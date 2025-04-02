@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Name Picker - Matrix Edition v4.6</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Monospace font */
+        @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;700&display=swap');
+
+        :root {
+            --matrix-green: #39ff14;
+            --matrix-green-dark: #0a4a0a;
+            --matrix-bg: #000000;
+            --matrix-bg-darker: #0a0a0a;
+            --matrix-font: 'Source Code Pro', monospace;
+        }
+
+        body {
+            font-family: var(--matrix-font);
+            background-color: var(--matrix-bg);
+            color: var(--matrix-green);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Canvas for background digital rain */
+        #matrixCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0; /* Behind everything */
+            display: block;
+        }
+
+        /* Click Trigger Area */
+        #clickTriggerArea {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 100%; /* Large clickable area */
+            height: 100%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 5; /* Above canvas, below panel/name */
+            /* background: rgba(255,0,0,0.1); */ /* DEBUG: uncomment to see area */
+        }
+        #clickTriggerArea.disabled {
+            pointer-events: none;
+            cursor: default;
+        }
+
+        /* Picker display area - Centered */
+        #selectedNameDisplayWrapper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 6; /* Above click area */
+            min-height: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 80%; /* Limit width */
+            text-align: center;
+            cursor: pointer;
+        }
+        #selectedNameDisplay {
+             font-family: var(--matrix-font);
+             color: var(--matrix-green);
+             text-shadow: 0 0 8px var(--matrix-green), 0 0 15px var(--matrix-green); /* Enhanced glow */
+             font-size: 3rem; /* text-5xl */
+             font-weight: 700;
+             line-height: 1.1;
+             word-break: break-word; /* Break long names */
+             /* Typing cursor */
+             border-right: 0.15em solid var(--matrix-green);
+             animation: blink-caret .75s step-end infinite;
+             min-height: 1.2em; /* Ensure space for cursor when empty */
+             padding-right: 0.15em; /* Space for cursor */
+             transition: font-size 0.3s ease-in-out; /* Add transition for quote size */
+             cursor: pointer;
+        }
+         /* When not typing */
+         #selectedNameDisplay:not(.typing) {
+            border-right: none;
+            animation: none;
+            padding-right: 0;
+         }
+         /* Smaller font size for the quote */
+         #selectedNameDisplay.quote {
+             font-size: 1.5rem; /* text-2xl */
+             font-weight: 400; /* normal weight */
+             color: rgba(57, 255, 20, 0.7); /* Slightly dimmer */
+         }
+
+
+        /* Blinking caret animation */
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: var(--matrix-green); }
+        }
+
+
+        /* Hamburger Menu Button */
+        #menuToggleBtn {
+            position: fixed;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 15; /* Above management panel */
+            font-family: var(--matrix-font);
+            font-size: 1.8rem; /* Larger symbol */
+            font-weight: 600;
+            background-color: transparent;
+            color: var(--matrix-green);
+            border: 2px solid var(--matrix-green);
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            text-shadow: 0 0 3px var(--matrix-green);
+            line-height: 1;
+        }
+        #menuToggleBtn:hover {
+            background-color: var(--matrix-green-dark);
+            color: var(--matrix-bg);
+            box-shadow: 0 0 10px var(--matrix-green);
+            text-shadow: none;
+        }
+         /* Style for 'X' close icon */
+        #menuToggleBtn.active { }
+
+
+        /* Management Panel (Hidden by default) */
+        #managementPanel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 90%; /* More width on mobile */
+            max-width: 350px; /* Max width on larger screens */
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.95); /* Darker, less transparent */
+            border-left: 2px solid var(--matrix-green);
+            box-shadow: -5px 0 15px rgba(57, 255, 20, 0.2);
+            transform: translateX(100%);
+            transition: transform 0.35s ease-in-out;
+            z-index: 10; /* Below menu button */
+            padding: 4rem 1.5rem 1.5rem 1.5rem; /* Add padding top for menu btn */
+            overflow-y: auto; /* Allow scrolling */
+            display: flex;
+            flex-direction: column;
+        }
+        #managementPanel.visible {
+            transform: translateX(0);
+        }
+
+        /* Input field styling */
+        #managementPanel input[type="text"] {
+            background-color: var(--matrix-bg-darker);
+            border: 1px solid var(--matrix-green-dark);
+            color: var(--matrix-green);
+            font-family: var(--matrix-font);
+            caret-color: var(--matrix-green);
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+        #managementPanel input[type="text"]::placeholder {
+            color: rgba(57, 255, 20, 0.4);
+        }
+        #managementPanel input[type="text"]:focus {
+            outline: none;
+            border-color: var(--matrix-green);
+            box-shadow: 0 0 5px var(--matrix-green);
+        }
+
+        /* Button styling inside panel*/
+        #managementPanel button {
+            font-family: var(--matrix-font);
+            font-weight: 600;
+            background-color: transparent;
+            color: var(--matrix-green);
+            border: 2px solid var(--matrix-green);
+            transition: all 0.2s ease-in-out;
+            text-shadow: 0 0 3px var(--matrix-green);
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            width: 100%;
+            margin-bottom: 0.75rem;
+        }
+         #managementPanel button:last-of-type {
+             margin-bottom: 0;
+         }
+         #managementPanel button:hover:not(:disabled) {
+            background-color: var(--matrix-green-dark);
+            color: var(--matrix-bg);
+            box-shadow: 0 0 10px var(--matrix-green);
+            text-shadow: none;
+            transform: translateY(-1px);
+        }
+         #managementPanel button:active:not(:disabled) {
+            transform: translateY(0px);
+            background-color: rgba(57, 255, 20, 0.3);
+        }
+         #managementPanel button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: var(--matrix-green-dark);
+            color: var(--matrix-green-dark);
+             text-shadow: none;
+        }
+         #managementPanel .remove-name-btn {
+             border: 1px solid var(--matrix-green-dark);
+             padding: 2px 4px;
+             line-height: 1;
+             pointer-events: auto !important;
+             opacity: 1 !important;
+             width: auto;
+             margin-left: 0.5rem;
+             margin-bottom: 0;
+         }
+         #managementPanel .remove-name-btn:hover:not(:disabled) {
+             border-color: #ff3914;
+             background-color: rgba(255, 57, 20, 0.2);
+             color: #ff3914;
+             box-shadow: 0 0 5px #ff3914;
+         }
+         /* Reboot button specific style */
+         #rebootBtn {
+             border-color: #ffa500;
+             color: #ffa500;
+             text-shadow: 0 0 3px #ffa500;
+             margin-top: 1.5rem;
+         }
+          #rebootBtn:hover:not(:disabled) {
+             background-color: rgba(255, 165, 0, 0.2);
+             color: var(--matrix-bg);
+             box-shadow: 0 0 10px #ffa500;
+             text-shadow: none;
+         }
+
+
+        /* List styling inside panel */
+        #managementPanel .list-container {
+            border: 1px solid var(--matrix-green-dark);
+            background-color: rgba(0, 0, 0, 0.3);
+            padding: 0.75rem;
+            border-radius: 0.375rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            margin-top: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+         #managementPanel #nameList {
+             overflow-y: auto;
+             max-height: none;
+             flex-grow: 1;
+             padding-right: 0.5rem;
+             space-y: 0.5rem;
+         }
+
+        #managementPanel .name-item {
+            background-color: transparent;
+            border-bottom: 1px dashed var(--matrix-green-dark);
+            padding: 0.5rem 0.25rem;
+            color: var(--matrix-green);
+            transition: all 0.3s ease-out;
+            opacity: 1;
+            transform: translateX(0);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #managementPanel .name-item:last-child {
+            border-bottom: none;
+        }
+         #managementPanel .name-item.removing {
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        #managementPanel .name-item-selected {
+            opacity: 0.4;
+            color: rgba(57, 255, 20, 0.4);
+            pointer-events: none;
+        }
+        #managementPanel .name-item-selected .name-span {
+             text-decoration: line-through;
+        }
+
+        /* Text & Titles inside panel */
+        #managementPanel h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+         #managementPanel p#footerText { /* Added ID */
+            font-size: 0.75rem;
+            color: rgba(57, 255, 20, 0.6);
+            text-align: center;
+         }
+         #managementPanel #noAvailableMessage {
+             color: rgba(57, 255, 20, 0.5);
+             font-style: italic;
+         }
+
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #selectedNameDisplay {
+                font-size: 2.25rem; /* Adjust name size */
+            }
+             #selectedNameDisplay.quote {
+                 font-size: 1.25rem; /* Adjust quote size */
+             }
+            #menuToggleBtn {
+                top: 1rem;
+                right: 1rem;
+                font-size: 1.5rem;
+                padding: 0.2rem 0.5rem;
+            }
+             #managementPanel {
+                 padding: 3.5rem 1rem 1rem 1rem;
+             }
+        }
+
+    </style>
+</head>
+<body>
+    <canvas id="matrixCanvas"></canvas>
+
+    <div id="clickTriggerArea"></div>
+
+    <div id="selectedNameDisplayWrapper">
+        <div id="selectedNameDisplay" class="typing">_</div>
+    </div>
+
+    <button id="menuToggleBtn">☰</button>
+
+    <div id="managementPanel">
+        <div>
+             <h3 class="// Manage Operatives:"></h3>
+             <input type="text" id="newNameInput" placeholder="Register new operative..." class="outline-none">
+             <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
+                 <span class="text-xl leading-none">[+]</span>
+                 Add
+             </button>
+        </div>
+
+        <div class="list-container">
+            <h3 class="// Operative Roster:"></h3>
+            <ul id="nameList">
+                <li id="noAvailableMessage" class="hidden">Roster empty...</li>
+            </ul>
+        </div>
+
+        <div>
+            <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
+                [ ] Reboot System
+            </button>
+         </div>
+
+         <p id="footerText">// System state is session-based.</p>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const nameListElement = document.getElementById('nameList');
+        const newNameInput = document.getElementById('newNameInput');
+        const addNameBtn = document.getElementById('addNameBtn');
+        const selectedNameDisplay = document.getElementById('selectedNameDisplay');
+        const selectedNameDisplayWrapper = document.getElementById('selectedNameDisplayWrapper');
+        const noAvailableMessage = document.getElementById('noAvailableMessage');
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        const clickTriggerArea = document.getElementById('clickTriggerArea');
+        const menuToggleBtn = document.getElementById('menuToggleBtn');
+        const managementPanel = document.getElementById('managementPanel');
+        const rebootBtn = document.getElementById('rebootBtn');
+
+        // --- State ---
+        let allNames = [];
+        let isPicking = false;
+        let typeIntervalId = null;
+
+        // --- Constants ---
+        const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const TYPING_INTERVAL_MS = 100;
+        const EMPTY_QUOTE = "Everything that has a beginning has an end.";
+
+        // --- Matrix Rain Setup (Unchanged) ---
+        let columns;
+        let drops = [];
+        const fontSize = 16;
+        function setupCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            columns = Math.floor(canvas.width / fontSize);
+            drops = [];
+            for (let i = 0; i < columns; i++) { drops[i] = Math.random() * -canvas.height; }
+        }
+        function drawMatrixRain() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#0a4a0a';
+            ctx.font = `${fontSize}px ${getComputedStyle(document.body).fontFamily}`;
+            for (let i = 0; i < drops.length; i++) {
+                const text = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) { drops[i] = 0; }
+                drops[i]++;
+            }
+        }
+        let rainAnimationId;
+        function startMatrixRain() {
+             if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
+             function animateRain() { drawMatrixRain(); rainAnimationId = requestAnimationFrame(animateRain); }
+             animateRain();
+        }
+
+        // --- Initialization ---
+        // --- MODIFIED initializeNames function ---
+        function initializeNames() {
+            const urlParams = new URLSearchParams(window.location.search);
+            allNames = []; // Reset
+            let initialNames = [];
+
+            // Check if 'names' parameter exists
+            if (urlParams.has('names')) {
+                const namesParam = urlParams.get('names');
+                // If parameter exists but is empty (?names=), treat as empty list
+                if (namesParam) {
+                    initialNames = namesParam.split(',')
+                                            .map(name => decodeURIComponent(name.trim()))
+                                            .filter(name => name); // Filter out empty strings from list itself
+                     console.log("// Loaded operatives from URL parameters.");
+                } else {
+                    // names parameter exists but is empty, start with empty list
+                    console.log("// 'names' parameter is empty, starting with empty roster.");
+                }
+            } else {
+                // 'names' parameter doesn't exist at all, load defaults
+                initialNames = ['Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher'];
+                console.log("// No 'names' parameter in URL, using defaults.");
+            }
+
+            allNames = initialNames.map(name => ({ name: name, selected: false }));
+            resetDisplayStyle();
+            renderAvailableList();
+            checkEmptyStates();
+        }
+        // --- END MODIFIED initializeNames function ---
+
+
+        // --- List Rendering (Unchanged) ---
+        function renderAvailableList() {
+            console.log('// Rendering operative roster...');
+            nameListElement.innerHTML = '';
+            if (allNames.length === 0) {
+                noAvailableMessage.classList.remove('hidden');
+            } else {
+                 noAvailableMessage.classList.add('hidden');
+                allNames.forEach((operative) => {
+                    const li = document.createElement('li');
+                    li.className = `name-item ${operative.selected ? 'name-item-selected' : ''}`;
+                    li.dataset.name = operative.name;
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = operative.name;
+                    nameSpan.className = 'name-span';
+                    li.appendChild(nameSpan);
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = `[X]`;
+                    removeBtn.className = 'remove-name-btn';
+                    removeBtn.title = `De-register ${operative.name}`;
+                    removeBtn.onclick = (e) => { e.stopPropagation(); removeName(operative.name); };
+                    li.appendChild(removeBtn);
+                    nameListElement.appendChild(li);
+                });
+            }
+        }
+
+        // --- Name Management Functions (Unchanged) ---
+        function addName() {
+            const name = newNameInput.value.trim();
+            const nameExists = allNames.some(op => op.name === name);
+            if (name && !nameExists) {
+                allNames.push({ name: name, selected: false });
+                newNameInput.value = '';
+                renderAvailableList();
+                checkEmptyStates();
+                console.log(`// Registered: ${name}`);
+            } else if (!name) {
+                 showTemporaryMessage("// Input required", "error");
+            } else {
+                 showTemporaryMessage(`// ${name} exists`, "error");
+            }
+        }
+        function removeName(nameToRemove) {
+            const liToRemove = nameListElement.querySelector(`li[data-name="${nameToRemove}"]`);
+             if (liToRemove) {
+                 liToRemove.classList.add('removing');
+                 setTimeout(() => {
+                    allNames = allNames.filter(op => op.name !== nameToRemove);
+                    renderAvailableList();
+                    checkEmptyStates();
+                    console.log(`// De-registered: ${nameToRemove}`);
+                 }, 300);
+             }
+        }
+
+        // --- Picking Logic & Reveal Animation (Unchanged from v4.5) ---
+        function pickRandomName() {
+            if (isPicking) { console.log("// Already picking, please wait."); return; }
+            const availableForPick = allNames.filter(op => !op.selected);
+            if (availableForPick.length === 0) {
+                console.log("// Roster exhausted. Displaying end quote.");
+                resetDisplayStyle(EMPTY_QUOTE, true);
+                clickTriggerArea.classList.add('disabled');
+                return;
+            }
+            isPicking = true;
+            checkEmptyStates(); // Disable trigger during pick
+            selectedNameDisplay.textContent = '';
+            selectedNameDisplay.classList.remove('quote');
+            selectedNameDisplay.classList.add('typing');
+            const finalRandomIndex = Math.floor(Math.random() * availableForPick.length);
+            const selectedOperative = availableForPick[finalRandomIndex];
+            revealNameGradually(selectedOperative.name);
+        }
+        function revealNameGradually(name) {
+            let i = 0;
+            if (typeIntervalId) clearInterval(typeIntervalId);
+            typeIntervalId = setInterval(() => {
+                if (i < name.length) {
+                    selectedNameDisplay.textContent += name.charAt(i);
+                    i++;
+                } else {
+                    clearInterval(typeIntervalId);
+                    typeIntervalId = null;
+                    finalizeSelection(name);
+                }
+            }, TYPING_INTERVAL_MS);
+        }
+        function finalizeSelection(selectedName) {
+             selectedNameDisplay.classList.remove('typing');
+             selectedNameDisplay.classList.remove('quote');
+            const indexInAllNames = allNames.findIndex(op => op.name === selectedName);
+            if (indexInAllNames !== -1) { allNames[indexInAllNames].selected = true; }
+            renderAvailableList();
+            isPicking = false;
+            checkEmptyStates(); // Re-enable trigger if names remain
+        }
+
+        // --- Reboot System Function ---
+        // --- MODIFIED rebootSystem function ---
+        function rebootSystem() {
+            if (isPicking) return; // Don't reboot while picking
+
+            console.log("// System Reboot Initialized via Reload...");
+
+            // 1. Get current names
+            const namesArray = allNames.map(op => op.name);
+
+            // 2. Encode names for URL
+            const encodedNames = namesArray.map(name => encodeURIComponent(name)).join(',');
+
+            // 3. Construct the new URL with the current names
+            // Using pathname ensures it works correctly even if the current URL has other parameters
+            const newUrl = window.location.pathname + '?names=' + encodedNames;
+
+            // 4. Navigate to the new URL, causing a page reload
+            window.location.href = newUrl;
+
+            // Old logic (resetting state directly) is removed as reload handles it
+        }
+        // --- END MODIFIED rebootSystem function ---
+
+
+        // --- Utility Functions (Unchanged from v4.5) ---
+        function checkEmptyStates() {
+            if (isPicking) {
+                 clickTriggerArea.classList.add('disabled');
+            } else {
+                 if (!selectedNameDisplay.classList.contains('quote')) {
+                    clickTriggerArea.classList.remove('disabled');
+                 } else {
+                    // Keep disabled if quote is showing (means list is empty)
+                     clickTriggerArea.classList.add('disabled');
+                 }
+            }
+            noAvailableMessage.classList.toggle('hidden', allNames.length > 0);
+        }
+        function resetDisplayStyle(displayName = '_', isQuote = false) {
+             if (typeIntervalId) clearInterval(typeIntervalId);
+             typeIntervalId = null;
+             selectedNameDisplay.textContent = displayName;
+             selectedNameDisplay.classList.remove('typing');
+             if (isQuote) {
+                 selectedNameDisplay.classList.add('quote');
+             } else {
+                 selectedNameDisplay.classList.remove('quote');
+             }
+        }
+        function showTemporaryMessage(message, type = "info") {
+            if (type === 'error') { console.error(message); }
+            else { console.log(message); }
+        }
+
+        // --- Menu Toggle Logic (Unchanged) ---
+        function toggleManagementPanel() {
+            managementPanel.classList.toggle('visible');
+            if (managementPanel.classList.contains('visible')) {
+                menuToggleBtn.innerHTML = '✕';
+                menuToggleBtn.classList.add('active');
+            } else {
+                menuToggleBtn.innerHTML = '☰';
+                 menuToggleBtn.classList.remove('active');
+            }
+        }
+
+        // --- Event Listeners (Unchanged) ---
+        menuToggleBtn.addEventListener('click', toggleManagementPanel);
+        clickTriggerArea.addEventListener('click', pickRandomName);
+        selectedNameDisplayWrapper.addEventListener('click', pickRandomName);
+        selectedNameDisplay.addEventListener('click', pickRandomName);
+        addNameBtn.addEventListener('click', addName);
+        rebootBtn.addEventListener('click', rebootSystem);
+        newNameInput.addEventListener('keypress', (event) => {
+            if (event.key === 'Enter') { addName(); }
+        });
+        window.addEventListener('resize', setupCanvas);
+
+        // --- Initial Load (Unchanged) ---
+        setupCanvas();
+        startMatrixRain();
+        initializeNames();
+
+    </script>
+
+</body>
+</html>
