@@ -394,7 +394,7 @@
 
         // --- Constants ---
         const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const TYPING_INTERVAL_MS = 10;
+        const TYPING_INTERVAL_MS = 20;
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
 
         // --- Matrix Rain Setup (Unchanged) ---
@@ -512,7 +512,7 @@
                     renderAvailableList();
                     checkEmptyStates();
                     console.log(`// De-registered: ${nameToRemove}`);
-                 }, 30);
+                 }, 100);
              }
         }
 
