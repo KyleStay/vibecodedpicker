@@ -394,7 +394,7 @@
 
         // --- Constants ---
         const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const TYPING_INTERVAL_MS = 30;
+        const TYPING_INTERVAL_MS = 10;
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
 
         // --- Matrix Rain Setup (Unchanged) ---
@@ -491,8 +491,7 @@
         // --- Name Management Functions (Unchanged) ---
         function addName() {
             const name = newNameInput.value.trim();
-            const nameExists = allNames.some(op => op.name === name);
-            if (name && !nameExists) {
+            if (name) {
                 allNames.push({ name: name, selected: false });
                 newNameInput.value = '';
                 renderAvailableList();
