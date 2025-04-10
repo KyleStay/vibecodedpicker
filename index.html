@@ -15,6 +15,8 @@
             --matrix-bg: #000000;
             --matrix-bg-darker: #0a0a0a;
             --matrix-font: 'Source Code Pro', monospace;
+            --progress-bar-height: 10px; /* Height of the progress bar */
+            --segment-gap: 2px; /* Gap between segments */
         }
 
         body {
@@ -27,6 +29,7 @@
             min-height: 100vh;
             overflow: hidden;
             position: relative;
+            padding-bottom: calc(var(--progress-bar-height) + 1rem); /* Add padding to prevent overlap with progress bar */
         }
 
         /* Canvas for background digital rain */
@@ -52,8 +55,6 @@
             z-index: 5; /* Above canvas, below panel/name */
             /* background: rgba(255,0,0,0.1); */ /* DEBUG: uncomment to see area */
         }
-        /* No longer disabling click trigger area */
-        /* #clickTriggerArea.disabled { ... } */
 
         /* Picker display area - Centered */
         #selectedNameDisplayWrapper {
@@ -244,7 +245,6 @@
              border-color: #ffa500;
              color: #ffa500;
              text-shadow: 0 0 3px #ffa500;
-             /* Removed margin-top to place it directly below list container */
          }
           #rebootBtn:hover:not(:disabled) {
              background-color: rgba(255, 165, 0, 0.2);
@@ -260,18 +260,17 @@
             background-color: rgba(0, 0, 0, 0.3);
             padding: 0.75rem;
             border-radius: 0.375rem;
-            flex-grow: 1;
+            flex-grow: 1; /* Allows list to take remaining space */
             display: flex;
             flex-direction: column;
-            margin-top: 1rem; /* Adjusted margin */
-            margin-bottom: 1rem; /* Adjusted margin */
+            margin-top: 1rem;
+            margin-bottom: 1rem;
         }
          #managementPanel #nameList {
              overflow-y: auto;
              max-height: none;
              flex-grow: 1;
-             padding-right: 0.5rem; /* Keep padding for scrollbar */
-             /* Remove space-y as items are now block */
+             padding-right: 0.5rem;
          }
 
         #managementPanel .name-item {
@@ -285,8 +284,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            cursor: grab; /* Indicate draggable */
-            margin-bottom: 0.25rem; /* Add space between items */
+            cursor: grab;
+            margin-bottom: 0.25rem;
         }
         #managementPanel .name-item:last-child {
             border-bottom: none;
@@ -296,13 +295,13 @@
             transition: opacity 0.3s ease-out, transform 0.3s ease-out;
             opacity: 0;
             transform: translateX(-20px);
-            cursor: default; /* No grab when removing */
+            cursor: default;
         }
         #managementPanel .name-item-selected {
             opacity: 0.4;
             color: rgba(57, 255, 20, 0.4);
-            pointer-events: none; /* Disable interactions */
-            cursor: default; /* No grab when selected */
+            pointer-events: none;
+            cursor: default;
         }
         #managementPanel .name-item-selected .name-span {
              text-decoration: line-through;
@@ -312,11 +311,10 @@
         #managementPanel .name-item.dragging {
             opacity: 0.5;
             background-color: var(--matrix-green-dark);
-            cursor: grabbing; /* Indicate grabbing */
-            border-style: solid; /* Make border solid while dragging */
+            cursor: grabbing;
+            border-style: solid;
         }
         #managementPanel .name-item.drag-over {
-            /* Add a visual indicator for the drop target */
             border-top: 2px solid var(--matrix-green);
             background-color: rgba(57, 255, 20, 0.1);
         }
@@ -328,7 +326,7 @@
             font-weight: 600;
             margin-bottom: 0.75rem;
         }
-         #managementPanel p#footerText { /* Added ID */
+         #managementPanel p#footerText {
             font-size: 0.75rem;
             color: rgba(57, 255, 20, 0.6);
             text-align: center;
@@ -339,24 +337,51 @@
              font-style: italic;
          }
 
+        /* Progress Bar Styles */
+        #progressBarContainer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 0.5rem 1rem;
+            z-index: 20;
+            box-sizing: border-box;
+        }
+        #progressBar {
+            display: flex;
+            width: 100%;
+            height: var(--progress-bar-height);
+            background-color: var(--matrix-bg-darker);
+            border: 1px solid var(--matrix-green-dark);
+            border-radius: 2px;
+            overflow: hidden;
+            gap: var(--segment-gap);
+            padding: var(--segment-gap);
+            box-sizing: border-box;
+        }
+        .progress-segment {
+            flex: 1;
+            background-color: var(--matrix-green);
+            border-radius: 1px;
+            transition: background-color 0.3s ease, opacity 0.3s ease;
+            box-shadow: 0 0 3px var(--matrix-green);
+        }
+        .progress-segment.used {
+            background-color: var(--matrix-green-dark);
+            opacity: 0.5;
+            box-shadow: none;
+        }
+
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            #selectedNameDisplay {
-                font-size: 2.25rem; /* Adjust name size */
-            }
-             #selectedNameDisplay.quote {
-                 font-size: 1.25rem; /* Adjust quote size */
-             }
+            #selectedNameDisplay { font-size: 2.25rem; }
+            #selectedNameDisplay.quote { font-size: 1.25rem; }
             #menuToggleBtn {
-                top: 1rem;
-                right: 1rem;
-                font-size: 1.5rem;
-                padding: 0.2rem 0.5rem;
+                top: 1rem; right: 1rem; font-size: 1.5rem; padding: 0.2rem 0.5rem;
             }
-             #managementPanel {
-                 padding: 3.5rem 1rem 1rem 1rem;
-             }
+            #managementPanel { padding: 3.5rem 1rem 1rem 1rem; }
+            #progressBarContainer { padding: 0.25rem 0.5rem; }
         }
 
     </style>
@@ -373,8 +398,13 @@
     <button id="menuToggleBtn">☰</button>
 
     <div id="managementPanel">
-        <div>
-             <h3 class="// Manage Operatives:"></h3>
+
+        <div class="mb-4">
+            <label for="titleInput">// Operative Schema:</label>
+            <input type="text" id="titleInput" placeholder="Define schema name..." class="outline-none">
+        </div>
+
+        <div class="mb-4"> <h3 class="// Manage Operatives:"></h3>
              <label for="newNameInput">// Register New Operative:</label>
              <input type="text" id="newNameInput" placeholder="Enter name..." class="outline-none">
              <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
@@ -387,12 +417,7 @@
             <h3 class="// Operative Roster (Drag to Reorder):"></h3>
             <ul id="nameList">
                 <li id="noAvailableMessage" class="hidden">Roster empty...</li>
-                </ul>
-        </div>
-
-        <div class="mb-4">
-            <label for="titleInput">// Operative Schema:</label>
-            <input type="text" id="titleInput" placeholder="Define schema name..." class="outline-none">
+            </ul>
         </div>
 
         <div>
@@ -402,6 +427,10 @@
          </div>
 
          <p id="footerText">// System state is session-based (saved via URL on reboot).</p>
+    </div>
+    <div id="progressBarContainer">
+        <div id="progressBar">
+            </div>
     </div>
 
     <script>
@@ -419,6 +448,7 @@
         const managementPanel = document.getElementById('managementPanel');
         const rebootBtn = document.getElementById('rebootBtn');
         const titleInput = document.getElementById('titleInput');
+        const progressBar = document.getElementById('progressBar');
 
         // --- State ---
         let allNames = [];
@@ -432,13 +462,11 @@
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
         const FONT_SIZE = 16;
-        const COLUMN_SPACING_FACTOR = 0.25; // Still using the denser spacing
+        const COLUMN_SPACING_FACTOR = 0.25; // Denser spacing
 
-        // --- Matrix Rain Setup ---
+        // --- Matrix Rain Setup (Unchanged) ---
         let columns;
         let drops = [];
-
-        // --- MODIFIED setupCanvas function ---
         function setupCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -446,40 +474,24 @@
             columns = Math.floor(canvas.width / effectiveColumnWidth);
             drops = [];
             for (let i = 0; i < columns; i++) {
-                // Initialize drops at random positions *within* the screen height
-                drops[i] = Math.random() * canvas.height / FONT_SIZE; // Divide by FONT_SIZE to get position in terms of characters
+                drops[i] = Math.random() * canvas.height / FONT_SIZE;
             }
-            console.log(`// Canvas Setup: ${canvas.width}x${canvas.height}, ${columns} columns initialized within view.`);
         }
-        // --- END MODIFIED setupCanvas function ---
-
-        // --- drawMatrixRain function (Unchanged from previous) ---
         function drawMatrixRain() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
             ctx.fillStyle = '#0a4a0a';
             ctx.font = `${FONT_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
-
             const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR;
-
             for (let i = 0; i < drops.length; i++) {
                 const text = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
-                // Draw text using the reduced column spacing
-                // Multiply drops[i] by FONT_SIZE to get pixel position
                 ctx.fillText(text, i * effectiveColumnWidth, drops[i] * FONT_SIZE);
-
-                // Move the drop down for the next frame
                 drops[i]++;
-
-                // If a drop has gone off the screen, reset it back to the top
                 if (drops[i] * FONT_SIZE > canvas.height && Math.random() > 0.975) {
                     drops[i] = 0;
                 }
             }
         }
-        // --- END drawMatrixRain function ---
-
         let rainAnimationId;
         function startMatrixRain() {
              if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
@@ -491,7 +503,7 @@
         }
 
 
-        // --- Initialization (Unchanged) ---
+        // --- Initialization ---
         function initializeStateFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             allNames = [];
@@ -501,14 +513,7 @@
             // Load Title
             if (urlParams.has('title')) {
                 const titleParam = urlParams.get('title').trim();
-                if (titleParam) {
-                    pageTitle = decodeURIComponent(titleParam);
-                    console.log("// Loaded title from URL parameter.");
-                } else {
-                    console.log("// 'title' parameter is empty, using default title.");
-                }
-            } else {
-                 console.log("// No 'title' parameter in URL, using default title.");
+                if (titleParam) { pageTitle = decodeURIComponent(titleParam); }
             }
             document.title = pageTitle;
             titleInput.value = pageTitle === DEFAULT_TITLE ? '' : pageTitle;
@@ -520,24 +525,54 @@
                     initialNames = namesParam.split(',')
                                             .map(name => decodeURIComponent(name.trim()))
                                             .filter(name => name);
-                     console.log("// Loaded operatives from URL parameters.");
-                } else {
-                    console.log("// 'names' parameter is empty, starting with empty roster.");
                 }
             } else {
                 initialNames = ['Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher'];
-                console.log("// No 'names' parameter in URL, using default operatives.");
             }
 
-            // Populate state and render
+            // Populate state (reset selected state)
             allNames = initialNames.map(name => ({ name: name, selected: false }));
+
+            // Render UI
             resetDisplayStyle();
             renderAvailableList();
-            checkEmptyStates(); // Call checkEmptyStates after initialization
+            renderProgressBar(); // Render initial progress bar
+            checkEmptyStates();
+            console.log("// System Initialized.");
         }
 
-        // --- List Rendering & Drag/Drop Event Handling (Unchanged) ---
+        // --- Progress Bar Rendering (MODIFIED) ---
+        function renderProgressBar() {
+            progressBar.innerHTML = ''; // Clear existing segments
+            if (allNames.length === 0) {
+                progressBar.style.display = 'none'; // Hide bar if no names
+                return;
+            }
+            progressBar.style.display = 'flex'; // Ensure bar is visible
+
+            // Count how many names have been selected
+            const selectedCount = allNames.filter(op => op.selected).length;
+
+            // Create segments for all names
+            allNames.forEach((operative, index) => {
+                const segment = document.createElement('div');
+                segment.className = 'progress-segment';
+                // No longer need data-name attribute
+
+                // Apply 'used' class based on the count of selected items
+                if (index < selectedCount) {
+                    segment.classList.add('used');
+                }
+                progressBar.appendChild(segment);
+            });
+             console.log(`// Progress bar rendered: ${selectedCount} / ${allNames.length} used.`);
+        }
+        // --- END MODIFIED Progress Bar Rendering ---
+
+
+        // --- List Rendering & Drag/Drop Event Handling ---
         function renderAvailableList() {
+            // (Function content unchanged, just ensure it's called correctly)
             console.log('// Rendering operative roster...');
             nameListElement.innerHTML = '';
 
@@ -548,7 +583,7 @@
                 allNames.forEach((operative) => {
                     const li = document.createElement('li');
                     li.className = `name-item ${operative.selected ? 'name-item-selected' : ''}`;
-                    li.dataset.name = operative.name;
+                    li.dataset.name = operative.name; // Keep data-name for list item logic
 
                     if (!operative.selected) {
                         li.draggable = true;
@@ -579,7 +614,7 @@
                     nameListElement.appendChild(li);
                 });
             }
-             checkEmptyStates(); // Check states after rendering
+             checkEmptyStates();
         }
 
         // Drag Handlers (Unchanged)
@@ -589,12 +624,10 @@
                 e.dataTransfer.effectAllowed = 'move';
                 e.dataTransfer.setData('text/plain', draggedItemName);
                 setTimeout(() => { e.target.classList.add('dragging'); }, 0);
-                console.log(`// Drag Start: ${draggedItemName}`);
             } else { e.preventDefault(); }
         }
         function handleDragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
+            e.preventDefault(); e.dataTransfer.dropEffect = 'move';
             const targetItem = e.target.closest('.name-item');
             if (targetItem && targetItem.dataset.name !== draggedItemName && !targetItem.classList.contains('name-item-selected')) {
                  targetItem.classList.add('drag-over');
@@ -620,7 +653,6 @@
             if (draggingElement) draggingElement.classList.remove('dragging');
 
             if (droppedOnName && droppedOnName !== draggedItemName && !targetItem.classList.contains('name-item-selected')) {
-                console.log(`// Drop: ${draggedItemName} onto ${droppedOnName}`);
                 const draggedIndex = allNames.findIndex(op => op.name === draggedItemName);
                 const targetIndex = allNames.findIndex(op => op.name === droppedOnName);
                 if (draggedIndex !== -1 && targetIndex !== -1) {
@@ -628,27 +660,27 @@
                     const newTargetIndex = allNames.findIndex(op => op.name === droppedOnName);
                     allNames.splice(newTargetIndex, 0, draggedOperative);
                     renderAvailableList();
+                    renderProgressBar(); // Re-render progress bar to reflect new order's selected state
                     console.log("// Roster reordered.");
-                } else { console.warn("// Dragged or target item not found in state array."); }
-            } else { console.log("// Drop cancelled or invalid target."); }
+                }
+            }
             draggedItemName = null;
         }
         function handleDragEnd(e) {
             e.target.classList.remove('dragging');
             document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
             draggedItemName = null;
-            console.log("// Drag End");
         }
 
 
-        // --- Name Management Functions (Unchanged) ---
+        // --- Name Management Functions (Calls renderProgressBar) ---
         function addName() {
             const name = newNameInput.value.trim();
             if (name && !allNames.some(op => op.name.toLowerCase() === name.toLowerCase())) {
                 allNames.push({ name: name, selected: false });
                 newNameInput.value = '';
                 renderAvailableList();
-                // checkEmptyStates(); // Called within renderAvailableList
+                renderProgressBar(); // Update progress bar
                 console.log(`// Registered: ${name}`);
             } else if (!name) {
                  showTemporaryMessage("// Input required", "error");
@@ -661,34 +693,27 @@
              if (liToRemove) {
                  liToRemove.classList.add('removing');
                  liToRemove.draggable = false;
-                 liToRemove.removeEventListener('dragstart', handleDragStart);
-                 liToRemove.removeEventListener('dragover', handleDragOver);
-                 liToRemove.removeEventListener('dragenter', handleDragEnter);
-                 liToRemove.removeEventListener('dragleave', handleDragLeave);
-                 liToRemove.removeEventListener('drop', handleDrop);
-                 liToRemove.removeEventListener('dragend', handleDragEnd);
+
                  setTimeout(() => {
+                    // Check if the removed item was selected, adjust progress bar if needed
+                    const wasSelected = allNames.find(op => op.name === nameToRemove)?.selected;
                     allNames = allNames.filter(op => op.name !== nameToRemove);
                     renderAvailableList();
-                    // checkEmptyStates(); // Called within renderAvailableList
+                    renderProgressBar(); // Update progress bar
                     console.log(`// De-registered: ${nameToRemove}`);
                  }, 300);
              }
         }
 
-        // --- Picking Logic & Reveal Animation (Unchanged) ---
+        // --- Picking Logic & Reveal Animation ---
         function pickRandomName() {
             if (selectedNameDisplay.classList.contains('quote')) {
-                console.log("// Quote clicked, initiating reboot...");
-                rebootSystem();
-                return;
+                rebootSystem(); return;
             }
-            if (isPicking) { console.log("// Already picking, please wait."); return; }
+            if (isPicking) { return; }
             const availableForPick = allNames.filter(op => !op.selected);
             if (availableForPick.length === 0) {
-                console.log("// Roster exhausted. Displaying end quote. Click quote to reboot.");
-                resetDisplayStyle(EMPTY_QUOTE, true);
-                return;
+                resetDisplayStyle(EMPTY_QUOTE, true); return;
             }
             isPicking = true;
             checkEmptyStates();
@@ -713,22 +738,45 @@
                 }
             }, TYPING_INTERVAL_MS);
         }
+        // --- MODIFIED finalizeSelection function ---
         function finalizeSelection(selectedName) {
              selectedNameDisplay.classList.remove('typing');
              selectedNameDisplay.classList.remove('quote');
-            const indexInAllNames = allNames.findIndex(op => op.name === selectedName);
-            if (indexInAllNames !== -1) { allNames[indexInAllNames].selected = true; }
-            renderAvailableList();
-            isPicking = false;
-            checkEmptyStates();
+
+             // Update the state array
+             const indexInAllNames = allNames.findIndex(op => op.name === selectedName);
+             if (indexInAllNames !== -1) {
+                 allNames[indexInAllNames].selected = true;
+             } else {
+                 console.warn(`// Selected name ${selectedName} not found in state array.`);
+                 // Handle error or exit if name not found?
+             }
+
+             // --- Update Progress Bar (Count-based) ---
+             // Find the first segment that doesn't have the 'used' class
+             const firstAvailableSegment = progressBar.querySelector('.progress-segment:not(.used)');
+             if (firstAvailableSegment) {
+                 firstAvailableSegment.classList.add('used');
+                 console.log(`// Progress segment updated (count-based).`);
+             } else {
+                  // This case should ideally not happen if logic is correct,
+                  // but good to log if it does.
+                  console.warn(`// No available progress segment found to mark as used.`);
+             }
+             // --- End Update Progress Bar ---
+
+             // Re-render the list in the panel to show the name as selected
+             renderAvailableList();
+
+             isPicking = false;
+             checkEmptyStates();
         }
+        // --- END MODIFIED finalizeSelection function ---
+
 
         // --- Reboot System Function (Unchanged) ---
         function rebootSystem() {
-            if (isPicking) {
-                console.log("// Cannot reboot while picking a name.");
-                return;
-            }
+            if (isPicking) { return; }
             console.log("// System Reboot Initialized via Reload...");
             const namesArray = allNames.map(op => op.name);
             const encodedNames = namesArray.map(name => encodeURIComponent(name)).join(',');
@@ -761,11 +809,9 @@
         function toggleManagementPanel() {
             managementPanel.classList.toggle('visible');
             if (managementPanel.classList.contains('visible')) {
-                menuToggleBtn.innerHTML = '✕';
-                menuToggleBtn.classList.add('active');
+                menuToggleBtn.innerHTML = '✕'; menuToggleBtn.classList.add('active');
             } else {
-                menuToggleBtn.innerHTML = '☰';
-                 menuToggleBtn.classList.remove('active');
+                menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active');
             }
         }
 
@@ -779,18 +825,17 @@
         newNameInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') { addName(); }
         });
-        // Resetup canvas and rain on resize
         window.addEventListener('resize', () => {
-             if (rainAnimationId) cancelAnimationFrame(rainAnimationId); // Stop current animation
-             setupCanvas(); // Recalculate dimensions and drops
-             startMatrixRain(); // Restart rain
+             if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
+             setupCanvas();
+             startMatrixRain();
         });
 
 
         // --- Initial Load ---
-        setupCanvas(); // Initial canvas setup
-        startMatrixRain(); // Start the rain effect
-        initializeStateFromURL(); // Load state from URL
+        setupCanvas();
+        startMatrixRain();
+        initializeStateFromURL();
 
     </script>
 
