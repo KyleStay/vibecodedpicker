@@ -79,19 +79,14 @@
              font-weight: 700;
              line-height: 1.1;
              word-break: break-word; /* Break long names */
-             /* Typing cursor */
-             border-right: 0.15em solid var(--matrix-green);
-             animation: blink-caret .75s step-end infinite;
-             min-height: 1.2em; /* Ensure space for cursor when empty */
-             padding-right: 0.15em; /* Space for cursor */
+             /* Removed border, padding, and animation properties for cursor */
+             min-height: 1.2em; /* Ensure space for character when blinking off */
              transition: font-size 0.3s ease-in-out; /* Add transition for quote size */
              cursor: pointer;
         }
-         /* When not typing */
-         #selectedNameDisplay:not(.typing) {
-            border-right: none;
-            animation: none;
-            padding-right: 0;
+         /* Apply blinking animation only when .typing class is present */
+         #selectedNameDisplay.typing {
+             animation: blink-pipe .75s step-end infinite;
          }
          /* Smaller font size for the quote */
          #selectedNameDisplay.quote {
@@ -102,10 +97,10 @@
          }
 
 
-        /* Blinking caret animation */
-        @keyframes blink-caret {
-            from, to { border-color: transparent }
-            50% { border-color: var(--matrix-green); }
+        /* Blinking animation (toggles opacity) */
+        @keyframes blink-pipe {
+            from, to { opacity: 1 }
+            50% { opacity: 0 }
         }
 
 
@@ -207,23 +202,23 @@
              margin-bottom: 0;
          }
          #managementPanel button:hover:not(:disabled) {
-            background-color: var(--matrix-green-dark);
-            color: var(--matrix-bg);
-            box-shadow: 0 0 10px var(--matrix-green);
-            text-shadow: none;
-            transform: translateY(-1px);
-        }
-         #managementPanel button:active:not(:disabled) {
-            transform: translateY(0px);
-            background-color: rgba(57, 255, 20, 0.3);
-        }
-         #managementPanel button:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-            border-color: var(--matrix-green-dark);
-            color: var(--matrix-green-dark);
+             background-color: var(--matrix-green-dark);
+             color: var(--matrix-bg);
+             box-shadow: 0 0 10px var(--matrix-green);
              text-shadow: none;
-        }
+             transform: translateY(-1px);
+         }
+         #managementPanel button:active:not(:disabled) {
+             transform: translateY(0px);
+             background-color: rgba(57, 255, 20, 0.3);
+         }
+         #managementPanel button:disabled {
+             opacity: 0.4;
+             cursor: not-allowed;
+             border-color: var(--matrix-green-dark);
+             color: var(--matrix-green-dark);
+              text-shadow: none;
+         }
          #managementPanel .remove-name-btn {
              border: 1px solid var(--matrix-green-dark);
              padding: 2px 4px;
@@ -292,11 +287,11 @@
             margin-bottom: 0;
         }
          #managementPanel .name-item.removing {
-            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
-            opacity: 0;
-            transform: translateX(-20px);
-            cursor: default;
-        }
+             transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+             opacity: 0;
+             transform: translateX(-20px);
+             cursor: default;
+         }
         #managementPanel .name-item-selected {
             opacity: 0.4;
             color: rgba(57, 255, 20, 0.4);
@@ -392,7 +387,7 @@
     <div id="clickTriggerArea"></div>
 
     <div id="selectedNameDisplayWrapper">
-        <div id="selectedNameDisplay" class="typing">_</div>
+        <div id="selectedNameDisplay" class="typing">|</div>
     </div>
 
     <button id="menuToggleBtn">☰</button>
@@ -451,18 +446,18 @@
         const progressBar = document.getElementById('progressBar');
 
         // --- State ---
-        let allNames = [];
+        let allNames = []; // Array of objects: { name: string, selected: boolean }
         let isPicking = false;
         let typeIntervalId = null;
-        let draggedItemName = null;
+        let draggedItemName = null; // Store the name of the item being dragged
 
         // --- Constants ---
         const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const TYPING_INTERVAL_MS = 20;
+        const TYPING_INTERVAL_MS = 20; // Speed of typing animation
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
-        const FONT_SIZE = 16;
-        const COLUMN_SPACING_FACTOR = 0.25; // Denser spacing
+        const FONT_SIZE = 16; // Font size for matrix rain
+        const COLUMN_SPACING_FACTOR = 0.25; // Denser spacing for rain columns
 
         // --- Matrix Rain Setup (Unchanged) ---
         let columns;
@@ -474,19 +469,30 @@
             columns = Math.floor(canvas.width / effectiveColumnWidth);
             drops = [];
             for (let i = 0; i < columns; i++) {
-                drops[i] = Math.random() * canvas.height / FONT_SIZE;
+                drops[i] = Math.random() * canvas.height / FONT_SIZE; // Random start position
             }
         }
         function drawMatrixRain() {
+            // Semi-transparent black background for fading effect
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#106b00';
-            ctx.font = `${FONT_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
+
+            // Set color and font for the falling characters
+            ctx.fillStyle = '#106b00'; // Darker matrix green
+            ctx.font = `${FONT_SIZE}px ${getComputedStyle(document.body).fontFamily}`; // Use body font
+
             const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR;
+            // Loop through columns
             for (let i = 0; i < drops.length; i++) {
+                // Pick a random character
                 const text = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
+                // Draw the character
                 ctx.fillText(text, i * effectiveColumnWidth, drops[i] * FONT_SIZE);
+
+                // Move the drop down
                 drops[i]++;
+
+                // Reset drop to top randomly or if it goes off screen
                 if (drops[i] * FONT_SIZE > canvas.height && Math.random() > 0.975) {
                     drops[i] = 0;
                 }
@@ -494,10 +500,10 @@
         }
         let rainAnimationId;
         function startMatrixRain() {
-             if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
+             if (rainAnimationId) cancelAnimationFrame(rainAnimationId); // Clear previous animation frame
              function animateRain() {
                  drawMatrixRain();
-                 rainAnimationId = requestAnimationFrame(animateRain);
+                 rainAnimationId = requestAnimationFrame(animateRain); // Loop the animation
              }
              animateRain();
         }
@@ -506,42 +512,43 @@
         // --- Initialization ---
         function initializeStateFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
-            allNames = [];
+            allNames = []; // Reset state array
             let initialNames = [];
             let pageTitle = DEFAULT_TITLE;
 
-            // Load Title
+            // Load Title from URL or use default
             if (urlParams.has('title')) {
                 const titleParam = urlParams.get('title').trim();
                 if (titleParam) { pageTitle = decodeURIComponent(titleParam); }
             }
-            document.title = pageTitle;
-            titleInput.value = pageTitle === DEFAULT_TITLE ? '' : pageTitle;
+            document.title = pageTitle; // Set browser tab title
+            titleInput.value = pageTitle === DEFAULT_TITLE ? '' : pageTitle; // Set input field value
 
-            // Load Names
+            // Load Names from URL or use default Matrix names
             if (urlParams.has('names')) {
                 const namesParam = urlParams.get('names');
                 if (namesParam) {
                     initialNames = namesParam.split(',')
-                                            .map(name => decodeURIComponent(name.trim()))
-                                            .filter(name => name);
+                                            .map(name => decodeURIComponent(name.trim())) // Decode and trim
+                                            .filter(name => name); // Remove empty names
                 }
             } else {
+                // Default names if none provided in URL
                 initialNames = ['Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher'];
             }
 
-            // Populate state (reset selected state)
+            // Populate state array (reset selected state)
             allNames = initialNames.map(name => ({ name: name, selected: false }));
 
-            // Render UI
-            resetDisplayStyle();
-            renderAvailableList();
+            // Render UI elements based on loaded state
+            resetDisplayStyle(); // Reset the main display area using the new default '|'
+            renderAvailableList(); // Render the list in the management panel
             renderProgressBar(); // Render initial progress bar
-            checkEmptyStates();
+            checkEmptyStates(); // Update UI based on whether the list is empty
             console.log("// System Initialized.");
         }
 
-        // --- Progress Bar Rendering (MODIFIED) ---
+        // --- Progress Bar Rendering (Unchanged) ---
         function renderProgressBar() {
             progressBar.innerHTML = ''; // Clear existing segments
             if (allNames.length === 0) {
@@ -560,6 +567,7 @@
                 // No longer need data-name attribute
 
                 // Apply 'used' class based on the count of selected items
+                // The first 'selectedCount' segments will be marked as used
                 if (index < selectedCount) {
                     segment.classList.add('used');
                 }
@@ -567,54 +575,55 @@
             });
              console.log(`// Progress bar rendered: ${selectedCount} / ${allNames.length} used.`);
         }
-        // --- END MODIFIED Progress Bar Rendering ---
 
 
-        // --- List Rendering & Drag/Drop Event Handling ---
+        // --- List Rendering & Drag/Drop Event Handling (Unchanged) ---
         function renderAvailableList() {
-            // (Function content unchanged, just ensure it's called correctly)
             console.log('// Rendering operative roster...');
-            nameListElement.innerHTML = '';
+            nameListElement.innerHTML = ''; // Clear current list
 
             if (allNames.length === 0) {
-                noAvailableMessage.classList.remove('hidden');
+                noAvailableMessage.classList.remove('hidden'); // Show "empty" message
             } else {
-                 noAvailableMessage.classList.add('hidden');
-                allNames.forEach((operative) => {
-                    const li = document.createElement('li');
-                    li.className = `name-item ${operative.selected ? 'name-item-selected' : ''}`;
-                    li.dataset.name = operative.name; // Keep data-name for list item logic
+                 noAvailableMessage.classList.add('hidden'); // Hide "empty" message
+                 allNames.forEach((operative) => {
+                     const li = document.createElement('li');
+                     li.className = `name-item ${operative.selected ? 'name-item-selected' : ''}`;
+                     li.dataset.name = operative.name; // Keep data-name for list item logic
 
-                    if (!operative.selected) {
-                        li.draggable = true;
-                        li.addEventListener('dragstart', handleDragStart);
-                        li.addEventListener('dragover', handleDragOver);
-                        li.addEventListener('dragenter', handleDragEnter);
-                        li.addEventListener('dragleave', handleDragLeave);
-                        li.addEventListener('drop', handleDrop);
-                        li.addEventListener('dragend', handleDragEnd);
-                    } else {
-                        li.draggable = false;
-                    }
+                     // Only allow dragging for non-selected items
+                     if (!operative.selected) {
+                         li.draggable = true;
+                         li.addEventListener('dragstart', handleDragStart);
+                         li.addEventListener('dragover', handleDragOver);
+                         li.addEventListener('dragenter', handleDragEnter);
+                         li.addEventListener('dragleave', handleDragLeave);
+                         li.addEventListener('drop', handleDrop);
+                         li.addEventListener('dragend', handleDragEnd);
+                     } else {
+                         li.draggable = false; // Disable dragging for selected items
+                     }
 
-                    const nameSpan = document.createElement('span');
-                    nameSpan.textContent = operative.name;
-                    nameSpan.className = 'name-span flex-grow mr-2 truncate';
-                    li.appendChild(nameSpan);
+                     // Create span for the name text
+                     const nameSpan = document.createElement('span');
+                     nameSpan.textContent = operative.name;
+                     nameSpan.className = 'name-span flex-grow mr-2 truncate'; // Allow truncation
+                     li.appendChild(nameSpan);
 
-                    const removeBtn = document.createElement('button');
-                    removeBtn.innerHTML = `[X]`;
-                    removeBtn.className = 'remove-name-btn flex-shrink-0';
-                    removeBtn.title = `De-register ${operative.name}`;
-                    removeBtn.onclick = (e) => { e.stopPropagation(); removeName(operative.name); };
-                    removeBtn.draggable = false;
-                    removeBtn.addEventListener('dragstart', (e) => e.preventDefault());
+                     // Create remove button
+                     const removeBtn = document.createElement('button');
+                     removeBtn.innerHTML = `[X]`; // Simple text icon
+                     removeBtn.className = 'remove-name-btn flex-shrink-0';
+                     removeBtn.title = `De-register ${operative.name}`;
+                     removeBtn.onclick = (e) => { e.stopPropagation(); removeName(operative.name); }; // Prevent triggering drag
+                     removeBtn.draggable = false; // Prevent button itself from being dragged
+                     removeBtn.addEventListener('dragstart', (e) => e.preventDefault()); // Extra safety
 
-                    li.appendChild(removeBtn);
-                    nameListElement.appendChild(li);
-                });
+                     li.appendChild(removeBtn);
+                     nameListElement.appendChild(li);
+                 });
             }
-             checkEmptyStates();
+             checkEmptyStates(); // Update related UI elements
         }
 
         // Drag Handlers (Unchanged)
@@ -655,12 +664,13 @@
             if (droppedOnName && droppedOnName !== draggedItemName && !targetItem.classList.contains('name-item-selected')) {
                 const draggedIndex = allNames.findIndex(op => op.name === draggedItemName);
                 const targetIndex = allNames.findIndex(op => op.name === droppedOnName);
+
                 if (draggedIndex !== -1 && targetIndex !== -1) {
                     const [draggedOperative] = allNames.splice(draggedIndex, 1);
                     const newTargetIndex = allNames.findIndex(op => op.name === droppedOnName);
                     allNames.splice(newTargetIndex, 0, draggedOperative);
                     renderAvailableList();
-                    renderProgressBar(); // Re-render progress bar to reflect new order's selected state
+                    renderProgressBar();
                     console.log("// Roster reordered.");
                 }
             }
@@ -673,14 +683,14 @@
         }
 
 
-        // --- Name Management Functions (Calls renderProgressBar) ---
+        // --- Name Management Functions (Unchanged) ---
         function addName() {
             const name = newNameInput.value.trim();
             if (name && !allNames.some(op => op.name.toLowerCase() === name.toLowerCase())) {
                 allNames.push({ name: name, selected: false });
                 newNameInput.value = '';
                 renderAvailableList();
-                renderProgressBar(); // Update progress bar
+                renderProgressBar();
                 console.log(`// Registered: ${name}`);
             } else if (!name) {
                  showTemporaryMessage("// Input required", "error");
@@ -693,40 +703,46 @@
              if (liToRemove) {
                  liToRemove.classList.add('removing');
                  liToRemove.draggable = false;
-
                  setTimeout(() => {
-                    // Check if the removed item was selected, adjust progress bar if needed
-                    const wasSelected = allNames.find(op => op.name === nameToRemove)?.selected;
-                    allNames = allNames.filter(op => op.name !== nameToRemove);
-                    renderAvailableList();
-                    renderProgressBar(); // Update progress bar
-                    console.log(`// De-registered: ${nameToRemove}`);
+                     allNames = allNames.filter(op => op.name !== nameToRemove);
+                     renderAvailableList();
+                     renderProgressBar();
+                     console.log(`// De-registered: ${nameToRemove}`);
                  }, 300);
              }
         }
 
-        // --- Picking Logic & Reveal Animation ---
+        // --- Picking Logic & Reveal Animation (Unchanged JS logic, CSS handles blinking) ---
         function pickRandomName() {
             if (selectedNameDisplay.classList.contains('quote')) {
                 rebootSystem(); return;
             }
             if (isPicking) { return; }
+
             const availableForPick = allNames.filter(op => !op.selected);
+
             if (availableForPick.length === 0) {
-                resetDisplayStyle(EMPTY_QUOTE, true); return;
+                resetDisplayStyle(EMPTY_QUOTE, true);
+                return;
             }
+
             isPicking = true;
             checkEmptyStates();
-            selectedNameDisplay.textContent = '';
+            selectedNameDisplay.textContent = ''; // Clear display, this stops the | from showing during typing
+            selectedNameDisplay.classList.remove('typing'); // Remove typing class to stop blinking during reveal
             selectedNameDisplay.classList.remove('quote');
-            selectedNameDisplay.classList.add('typing');
+
             const finalRandomIndex = Math.floor(Math.random() * availableForPick.length);
             const selectedOperative = availableForPick[finalRandomIndex];
+
             revealNameGradually(selectedOperative.name);
         }
         function revealNameGradually(name) {
             let i = 0;
             if (typeIntervalId) clearInterval(typeIntervalId);
+
+            selectedNameDisplay.textContent = ''; // Ensure it starts empty
+
             typeIntervalId = setInterval(() => {
                 if (i < name.length) {
                     selectedNameDisplay.textContent += name.charAt(i);
@@ -738,40 +754,30 @@
                 }
             }, TYPING_INTERVAL_MS);
         }
-        // --- MODIFIED finalizeSelection function ---
+        // Finalize selection - ensures typing class is removed so final name doesn't blink
         function finalizeSelection(selectedName) {
-             selectedNameDisplay.classList.remove('typing');
+             selectedNameDisplay.classList.remove('typing'); // Ensure blinking stops
              selectedNameDisplay.classList.remove('quote');
 
-             // Update the state array
              const indexInAllNames = allNames.findIndex(op => op.name === selectedName);
              if (indexInAllNames !== -1) {
                  allNames[indexInAllNames].selected = true;
              } else {
                  console.warn(`// Selected name ${selectedName} not found in state array.`);
-                 // Handle error or exit if name not found?
              }
 
-             // --- Update Progress Bar (Count-based) ---
-             // Find the first segment that doesn't have the 'used' class
              const firstAvailableSegment = progressBar.querySelector('.progress-segment:not(.used)');
              if (firstAvailableSegment) {
                  firstAvailableSegment.classList.add('used');
                  console.log(`// Progress segment updated (count-based).`);
              } else {
-                  // This case should ideally not happen if logic is correct,
-                  // but good to log if it does.
                   console.warn(`// No available progress segment found to mark as used.`);
              }
-             // --- End Update Progress Bar ---
 
-             // Re-render the list in the panel to show the name as selected
-             renderAvailableList();
-
+             renderAvailableList(); // Update list to show selection
              isPicking = false;
              checkEmptyStates();
         }
-        // --- END MODIFIED finalizeSelection function ---
 
 
         // --- Reboot System Function (Unchanged) ---
@@ -789,16 +795,24 @@
             window.location.href = newUrl;
         }
 
-        // --- Utility Functions (Unchanged) ---
+        // --- Utility Functions (Partially Modified) ---
         function checkEmptyStates() {
             noAvailableMessage.classList.toggle('hidden', allNames.length > 0);
         }
-        function resetDisplayStyle(displayName = '_', isQuote = false) {
+        // Modified resetDisplayStyle to add/remove typing class correctly for blinking '|'
+        function resetDisplayStyle(displayName = '|', isQuote = false) {
              if (typeIntervalId) clearInterval(typeIntervalId);
              typeIntervalId = null;
              selectedNameDisplay.textContent = displayName;
-             selectedNameDisplay.classList.remove('typing');
-             selectedNameDisplay.classList.toggle('quote', isQuote);
+             selectedNameDisplay.classList.remove('quote'); // Remove quote style first
+             selectedNameDisplay.classList.remove('typing'); // Remove typing style first
+
+             if (isQuote) {
+                 selectedNameDisplay.classList.add('quote'); // Add quote style if needed
+             } else if (displayName === '|') {
+                 // Only add typing class (for blinking) if it's the default pipe character
+                 selectedNameDisplay.classList.add('typing');
+             }
         }
         function showTemporaryMessage(message, type = "info") {
             if (type === 'error') { console.error(message); }
