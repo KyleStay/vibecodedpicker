@@ -10,13 +10,14 @@
         @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;700&display=swap');
 
         :root {
-            --matrix-green: #39ff14;
+            --matrix-green: #39ff14; /* Brighter green for trail */
             --matrix-green-dark: #0a4a0a;
             --matrix-bg: #000000;
             --matrix-bg-darker: #0a0a0a;
             --matrix-font: 'Source Code Pro', monospace;
+            --matrix-lead: #ffffff; /* Near-white color for leading char */
             --progress-bar-height: 10px; /* Height of the progress bar */
-            --segment-gap: 2px; /* Gap between segments */
+            --segment-gap: 2px; /* Gap between segments - FIXED */
         }
 
         body {
@@ -43,6 +44,20 @@
             display: block;
         }
 
+        /* Brightness Overlay */
+        #brightnessOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0); /* Initially transparent */
+            z-index: 1; /* Above canvas, below UI */
+            pointer-events: none; /* Allow clicks through */
+            transition: background-color 0.1s ease-in-out; /* Smooth transition */
+        }
+
+
         /* Click Trigger Area */
         #clickTriggerArea {
             position: fixed;
@@ -52,7 +67,7 @@
             height: 100%;
             transform: translate(-50%, -50%);
             cursor: pointer;
-            z-index: 5; /* Above canvas, below panel/name */
+            z-index: 5; /* Above overlay, below panel/name */
             /* background: rgba(255,0,0,0.1); */ /* DEBUG: uncomment to see area */
         }
 
@@ -181,6 +196,15 @@
             display: block;
             font-size: 0.875rem; /* Smaller label */
             color: rgba(57, 255, 20, 0.7);
+            margin-bottom: 0.25rem;
+        }
+
+        /* Slider styling */
+        #managementPanel input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--matrix-green); /* Make slider track/thumb green */
+            margin-top: 0.25rem;
             margin-bottom: 0.25rem;
         }
 
@@ -320,6 +344,7 @@
             font-size: 1.125rem;
             font-weight: 600;
             margin-bottom: 0.75rem;
+            margin-top: 0.5rem; /* Add some space above headings */
         }
          #managementPanel p#footerText {
             font-size: 0.75rem;
@@ -350,8 +375,8 @@
             border: 1px solid var(--matrix-green-dark);
             border-radius: 2px;
             overflow: hidden;
-            gap: var(--segment-gap);
-            padding: var(--segment-gap);
+            gap: var(--segment-gap); /* Use the gap */
+            padding: var(--segment-gap); /* Use the gap for padding */
             box-sizing: border-box;
         }
         .progress-segment {
@@ -383,8 +408,7 @@
 </head>
 <body>
     <canvas id="matrixCanvas"></canvas>
-
-    <div id="clickTriggerArea"></div>
+    <div id="brightnessOverlay"></div> <div id="clickTriggerArea"></div>
 
     <div id="selectedNameDisplayWrapper">
         <div id="selectedNameDisplay" class="typing">|</div>
@@ -399,7 +423,15 @@
             <input type="text" id="titleInput" placeholder="Define schema name..." class="outline-none">
         </div>
 
-        <div class="mb-4"> <h3 class="// Manage Operatives:"></h3>
+        <div class="mb-4 pt-2 border-t border-[var(--matrix-green-dark)]">
+            <label for="brightnessSlider" class="flex justify-between items-center">
+                <span>// Signal Intensity:</span>
+                <span id="brightnessValue" class="font-semibold text-sm">50%</span> </label>
+            <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="50">
+        </div>
+
+        <div class="mb-4 pt-2 border-t border-[var(--matrix-green-dark)]">
+            <h3 class="// Manage Operatives:"></h3>
              <label for="newNameInput">// Register New Operative:</label>
              <input type="text" id="newNameInput" placeholder="Enter name..." class="outline-none">
              <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
@@ -415,9 +447,8 @@
             </ul>
         </div>
 
-        <div>
-            <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
-                [ ] Reboot System & Save State
+        <div class="mt-4"> <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
+                [ ] Reboot System
             </button>
          </div>
 
@@ -444,60 +475,92 @@
         const rebootBtn = document.getElementById('rebootBtn');
         const titleInput = document.getElementById('titleInput');
         const progressBar = document.getElementById('progressBar');
+        // New Elements
+        const brightnessOverlay = document.getElementById('brightnessOverlay');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const brightnessValue = document.getElementById('brightnessValue');
+
 
         // --- State ---
         let allNames = []; // Array of objects: { name: string, selected: boolean }
         let isPicking = false;
         let typeIntervalId = null;
         let draggedItemName = null; // Store the name of the item being dragged
+        let currentBrightnessPercent = 50; // Default brightness set to 50%
 
         // --- Constants ---
         const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const TYPING_INTERVAL_MS = 20; // Speed of typing animation
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
-        const FONT_SIZE = 16; // Font size for matrix rain
-        const COLUMN_SPACING_FACTOR = 0.25; // Denser spacing for rain columns
+        const FONT_SIZE = 24; // Font size for matrix rain
+        const COLUMN_SPACING_FACTOR = 0.5; // Wider spacing for less rain
+        // Use the brighter green from CSS for the trail color
+        const MATRIX_GREEN_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-green').trim();
+        const MATRIX_LEAD_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-lead').trim(); // Get lead color from CSS variable
 
-        // --- Matrix Rain Setup (Unchanged) ---
+        // --- Matrix Rain Setup ---
         let columns;
         let drops = [];
+        // Store previous leader info {text, xPos, yPos} for each column
+        let previousLeaders = [];
+
         function setupCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR;
+            const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR; // Use updated factor
             columns = Math.floor(canvas.width / effectiveColumnWidth);
             drops = [];
+            previousLeaders = []; // Initialize previous leaders array
             for (let i = 0; i < columns; i++) {
                 drops[i] = Math.random() * canvas.height / FONT_SIZE; // Random start position
+                previousLeaders[i] = null; // No previous leader initially
             }
         }
+
+        // Modified drawMatrixRain (v4 - Delayed Green Draw)
         function drawMatrixRain() {
-            // Semi-transparent black background for fading effect
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            // 1. Apply fade to the entire canvas
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; // Slightly faster fade might look better now
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Set color and font for the falling characters
-            ctx.fillStyle = '#106b00'; // Darker matrix green
-            ctx.font = `${FONT_SIZE}px ${getComputedStyle(document.body).fontFamily}`; // Use body font
+            // Set font for drawing
+            ctx.font = `${FONT_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
 
-            const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR;
+            const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR; // Use updated factor
+
             // Loop through columns
             for (let i = 0; i < drops.length; i++) {
-                // Pick a random character
-                const text = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
-                // Draw the character
-                ctx.fillText(text, i * effectiveColumnWidth, drops[i] * FONT_SIZE);
+                // 2. Draw previous leader in GREEN at its old position
+                if (previousLeaders[i]) {
+                    const { text, xPos, yPos } = previousLeaders[i];
+                    ctx.fillStyle = MATRIX_GREEN_COLOR; // Use the brighter green for the trail start
+                    ctx.fillText(text, xPos, yPos);
+                }
 
-                // Move the drop down
+                // 3. Prepare and draw the NEW leader in WHITE
+                const newText = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
+                const newXPos = i * effectiveColumnWidth;
+                const newYPos = drops[i] * FONT_SIZE;
+
+                ctx.fillStyle = MATRIX_LEAD_COLOR; // White for the new leader
+                ctx.fillText(newText, newXPos, newYPos);
+
+                // 4. Store info for the NEXT frame's green draw
+                previousLeaders[i] = { text: newText, xPos: newXPos, yPos: newYPos };
+
+                // 5. Update drop position for the next frame
                 drops[i]++;
 
                 // Reset drop to top randomly or if it goes off screen
                 if (drops[i] * FONT_SIZE > canvas.height && Math.random() > 0.975) {
                     drops[i] = 0;
+                    previousLeaders[i] = null; // Clear previous leader when drop resets
                 }
             }
         }
+
+
         let rainAnimationId;
         function startMatrixRain() {
              if (rainAnimationId) cancelAnimationFrame(rainAnimationId); // Clear previous animation frame
@@ -515,40 +578,74 @@
             allNames = []; // Reset state array
             let initialNames = [];
             let pageTitle = DEFAULT_TITLE;
+            // Set default brightness here before checking URL param
+            currentBrightnessPercent = 50;
 
-            // Load Title from URL or use default
+            // Load Title
             if (urlParams.has('title')) {
                 const titleParam = urlParams.get('title').trim();
                 if (titleParam) { pageTitle = decodeURIComponent(titleParam); }
             }
-            document.title = pageTitle; // Set browser tab title
-            titleInput.value = pageTitle === DEFAULT_TITLE ? '' : pageTitle; // Set input field value
+            document.title = pageTitle;
+            titleInput.value = pageTitle === DEFAULT_TITLE ? '' : pageTitle;
 
-            // Load Names from URL or use default Matrix names
+            // Load Brightness (override default if parameter exists and is valid)
+            if (urlParams.has('brightness')) {
+                const brightnessParam = parseInt(urlParams.get('brightness'), 10);
+                // Validate: ensure it's a number between 0 and 100
+                if (!isNaN(brightnessParam) && brightnessParam >= 0 && brightnessParam <= 100) {
+                    currentBrightnessPercent = brightnessParam;
+                }
+            }
+            // Update brightness slider and overlay based on final value (default or URL)
+            updateBrightness(currentBrightnessPercent);
+
+
+            // Load Names
             if (urlParams.has('names')) {
                 const namesParam = urlParams.get('names');
                 if (namesParam) {
                     initialNames = namesParam.split(',')
-                                            .map(name => decodeURIComponent(name.trim())) // Decode and trim
-                                            .filter(name => name); // Remove empty names
+                                            .map(name => decodeURIComponent(name.trim()))
+                                            .filter(name => name);
                 }
             } else {
-                // Default names if none provided in URL
                 initialNames = ['Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher'];
             }
 
-            // Populate state array (reset selected state)
+            // Populate state
             allNames = initialNames.map(name => ({ name: name, selected: false }));
 
-            // Render UI elements based on loaded state
-            resetDisplayStyle(); // Reset the main display area using the new default '|'
-            renderAvailableList(); // Render the list in the management panel
-            renderProgressBar(); // Render initial progress bar
-            checkEmptyStates(); // Update UI based on whether the list is empty
+            // Render UI
+            resetDisplayStyle();
+            renderAvailableList();
+            renderProgressBar();
+            checkEmptyStates();
             console.log("// System Initialized.");
+            console.log(`// Initial Brightness: ${currentBrightnessPercent}%`);
         }
 
-        // --- Progress Bar Rendering (Unchanged) ---
+        // --- Brightness Control ---
+        function updateBrightness(percent) {
+            // Clamp value between 0 and 100
+            currentBrightnessPercent = Math.max(0, Math.min(100, percent));
+
+            // Update slider and text display
+            if (brightnessSlider) brightnessSlider.value = currentBrightnessPercent;
+            if (brightnessValue) brightnessValue.textContent = `${currentBrightnessPercent}%`;
+
+            // Calculate overlay alpha (inverted: 100% bright = 0 alpha, 0% bright = 1 alpha)
+            const alpha = (100 - currentBrightnessPercent) / 100;
+
+            // Apply style to overlay
+            if (brightnessOverlay) {
+                brightnessOverlay.style.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
+            }
+        }
+
+
+        // --- Progress Bar Rendering ---
+        // Ensure this function uses the correct CSS variables
         function renderProgressBar() {
             progressBar.innerHTML = ''; // Clear existing segments
             if (allNames.length === 0) {
@@ -564,10 +661,8 @@
             allNames.forEach((operative, index) => {
                 const segment = document.createElement('div');
                 segment.className = 'progress-segment';
-                // No longer need data-name attribute
 
                 // Apply 'used' class based on the count of selected items
-                // The first 'selectedCount' segments will be marked as used
                 if (index < selectedCount) {
                     segment.classList.add('used');
                 }
@@ -712,7 +807,7 @@
              }
         }
 
-        // --- Picking Logic & Reveal Animation (Unchanged JS logic, CSS handles blinking) ---
+        // --- Picking Logic & Reveal Animation (Unchanged) ---
         function pickRandomName() {
             if (selectedNameDisplay.classList.contains('quote')) {
                 rebootSystem(); return;
@@ -728,8 +823,8 @@
 
             isPicking = true;
             checkEmptyStates();
-            selectedNameDisplay.textContent = ''; // Clear display, this stops the | from showing during typing
-            selectedNameDisplay.classList.remove('typing'); // Remove typing class to stop blinking during reveal
+            selectedNameDisplay.textContent = '';
+            selectedNameDisplay.classList.remove('typing');
             selectedNameDisplay.classList.remove('quote');
 
             const finalRandomIndex = Math.floor(Math.random() * availableForPick.length);
@@ -741,7 +836,7 @@
             let i = 0;
             if (typeIntervalId) clearInterval(typeIntervalId);
 
-            selectedNameDisplay.textContent = ''; // Ensure it starts empty
+            selectedNameDisplay.textContent = '';
 
             typeIntervalId = setInterval(() => {
                 if (i < name.length) {
@@ -754,9 +849,8 @@
                 }
             }, TYPING_INTERVAL_MS);
         }
-        // Finalize selection - ensures typing class is removed so final name doesn't blink
         function finalizeSelection(selectedName) {
-             selectedNameDisplay.classList.remove('typing'); // Ensure blinking stops
+             selectedNameDisplay.classList.remove('typing');
              selectedNameDisplay.classList.remove('quote');
 
              const indexInAllNames = allNames.findIndex(op => op.name === selectedName);
@@ -774,43 +868,52 @@
                   console.warn(`// No available progress segment found to mark as used.`);
              }
 
-             renderAvailableList(); // Update list to show selection
+             renderAvailableList();
              isPicking = false;
              checkEmptyStates();
         }
 
 
-        // --- Reboot System Function (Unchanged) ---
+        // --- Reboot System Function (Modified for Brightness) ---
         function rebootSystem() {
             if (isPicking) { return; }
             console.log("// System Reboot Initialized via Reload...");
+
+            // Get current names and title
             const namesArray = allNames.map(op => op.name);
             const encodedNames = namesArray.map(name => encodeURIComponent(name)).join(',');
             const currentTitle = titleInput.value.trim();
             const encodedTitle = currentTitle ? encodeURIComponent(currentTitle) : '';
+
+            // Build URL parameters
             let params = [];
             if (encodedNames) { params.push('names=' + encodedNames); }
             if (encodedTitle) { params.push('title=' + encodedTitle); }
+            // Add brightness parameter if not default (50)
+            if (currentBrightnessPercent !== 50) { // Check against new default
+                 params.push('brightness=' + currentBrightnessPercent);
+            }
+
+
+            // Construct the new URL and reload the page
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
             window.location.href = newUrl;
         }
 
-        // --- Utility Functions (Partially Modified) ---
+        // --- Utility Functions (Unchanged) ---
         function checkEmptyStates() {
             noAvailableMessage.classList.toggle('hidden', allNames.length > 0);
         }
-        // Modified resetDisplayStyle to add/remove typing class correctly for blinking '|'
         function resetDisplayStyle(displayName = '|', isQuote = false) {
              if (typeIntervalId) clearInterval(typeIntervalId);
              typeIntervalId = null;
              selectedNameDisplay.textContent = displayName;
-             selectedNameDisplay.classList.remove('quote'); // Remove quote style first
-             selectedNameDisplay.classList.remove('typing'); // Remove typing style first
+             selectedNameDisplay.classList.remove('quote');
+             selectedNameDisplay.classList.remove('typing');
 
              if (isQuote) {
-                 selectedNameDisplay.classList.add('quote'); // Add quote style if needed
+                 selectedNameDisplay.classList.add('quote');
              } else if (displayName === '|') {
-                 // Only add typing class (for blinking) if it's the default pipe character
                  selectedNameDisplay.classList.add('typing');
              }
         }
@@ -829,7 +932,7 @@
             }
         }
 
-        // --- Event Listeners (Unchanged) ---
+        // --- Event Listeners ---
         menuToggleBtn.addEventListener('click', toggleManagementPanel);
         clickTriggerArea.addEventListener('click', pickRandomName);
         selectedNameDisplayWrapper.addEventListener('click', pickRandomName);
@@ -841,15 +944,19 @@
         });
         window.addEventListener('resize', () => {
              if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
-             setupCanvas();
+             setupCanvas(); // Re-initialize drops and previousLeaders on resize
              startMatrixRain();
+        });
+        // Brightness Slider Listener
+        brightnessSlider.addEventListener('input', (event) => {
+            updateBrightness(parseInt(event.target.value));
         });
 
 
         // --- Initial Load ---
         setupCanvas();
         startMatrixRain();
-        initializeStateFromURL();
+        initializeStateFromURL(); // Now handles brightness init
 
     </script>
 
