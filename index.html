@@ -555,8 +555,11 @@
 
         // Calculates the delay (ms) between updates for a single column based on target FPS
         function calculateColumnDelay(baseFps) {
-            const fpsOffset = Math.floor(Math.random() * (MAX_FPS_OFFSET * 2 + 1)) - MAX_FPS_OFFSET;
+            // Generate a random float offset between -MAX_FPS_OFFSET and +MAX_FPS_OFFSET
+            const fpsOffset = (Math.random() - 0.5) * 2 * MAX_FPS_OFFSET;
+            // Calculate the target FPS for this column (ensure it's at least 1)
             const columnFps = Math.max(1, baseFps + fpsOffset);
+            // Return the delay in milliseconds
             return 1000 / columnFps;
         }
 
@@ -573,7 +576,7 @@
             for (let i = 0; i < columns; i++) {
                 drops[i] = {
                     y: Math.floor(Math.random() * canvas.height / currentFontSize),
-                    delay: calculateColumnDelay(currentRainFPS),
+                    delay: calculateColumnDelay(currentRainFPS), // Use the updated function
                     lastUpdateTime: 0
                 };
                 trails[i] = [];
@@ -775,7 +778,7 @@
             if (drops && drops.length > 0) {
                 // console.log(`// Recalculating drop delays based on new base FPS: ${currentRainFPS}`);
                 drops.forEach(drop => {
-                    drop.delay = calculateColumnDelay(currentRainFPS);
+                    drop.delay = calculateColumnDelay(currentRainFPS); // Use updated function
                 });
             }
         }
@@ -794,7 +797,7 @@
         }
 
 
-        // --- Progress Bar Rendering --- Updated Logic
+        // --- Progress Bar Rendering --- (Logic is correct for sequential)
         function renderProgressBar() {
             progressBar.innerHTML = ''; // Clear existing segments
             const totalCount = allNames.length;
