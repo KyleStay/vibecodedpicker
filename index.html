@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Loading System...</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Loading System...</title> <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Monospace font */
         @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;700&display=swap');
@@ -63,30 +62,56 @@
         /* Click Trigger Area */
         #clickTriggerArea {
             position: fixed;
-            top: 50%;
-            left: 50%;
-            width: 100%; /* Large clickable area */
+            top: 0; /* Cover whole screen */
+            left: 0;
+            width: 100%;
             height: 100%;
-            transform: translate(-50%, -50%);
             cursor: pointer;
-            z-index: 5; /* Above overlay, below panel/name */
+            z-index: 5; /* Above overlay, below panel/main display */
             /* background: rgba(255,0,0,0.1); */ /* DEBUG: uncomment to see area */
         }
 
-        /* Picker display area - Centered */
-        #selectedNameDisplayWrapper {
+        /* Container for Schema Title and Main Name Display */
+        #mainDisplayContainer {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 6; /* Above click area */
+            width: 90%; /* Responsive width */
+            max-width: 800px; /* Max width */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none; /* Allow clicks to pass through container */
+        }
+
+        /* Schema Title Display Area */
+        #schemaTitleDisplay {
+            font-family: var(--matrix-font);
+            color: rgba(57, 255, 20, 0.7); /* Slightly dimmer green */
+            text-shadow: 0 0 5px rgba(57, 255, 20, 0.5);
+            font-size: 5rem; /* <-- INCREASED FONT SIZE (was 1.25rem) */
+            font-weight: 700; /* Increased weight slightly */
+            margin-bottom: 1rem; /* <-- INCREASED MARGIN (was 0.5rem) */
+            text-align: center;
+            width: 100%;
+            min-height: 1.2em; /* Adjusted min-height based on font-size */
+            line-height: 1.1; /* Adjust line height */
+            word-break: break-word;
+        }
+
+        /* Picker display area - Centered within container */
+        #selectedNameDisplayWrapper {
+            position: relative;
             min-height: 4rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 80%; /* Limit width */
+            width: 100%; /* Takes width from container */
             text-align: center;
             cursor: pointer; /* Make wrapper clickable */
+            pointer-events: auto; /* Enable pointer events for this specific wrapper */
         }
         #selectedNameDisplay {
              font-family: var(--matrix-font);
@@ -409,6 +434,10 @@
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
+            #schemaTitleDisplay {
+                 font-size: 3.5rem; /* <-- INCREASED FONT SIZE for mobile */
+                 margin-bottom: 0.75rem; /* Adjusted margin */
+            }
             #selectedNameDisplay { font-size: 2.25rem; }
             #selectedNameDisplay.quote { font-size: 1.25rem; }
             #menuToggleBtn {
@@ -425,9 +454,15 @@
     <div id="brightnessOverlay"></div>
     <div id="clickTriggerArea"></div>
 
-    <div id="selectedNameDisplayWrapper">
-        <div id="selectedNameDisplay" class="typing">|</div>
+    <div id="mainDisplayContainer">
+        <div id="schemaTitleDisplay">
+            </div>
+
+        <div id="selectedNameDisplayWrapper">
+            <div id="selectedNameDisplay" class="typing">|</div>
+        </div>
     </div>
+
 
     <button id="menuToggleBtn">☰</button>
 
@@ -500,6 +535,7 @@
         const addNameBtn = document.getElementById('addNameBtn');
         const selectedNameDisplay = document.getElementById('selectedNameDisplay');
         const selectedNameDisplayWrapper = document.getElementById('selectedNameDisplayWrapper');
+        const schemaTitleDisplay = document.getElementById('schemaTitleDisplay'); // <-- Title Element
         const noAvailableMessage = document.getElementById('noAvailableMessage');
         const canvas = document.getElementById('matrixCanvas');
         const ctx = canvas.getContext('2d');
@@ -545,7 +581,7 @@
         const TARGET_ANIMATION_FPS = 60; // Target FPS for the main animation loop
         const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS; // Delay for main loop
         // const MAX_FPS_OFFSET = 3; // Absolute offset (No longer used)
-        const MAX_FPS_PERCENT_OFFSET = 0.33; // Max speed difference (+/- 33%) from base FPS <-- NEW
+        const MAX_FPS_PERCENT_OFFSET = 0.33; // Max speed difference (+/- 33%) from base FPS
         const MATRIX_GREEN_COLOR_RGB = getComputedStyle(document.documentElement).getPropertyValue('--matrix-green-rgb').trim(); // Get RGB from CSS
         const MATRIX_LEAD_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-lead').trim(); // Get lead color from CSS variable
         const MATRIX_FLASH_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-flash').trim(); // Get flash color from CSS variable
@@ -556,36 +592,25 @@
 
         // Calculates the delay (ms) between updates for a single column based on target FPS
         function calculateColumnDelay(baseFps) {
-            // Calculate the multiplier range (e.g., 0.67 to 1.33 for +/- 33%)
             const minMultiplier = 1.0 - MAX_FPS_PERCENT_OFFSET;
             const maxMultiplier = 1.0 + MAX_FPS_PERCENT_OFFSET;
-            // Generate a random multiplier within the range
             const randomMultiplier = Math.random() * (maxMultiplier - minMultiplier) + minMultiplier;
-
-            // Calculate the target FPS for this column based on the base FPS and the multiplier
             const columnFps = baseFps * randomMultiplier;
-
-            // Ensure the final FPS is at least 1 to prevent division by zero or infinite delay
             const finalColumnFps = Math.max(1, columnFps);
-
-            // Return the delay in milliseconds
             return 1000 / finalColumnFps;
         }
 
         function setupCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            // console.log(`// Setting up canvas with Font Size: ${currentFontSize}px`);
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
-
-            drops = []; // Reset drops array
-            trails = []; // Reset trails array
-
+            drops = [];
+            trails = [];
             for (let i = 0; i < columns; i++) {
                 drops[i] = {
                     y: Math.floor(Math.random() * canvas.height / currentFontSize),
-                    delay: calculateColumnDelay(currentRainFPS), // Use the updated function
+                    delay: calculateColumnDelay(currentRainFPS),
                     lastUpdateTime: 0
                 };
                 trails[i] = [];
@@ -610,13 +635,10 @@
                     if (!trails[i]) trails[i] = [];
                     trails[i].unshift({ char: newLeaderChar, flipped: false });
                     if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); }
-
                     drop.y++;
-
                     if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) {
                         drop.y = 0;
                         trails[i] = [];
-                        // drop.delay = calculateColumnDelay(currentRainFPS); // Optional: re-randomize speed on reset
                     }
                     drop.lastUpdateTime = now;
                 }
@@ -626,8 +648,7 @@
                     for (let k = 0; k < trails[i].length; k++) {
                         let trailItem = trails[i][k];
                         const trailYPos = (drop.y - k) * currentFontSize;
-
-                        if (trailYPos < -currentFontSize || trailYPos > canvas.height) continue; // Optimization: Don't draw far off-screen
+                        if (trailYPos < -currentFontSize || trailYPos > canvas.height) continue;
 
                         // Flip logic
                         if (k > 0 && !trailItem.flipTimestamp && Math.random() < FLIP_CHANCE) {
@@ -640,7 +661,7 @@
                             trailItem.flipTimestamp = now;
                         }
 
-                        // Color logic (flash or trail)
+                        // Color logic
                         let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
                         if (isHighlighting) {
                             ctx.fillStyle = MATRIX_FLASH_COLOR;
@@ -676,29 +697,31 @@
         function startMatrixRain() {
              if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); }
              let lastFrameTime = 0;
-
              function animateRain(currentTime) {
                  rainAnimationId = requestAnimationFrame(animateRain);
                  const deltaTime = currentTime - lastFrameTime;
-
                  if (deltaTime >= ANIMATION_FRAME_DELAY) {
                      try {
                          drawMatrixRain();
                          lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY);
                      } catch(error) {
                          console.error("Error during drawMatrixRain, stopping animation:", error);
-                         if (rainAnimationId !== null) {
-                             cancelAnimationFrame(rainAnimationId);
-                             rainAnimationId = null;
-                         }
+                         if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; }
                      }
                  }
              }
              if (canvas.width > 0 && canvas.height > 0) {
                  rainAnimationId = requestAnimationFrame(animateRain);
-             } else {
-                 console.warn("// Canvas dimensions not ready, delaying rain start.");
-             }
+             } else { console.warn("// Canvas dimensions not ready, delaying rain start."); }
+        }
+
+        // --- Title Update Function ---
+        function updateSchemaTitle(title) {
+            const displayTitle = title.trim();
+            if (schemaTitleDisplay) {
+                schemaTitleDisplay.textContent = displayTitle || '';
+            }
+            document.title = displayTitle || DEFAULT_TITLE;
         }
 
 
@@ -708,62 +731,41 @@
             allNames = [];
             let initialNames = [];
             let pageTitle = DEFAULT_TITLE;
-
-            currentBrightnessPercent = 60;
-            currentRainFPS = 10;
-            currentFontSize = 24;
+            let schemaTitle = '';
+            currentBrightnessPercent = 60; currentRainFPS = 10; currentFontSize = 24;
 
             if (urlParams.has('title')) {
                  const titleParam = urlParams.get('title').trim();
-                 if (titleParam) { pageTitle = decodeURIComponent(titleParam); }
+                 if (titleParam) { pageTitle = decodeURIComponent(titleParam); schemaTitle = pageTitle; }
              }
-            document.title = pageTitle;
-            titleInput.value = pageTitle === DEFAULT_TITLE ? '' : pageTitle;
+            titleInput.value = schemaTitle;
+            updateSchemaTitle(schemaTitle);
 
             if (urlParams.has('brightness')) {
                  const brightnessParam = parseInt(urlParams.get('brightness'), 10);
-                 if (!isNaN(brightnessParam) && brightnessParam >= 0 && brightnessParam <= 100) {
-                     currentBrightnessPercent = brightnessParam;
-                 }
+                 if (!isNaN(brightnessParam) && brightnessParam >= 0 && brightnessParam <= 100) { currentBrightnessPercent = brightnessParam; }
             }
             updateBrightness(currentBrightnessPercent);
 
             if (urlParams.has('speed')) {
                  const speedParam = parseInt(urlParams.get('speed'), 10);
-                 if (!isNaN(speedParam) && speedParam >= 1 && speedParam <= 100) {
-                     currentRainFPS = speedParam;
-                 }
+                 if (!isNaN(speedParam) && speedParam >= 1 && speedParam <= 100) { currentRainFPS = speedParam; }
             }
             updateRainSpeedDisplay(currentRainFPS);
 
             if (urlParams.has('fontSize')) {
                  const fontSizeParam = parseInt(urlParams.get('fontSize'), 10);
-                 if (!isNaN(fontSizeParam) && fontSizeParam >= 8 && fontSizeParam <= 32) {
-                     currentFontSize = fontSizeParam;
-                 }
+                 if (!isNaN(fontSizeParam) && fontSizeParam >= 8 && fontSizeParam <= 32) { currentFontSize = fontSizeParam; }
              }
             updateFontSizeDisplay(currentFontSize);
 
             if (urlParams.has('names')) {
                  const namesParam = urlParams.get('names');
-                 if (namesParam) {
-                     initialNames = namesParam.split(',')
-                                             .map(name => decodeURIComponent(name.trim()))
-                                             .filter(name => name);
-                 }
-             } else {
-                initialNames = ['Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher'];
-             }
-            // Ensure loaded names are properly formatted into state objects
+                 if (namesParam) { initialNames = namesParam.split(',').map(name => decodeURIComponent(name.trim())).filter(name => name); }
+             } else { initialNames = ['Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher']; }
             allNames = initialNames.map(name => ({ name: name, selected: false }));
 
-            // Render UI & Start Rain
-            resetDisplayStyle(); // Set initial display state
-            renderAvailableList(); // Populate the name list in the panel
-            renderProgressBar(); // Draw the initial progress bar state
-            checkEmptyStates(); // Update UI based on whether names exist
-            setupCanvas(); // Setup canvas dimensions, columns, and INITIAL drop delays
-            startMatrixRain(); // Start the animation loop
+            resetDisplayStyle(); renderAvailableList(); renderProgressBar(); checkEmptyStates(); setupCanvas(); startMatrixRain();
             console.log("// System Initialized.");
         }
 
@@ -775,322 +777,187 @@
             const alpha = (100 - currentBrightnessPercent) / 100;
             if (brightnessOverlay) brightnessOverlay.style.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
         }
-
         function updateRainSpeedDisplay(fps) {
              currentRainFPS = Math.max(1, Math.min(100, fps));
              if (speedSlider) speedSlider.value = currentRainFPS;
              if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`;
         }
-
         function handleSpeedChange(fps) {
             updateRainSpeedDisplay(fps);
-            if (drops && drops.length > 0) {
-                // console.log(`// Recalculating drop delays based on new base FPS: ${currentRainFPS}`);
-                drops.forEach(drop => {
-                    drop.delay = calculateColumnDelay(currentRainFPS); // Use updated function
-                });
-            }
+            if (drops && drops.length > 0) { drops.forEach(drop => { drop.delay = calculateColumnDelay(currentRainFPS); }); }
         }
-
         function updateFontSizeDisplay(size) {
             currentFontSize = Math.max(8, Math.min(32, size));
             if (fontSizeSlider) fontSizeSlider.value = currentFontSize;
             if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`;
         }
-
         function handleFontSizeChange(size) {
             updateFontSizeDisplay(size);
             if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
-            setupCanvas();
-            startMatrixRain();
+            setupCanvas(); startMatrixRain();
         }
 
-
-        // --- Progress Bar Rendering --- (Logic is correct for sequential)
+        // --- Progress Bar Rendering ---
         function renderProgressBar() {
-            progressBar.innerHTML = ''; // Clear existing segments
+            progressBar.innerHTML = '';
             const totalCount = allNames.length;
-
-            if (totalCount === 0) {
-                progressBar.classList.add('hidden');
-                return;
-            }
+            if (totalCount === 0) { progressBar.classList.add('hidden'); return; }
             progressBar.classList.remove('hidden');
-
-            // Count how many operatives are selected
             const selectedCount = allNames.filter(op => op.selected).length;
-
-            // Create one segment for each name total
             for (let i = 0; i < totalCount; i++) {
                 const segment = document.createElement('div');
-                segment.className = 'progress-segment'; // Base class
-                // Add 'used' class if the current index is less than the selected count
-                if (i < selectedCount) {
-                    segment.classList.add('used');
-                }
+                segment.className = 'progress-segment';
+                if (i < selectedCount) { segment.classList.add('used'); }
                 progressBar.appendChild(segment);
             }
         }
 
-
         // --- List Rendering & Drag/Drop Event Handling ---
         function renderAvailableList() {
-            nameListElement.innerHTML = ''; // Clear current list
-            checkEmptyStates(); // Show/hide 'empty' message
-
-            allNames.forEach((operative) => { // No index needed here
+            nameListElement.innerHTML = ''; checkEmptyStates();
+            allNames.forEach((operative) => {
                 const li = document.createElement('li');
-                li.className = 'name-item'; // Base class, specific styles in CSS
-                li.draggable = !operative.selected; // Only draggable if not selected
-                li.dataset.name = operative.name; // Store name for drag/drop/remove
-
-                if (operative.selected) {
-                    li.classList.add('name-item-selected');
-                }
-
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = operative.name;
+                li.className = 'name-item'; li.draggable = !operative.selected; li.dataset.name = operative.name;
+                if (operative.selected) { li.classList.add('name-item-selected'); }
+                const nameSpan = document.createElement('span'); nameSpan.textContent = operative.name;
                 nameSpan.className = 'name-span flex-grow mr-2 overflow-hidden text-ellipsis whitespace-nowrap';
-                if (operative.selected) {
-                    nameSpan.classList.add('line-through');
-                }
+                if (operative.selected) { nameSpan.classList.add('line-through'); }
                 li.appendChild(nameSpan);
-
-                const removeBtn = document.createElement('button');
-                removeBtn.textContent = 'X';
-                // Combine base and specific classes
-                removeBtn.className = 'remove-name-btn flex-shrink-0'; // Prevent button shrinking
-                removeBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    removeName(operative.name);
-                };
-                removeBtn.disabled = operative.selected; // Disable if selected
-
+                const removeBtn = document.createElement('button'); removeBtn.textContent = 'X';
+                removeBtn.className = 'remove-name-btn flex-shrink-0';
+                removeBtn.onclick = (e) => { e.stopPropagation(); removeName(operative.name); };
+                removeBtn.disabled = operative.selected;
                 li.appendChild(removeBtn);
-
                 if (!operative.selected) {
-                    li.addEventListener('dragstart', handleDragStart);
-                    li.addEventListener('dragover', handleDragOver);
-                    li.addEventListener('dragenter', handleDragEnter);
-                    li.addEventListener('dragleave', handleDragLeave);
-                    li.addEventListener('drop', handleDrop);
-                    li.addEventListener('dragend', handleDragEnd);
+                    li.addEventListener('dragstart', handleDragStart); li.addEventListener('dragover', handleDragOver);
+                    li.addEventListener('dragenter', handleDragEnter); li.addEventListener('dragleave', handleDragLeave);
+                    li.addEventListener('drop', handleDrop); li.addEventListener('dragend', handleDragEnd);
                 }
-
                 nameListElement.appendChild(li);
             });
         }
-
         function handleDragStart(e) {
-            // Use optional chaining for safety, though target should exist
-            draggedItemName = e.target?.dataset?.name;
-            if (!draggedItemName) return;
-
-            // Add dragging styles after a tiny delay to allow browser to capture drag image
-            setTimeout(() => {
-                 // Check if the element still exists before adding class
-                 if(e.target) e.target.classList.add('dragging');
-            }, 0);
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', draggedItemName);
+            draggedItemName = e.target?.dataset?.name; if (!draggedItemName) return;
+            setTimeout(() => { if(e.target) e.target.classList.add('dragging'); }, 0);
+            e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', draggedItemName);
         }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-        }
-
+        function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
         function handleDragEnter(e) {
-            const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); // Ensure target is valid
-            if (targetLi && targetLi.dataset.name !== draggedItemName) {
-                 targetLi.classList.add('drag-over');
-            }
+            const targetLi = e.target.closest('.name-item:not(.name-item-selected)');
+            if (targetLi && targetLi.dataset.name !== draggedItemName) { targetLi.classList.add('drag-over'); }
         }
-
         function handleDragLeave(e) {
             const targetLi = e.target.closest('.name-item');
-            // Check if the relatedTarget (where the mouse moved to) is outside the element
-            if (targetLi && !targetLi.contains(e.relatedTarget)) {
-                 targetLi.classList.remove('drag-over');
-            }
+            if (targetLi && !targetLi.contains(e.relatedTarget)) { targetLi.classList.remove('drag-over'); }
         }
-
         function handleDrop(e) {
-            e.stopPropagation();
-            e.preventDefault();
-
-            const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); // Ensure target is valid
-            const droppedName = e.dataTransfer.getData('text/plain'); // Get name from data transfer
-
-            // Clean up any lingering drag-over styles immediately
+            e.stopPropagation(); e.preventDefault();
+            const targetLi = e.target.closest('.name-item:not(.name-item-selected)');
+            const droppedName = e.dataTransfer.getData('text/plain');
             document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
-
-            if (!targetLi || !droppedName || targetLi.dataset.name === droppedName) {
-                return; // Invalid drop target or dropping on self
-            }
-
+            if (!targetLi || !droppedName || targetLi.dataset.name === droppedName) { return; }
             const draggedIndex = allNames.findIndex(op => op.name === droppedName);
             let targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
-
             if (draggedIndex > -1 && targetIndex > -1) {
                 const [draggedOperative] = allNames.splice(draggedIndex, 1);
-                // Re-find target index after removal
-                targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
-
-                if(targetIndex > -1) {
-                    allNames.splice(targetIndex, 0, draggedOperative); // Insert before target
-                } else {
-                    allNames.push(draggedOperative); // Append if target vanished
-                }
-                renderAvailableList(); // Re-render list
+                targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name); // Re-find index
+                if(targetIndex > -1) { allNames.splice(targetIndex, 0, draggedOperative); }
+                else { allNames.push(draggedOperative); } // Append if target vanished
+                renderAvailableList();
             }
         }
-
         function handleDragEnd(e) {
-            // Clean up all dragging styles
             document.querySelectorAll('.name-item.dragging').forEach(item => item.classList.remove('dragging'));
-            // Ensure drag-over is also cleaned, just in case leave/drop missed it
             document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
             draggedItemName = null;
         }
-
 
         // --- Name Management Functions ---
         function addName() {
             const name = newNameInput.value.trim();
             if (name && !allNames.some(op => op.name.toLowerCase() === name.toLowerCase())) {
-                allNames.push({ name: name, selected: false });
-                newNameInput.value = '';
-                renderAvailableList();
-                renderProgressBar(); // Update progress bar
-                checkEmptyStates();
-                showTemporaryMessage(`// Operative "${name}" registered.`);
-            } else if (!name) {
-                 showTemporaryMessage("// Input field empty.", "warn");
-            } else {
-                showTemporaryMessage(`// Operative "${name}" already exists.`, "warn");
-            }
+                allNames.push({ name: name, selected: false }); newNameInput.value = '';
+                renderAvailableList(); renderProgressBar(); checkEmptyStates(); showTemporaryMessage(`// Operative "${name}" registered.`);
+            } else if (!name) { showTemporaryMessage("// Input field empty.", "warn"); }
+            else { showTemporaryMessage(`// Operative "${name}" already exists.`, "warn"); }
         }
-
         function removeName(nameToRemove) {
             const itemElement = nameListElement.querySelector(`li[data-name="${nameToRemove}"]`);
-            if (itemElement && !itemElement.classList.contains('removing')) { // Prevent double clicks
+            if (itemElement && !itemElement.classList.contains('removing')) {
                 itemElement.classList.add('removing');
-                // Wait for animation before removing from state
                 setTimeout(() => {
                     allNames = allNames.filter(op => op.name !== nameToRemove);
-                    renderAvailableList(); // Re-render the list
-                    renderProgressBar(); // Update progress bar
-                    checkEmptyStates();
-                    showTemporaryMessage(`// Operative "${nameToRemove}" deregistered.`);
-                }, 300); // Match CSS transition duration
+                    renderAvailableList(); renderProgressBar(); checkEmptyStates(); showTemporaryMessage(`// Operative "${nameToRemove}" deregistered.`);
+                }, 300);
             }
         }
 
         // --- Picking Logic & Reveal Animation ---
         function pickRandomName() {
-            // console.log("pickRandomName called, isPicking:", isPicking); // Debug log
+            // Check 1: Is the quote already displayed? -> Reboot
             if (selectedNameDisplay.classList.contains('quote')) {
                 console.log("// Quote displayed, triggering reboot...");
-                rebootSystem();
-                return;
+                rebootSystem(); return;
             }
-            if (isPicking) {
-                console.log("// Already picking, returning.");
-                return;
+            // Check 2: Are all names selected? -> Show quote
+            if (allNames.length > 0 && allNames.every(op => op.selected)) {
+                console.log("// All names selected, displaying quote on click.");
+                resetDisplayStyle(EMPTY_QUOTE, true); return;
             }
+            // Check 3: Is a pick already in progress? -> Do nothing
+            if (isPicking) { console.log("// Already picking, returning."); return; }
 
+            // Proceed to pick a name
             const availableForPick = allNames.filter(op => !op.selected);
-            if (availableForPick.length === 0) {
-                console.log("// No names available, displaying quote.");
-                resetDisplayStyle(EMPTY_QUOTE, true);
-                return;
-            }
+            if (availableForPick.length === 0) { // Safeguard
+                 if (allNames.length === 0) { console.log("// No names in the list to pick from."); resetDisplayStyle('|'); }
+                 else { console.log("// No names available (edge case check), displaying quote."); resetDisplayStyle(EMPTY_QUOTE, true); }
+                 return;
+             }
 
+            // Start the picking process
             console.log("// Starting pick...");
-            isPicking = true; // Set flag
-            // Disable click listeners temporarily to prevent re-triggering during animation
-            clickTriggerArea.style.pointerEvents = 'none';
-            selectedNameDisplayWrapper.style.pointerEvents = 'none';
-
-            selectedNameDisplay.textContent = '';
-            selectedNameDisplay.classList.remove('typing', 'quote');
-
+            isPicking = true;
+            clickTriggerArea.style.pointerEvents = 'none'; selectedNameDisplayWrapper.style.pointerEvents = 'none';
+            selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.remove('typing', 'quote');
             const finalRandomIndex = Math.floor(Math.random() * availableForPick.length);
             const selectedOperative = availableForPick[finalRandomIndex];
-
             revealNameGradually(selectedOperative.name);
         }
-
         function revealNameGradually(name) {
-            // console.log(`Revealing name: ${name}`); // Debug log
-            let i = 0;
-            if (typeIntervalId) clearInterval(typeIntervalId);
-            selectedNameDisplay.textContent = '';
-            selectedNameDisplay.classList.add('typing'); // Add cursor blink
-
+            let i = 0; if (typeIntervalId) clearInterval(typeIntervalId);
+            selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.add('typing');
             typeIntervalId = setInterval(() => {
-                if (i < name.length) {
-                    selectedNameDisplay.textContent += name.charAt(i);
-                    i++;
-                } else {
-                    clearInterval(typeIntervalId);
-                    typeIntervalId = null;
-                    finalizeSelection(name); // Pass the selected name
-                }
+                if (i < name.length) { selectedNameDisplay.textContent += name.charAt(i); i++; }
+                else { clearInterval(typeIntervalId); typeIntervalId = null; finalizeSelection(name); }
             }, TYPING_INTERVAL_MS);
         }
-
         function finalizeSelection(selectedName) {
-             // console.log(`Finalizing selection: ${selectedName}`); // Debug log
-             selectedNameDisplay.classList.remove('typing'); // Stop blinking
-
+             selectedNameDisplay.classList.remove('typing');
              const indexInAllNames = allNames.findIndex(op => op.name === selectedName);
-             if (indexInAllNames !== -1) {
-                 allNames[indexInAllNames].selected = true;
-             } else {
-                 console.warn(`// Selected name ${selectedName} not found in state array.`);
-             }
-
-             renderProgressBar(); // Update progress bar
-             renderAvailableList(); // Update list appearance
+             if (indexInAllNames !== -1) { allNames[indexInAllNames].selected = true; }
+             else { console.warn(`// Selected name ${selectedName} not found in state array.`); }
+             renderProgressBar(); renderAvailableList();
              isPicking = false; // Reset flag AFTER updates
-             // Re-enable click listeners
-             clickTriggerArea.style.pointerEvents = 'auto';
-             selectedNameDisplayWrapper.style.pointerEvents = 'auto';
+             clickTriggerArea.style.pointerEvents = 'auto'; selectedNameDisplayWrapper.style.pointerEvents = 'auto'; // Re-enable clicks
              checkEmptyStates();
-
-             // Check if that was the last name AFTER updating state
-             const remainingAvailable = allNames.filter(op => !op.selected);
-             if (remainingAvailable.length === 0) {
-                 console.log("// Last name selected, preparing to show quote.");
-                 setTimeout(() => {
-                     resetDisplayStyle(EMPTY_QUOTE, true);
-                 }, 750); // Delay to show name briefly
-             }
         }
-
 
         // --- Reboot System Function ---
         function rebootSystem() {
-            if (isPicking) { return; } // Prevent reboot during animation
+            if (isPicking) { return; }
             console.log("// System Reboot Initialized via Reload...");
-
             const namesArray = allNames.map(op => op.name);
             const encodedNames = namesArray.map(name => encodeURIComponent(name)).join(',');
-            const currentTitle = titleInput.value.trim();
-            const encodedTitle = currentTitle ? encodeURIComponent(currentTitle) : '';
-
+            const currentTitle = titleInput.value.trim(); // Get title from input
+            const encodedTitle = currentTitle ? encodeURIComponent(currentTitle) : ''; // Encode if not empty
             let params = [];
             if (encodedNames) { params.push('names=' + encodedNames); }
-            if (encodedTitle && encodedTitle !== encodeURIComponent(DEFAULT_TITLE)) { // Only add title if not default
-                 params.push('title=' + encodedTitle);
-            }
-            // Add settings parameters only if they differ from defaults
+            // Only add title param if it's not empty
+            if (encodedTitle) { params.push('title=' + encodedTitle); }
             if (currentBrightnessPercent !== 60) { params.push('brightness=' + currentBrightnessPercent); }
             if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
             if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
-
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
             window.location.href = newUrl;
         }
@@ -1099,27 +966,16 @@
         function checkEmptyStates() {
             const isEmpty = allNames.length === 0;
             noAvailableMessage.classList.toggle('hidden', !isEmpty);
-            // Disable reboot if list is empty? Maybe not necessary as it reloads anyway.
-            // rebootBtn.disabled = isEmpty;
         }
-
         function resetDisplayStyle(displayName = '|', isQuote = false) {
-             if (typeIntervalId) clearInterval(typeIntervalId);
-             typeIntervalId = null;
+             if (typeIntervalId) clearInterval(typeIntervalId); typeIntervalId = null;
              selectedNameDisplay.textContent = displayName;
              selectedNameDisplay.classList.remove('quote', 'typing');
-             if (isQuote) {
-                 selectedNameDisplay.classList.add('quote');
-             } else if (displayName === '|') {
-                 selectedNameDisplay.classList.add('typing');
-             }
-             // Ensure clicks are enabled if resetting to initial state
-             clickTriggerArea.style.pointerEvents = 'auto';
-             selectedNameDisplayWrapper.style.pointerEvents = 'auto';
+             if (isQuote) { selectedNameDisplay.classList.add('quote'); }
+             else if (displayName === '|') { selectedNameDisplay.classList.add('typing'); }
+             clickTriggerArea.style.pointerEvents = 'auto'; selectedNameDisplayWrapper.style.pointerEvents = 'auto';
         }
-
         function showTemporaryMessage(message, type = "info") {
-            // Basic console logging, could be expanded to a UI element
             if (type === "warn") { console.warn(message); }
             else if (type === "error") { console.error(message); }
             else { console.log(message); }
@@ -1127,52 +983,31 @@
 
         // --- Menu Toggle Logic ---
         function toggleManagementPanel() {
-            // console.log("Toggling menu panel"); // Debug log
             const isVisible = managementPanel.classList.toggle('visible');
-            if (isVisible) {
-                menuToggleBtn.innerHTML = '✕';
-                menuToggleBtn.classList.add('active');
-            } else {
-                menuToggleBtn.innerHTML = '☰';
-                menuToggleBtn.classList.remove('active');
-            }
+            menuToggleBtn.innerHTML = isVisible ? '✕' : '☰';
+            menuToggleBtn.classList.toggle('active', isVisible);
         }
 
         // --- Event Listeners ---
         menuToggleBtn.addEventListener('click', toggleManagementPanel);
-        // Use the wrapper for primary click detection
         selectedNameDisplayWrapper.addEventListener('click', pickRandomName);
-        // Keep the background click area as a fallback
-        clickTriggerArea.addEventListener('click', pickRandomName);
-
+        clickTriggerArea.addEventListener('click', pickRandomName); // Fallback
         addNameBtn.addEventListener('click', addName);
-        newNameInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') { addName(); }
-        });
+        newNameInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { addName(); } });
         rebootBtn.addEventListener('click', rebootSystem);
+        window.addEventListener('resize', () => { if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain(); });
+        brightnessSlider.addEventListener('input', (event) => { updateBrightness(parseInt(event.target.value)); });
+        speedSlider.addEventListener('input', (event) => { handleSpeedChange(parseInt(event.target.value)); });
+        fontSizeSlider.addEventListener('input', (event) => { handleFontSizeChange(parseInt(event.target.value)); });
 
-        window.addEventListener('resize', () => {
-             if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
-             setupCanvas();
-             startMatrixRain();
-        });
-
-        brightnessSlider.addEventListener('input', (event) => {
-            updateBrightness(parseInt(event.target.value));
-        });
-        speedSlider.addEventListener('input', (event) => {
-            handleSpeedChange(parseInt(event.target.value));
-        });
-        fontSizeSlider.addEventListener('input', (event) => {
-            handleFontSizeChange(parseInt(event.target.value));
+        // Listener for the title input field
+        titleInput.addEventListener('input', (event) => {
+            updateSchemaTitle(event.target.value);
         });
 
 
         // --- Initial Load ---
-        // Ensure DOM is fully loaded before attaching listeners and initializing
-        document.addEventListener('DOMContentLoaded', () => {
-             initializeStateFromURL();
-        });
+        document.addEventListener('DOMContentLoaded', () => { initializeStateFromURL(); });
 
     </script>
 
