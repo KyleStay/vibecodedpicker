@@ -424,11 +424,23 @@
         </div>
 
         <div class="mb-4 pt-2 border-t border-[var(--matrix-green-dark)]">
-            <label for="brightnessSlider" class="flex justify-between items-center">
-                <span>// Signal Intensity:</span>
-                <span id="brightnessValue" class="font-semibold text-sm">50%</span> </label>
-            <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="50">
+             <h3 class="// System Parameters:"></h3>
+             <div class="mb-3">
+                 <label for="brightnessSlider" class="flex justify-between items-center">
+                     <span>// Signal Intensity:</span>
+                     <span id="brightnessValue" class="font-semibold text-sm">50%</span>
+                 </label>
+                 <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="50">
+             </div>
+             <div>
+                 <label for="speedSlider" class="flex justify-between items-center">
+                     <span>// Stream Velocity (FPS):</span>
+                     <span id="speedValue" class="font-semibold text-sm">25 FPS</span>
+                 </label>
+                 <input type="range" id="speedSlider" min="10" max="60" step="1" value="25">
+             </div>
         </div>
+
 
         <div class="mb-4 pt-2 border-t border-[var(--matrix-green-dark)]">
             <h3 class="// Manage Operatives:"></h3>
@@ -475,25 +487,29 @@
         const rebootBtn = document.getElementById('rebootBtn');
         const titleInput = document.getElementById('titleInput');
         const progressBar = document.getElementById('progressBar');
-        // New Elements
+        // Setting Elements
         const brightnessOverlay = document.getElementById('brightnessOverlay');
         const brightnessSlider = document.getElementById('brightnessSlider');
         const brightnessValue = document.getElementById('brightnessValue');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
 
 
         // --- State ---
         let allNames = []; // Array of objects: { name: string, selected: boolean }
         let isPicking = false;
         let typeIntervalId = null;
-        let draggedItemName = null; // Store the name of the item being dragged
-        let currentBrightnessPercent = 50; // Default brightness set to 50%
+        let draggedItemName = null;
+        let currentBrightnessPercent = 50; // Default brightness
+        let currentRainFPS = 25; // Default rain speed (Frames Per Second)
+        let rainAnimationId = null; // Holds timeoutID
 
         // --- Constants ---
         const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const TYPING_INTERVAL_MS = 20; // Speed of typing animation
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
-        const FONT_SIZE = 24; // Font size for matrix rain
+        const FONT_SIZE = 20; // Font size for matrix rain
         const COLUMN_SPACING_FACTOR = 0.5; // Wider spacing for less rain
         // Use the brighter green from CSS for the trail color
         const MATRIX_GREEN_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-green').trim();
@@ -502,84 +518,72 @@
         // --- Matrix Rain Setup ---
         let columns;
         let drops = [];
-        // Store previous leader info {text, xPos, yPos} for each column
-        let previousLeaders = [];
+        let previousLeaders = []; // Store previous leader info
 
         function setupCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR; // Use updated factor
+            const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR;
             columns = Math.floor(canvas.width / effectiveColumnWidth);
             drops = [];
-            previousLeaders = []; // Initialize previous leaders array
+            previousLeaders = [];
             for (let i = 0; i < columns; i++) {
-                drops[i] = Math.random() * canvas.height / FONT_SIZE; // Random start position
-                previousLeaders[i] = null; // No previous leader initially
+                drops[i] = Math.random() * canvas.height / FONT_SIZE;
+                previousLeaders[i] = null;
             }
         }
 
-        // Modified drawMatrixRain (v4 - Delayed Green Draw)
+        // Draw Matrix Rain Function
         function drawMatrixRain() {
-            // 1. Apply fade to the entire canvas
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)'; // Slightly faster fade might look better now
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Set font for drawing
             ctx.font = `${FONT_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
+            const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR;
 
-            const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR; // Use updated factor
-
-            // Loop through columns
             for (let i = 0; i < drops.length; i++) {
-                // 2. Draw previous leader in GREEN at its old position
                 if (previousLeaders[i]) {
                     const { text, xPos, yPos } = previousLeaders[i];
-                    ctx.fillStyle = MATRIX_GREEN_COLOR; // Use the brighter green for the trail start
+                    ctx.fillStyle = MATRIX_GREEN_COLOR;
                     ctx.fillText(text, xPos, yPos);
                 }
-
-                // 3. Prepare and draw the NEW leader in WHITE
                 const newText = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
                 const newXPos = i * effectiveColumnWidth;
                 const newYPos = drops[i] * FONT_SIZE;
-
-                ctx.fillStyle = MATRIX_LEAD_COLOR; // White for the new leader
+                ctx.fillStyle = MATRIX_LEAD_COLOR;
                 ctx.fillText(newText, newXPos, newYPos);
-
-                // 4. Store info for the NEXT frame's green draw
                 previousLeaders[i] = { text: newText, xPos: newXPos, yPos: newYPos };
-
-                // 5. Update drop position for the next frame
                 drops[i]++;
-
-                // Reset drop to top randomly or if it goes off screen
                 if (drops[i] * FONT_SIZE > canvas.height && Math.random() > 0.975) {
                     drops[i] = 0;
-                    previousLeaders[i] = null; // Clear previous leader when drop resets
+                    previousLeaders[i] = null;
                 }
             }
         }
 
-
-        let rainAnimationId;
+        // Start/Restart Matrix Rain Animation Loop
         function startMatrixRain() {
-             if (rainAnimationId) cancelAnimationFrame(rainAnimationId); // Clear previous animation frame
+             if (rainAnimationId !== null) {
+                 clearTimeout(rainAnimationId); // Clear existing loop if running
+             }
              function animateRain() {
                  drawMatrixRain();
-                 rainAnimationId = requestAnimationFrame(animateRain); // Loop the animation
+                 // Calculate delay based on current FPS setting
+                 const delay = 1000 / currentRainFPS;
+                 rainAnimationId = setTimeout(animateRain, delay); // Schedule next frame
              }
-             animateRain();
+             animateRain(); // Start the loop
         }
 
 
         // --- Initialization ---
         function initializeStateFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
-            allNames = []; // Reset state array
+            allNames = [];
             let initialNames = [];
             let pageTitle = DEFAULT_TITLE;
-            // Set default brightness here before checking URL param
+            // Set defaults before checking params
             currentBrightnessPercent = 50;
+            currentRainFPS = 25; // Default FPS
 
             // Load Title
             if (urlParams.has('title')) {
@@ -589,17 +593,24 @@
             document.title = pageTitle;
             titleInput.value = pageTitle === DEFAULT_TITLE ? '' : pageTitle;
 
-            // Load Brightness (override default if parameter exists and is valid)
+            // Load Brightness
             if (urlParams.has('brightness')) {
                 const brightnessParam = parseInt(urlParams.get('brightness'), 10);
-                // Validate: ensure it's a number between 0 and 100
                 if (!isNaN(brightnessParam) && brightnessParam >= 0 && brightnessParam <= 100) {
                     currentBrightnessPercent = brightnessParam;
                 }
             }
-            // Update brightness slider and overlay based on final value (default or URL)
-            updateBrightness(currentBrightnessPercent);
+            updateBrightness(currentBrightnessPercent); // Update UI
 
+            // Load Speed (FPS)
+            if (urlParams.has('speed')) {
+                const speedParam = parseInt(urlParams.get('speed'), 10);
+                // Validate FPS range (e.g., 10-60)
+                if (!isNaN(speedParam) && speedParam >= 10 && speedParam <= 60) {
+                    currentRainFPS = speedParam;
+                }
+            }
+            updateRainSpeedDisplay(currentRainFPS); // Update UI only
 
             // Load Names
             if (urlParams.has('names')) {
@@ -616,56 +627,53 @@
             // Populate state
             allNames = initialNames.map(name => ({ name: name, selected: false }));
 
-            // Render UI
+            // Render UI & Start Rain (AFTER settings are loaded)
             resetDisplayStyle();
             renderAvailableList();
             renderProgressBar();
             checkEmptyStates();
+            setupCanvas(); // Setup canvas dimensions and initial drops
+            startMatrixRain(); // Start rain AFTER FPS is set
             console.log("// System Initialized.");
             console.log(`// Initial Brightness: ${currentBrightnessPercent}%`);
+            console.log(`// Initial Speed: ${currentRainFPS} FPS`);
         }
 
-        // --- Brightness Control ---
+        // --- Settings Controls ---
         function updateBrightness(percent) {
-            // Clamp value between 0 and 100
             currentBrightnessPercent = Math.max(0, Math.min(100, percent));
-
-            // Update slider and text display
             if (brightnessSlider) brightnessSlider.value = currentBrightnessPercent;
             if (brightnessValue) brightnessValue.textContent = `${currentBrightnessPercent}%`;
-
-            // Calculate overlay alpha (inverted: 100% bright = 0 alpha, 0% bright = 1 alpha)
             const alpha = (100 - currentBrightnessPercent) / 100;
+            if (brightnessOverlay) brightnessOverlay.style.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
+        }
 
-            // Apply style to overlay
-            if (brightnessOverlay) {
-                brightnessOverlay.style.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
-            }
+        // Updates display only
+        function updateRainSpeedDisplay(fps) {
+             currentRainFPS = Math.max(10, Math.min(60, fps)); // Clamp FPS
+             if (speedSlider) speedSlider.value = currentRainFPS;
+             if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`;
+        }
+
+        // Updates state, display, and restarts animation loop
+        function handleSpeedChange(fps) {
+            updateRainSpeedDisplay(fps); // Update state var and UI
+            startMatrixRain(); // Restart animation with new speed
         }
 
 
-        // --- Progress Bar Rendering ---
-        // Ensure this function uses the correct CSS variables
+        // --- Progress Bar Rendering (Unchanged) ---
         function renderProgressBar() {
-            progressBar.innerHTML = ''; // Clear existing segments
+            progressBar.innerHTML = '';
             if (allNames.length === 0) {
-                progressBar.style.display = 'none'; // Hide bar if no names
-                return;
+                progressBar.style.display = 'none'; return;
             }
-            progressBar.style.display = 'flex'; // Ensure bar is visible
-
-            // Count how many names have been selected
+            progressBar.style.display = 'flex';
             const selectedCount = allNames.filter(op => op.selected).length;
-
-            // Create segments for all names
             allNames.forEach((operative, index) => {
                 const segment = document.createElement('div');
                 segment.className = 'progress-segment';
-
-                // Apply 'used' class based on the count of selected items
-                if (index < selectedCount) {
-                    segment.classList.add('used');
-                }
+                if (index < selectedCount) { segment.classList.add('used'); }
                 progressBar.appendChild(segment);
             });
              console.log(`// Progress bar rendered: ${selectedCount} / ${allNames.length} used.`);
@@ -675,18 +683,15 @@
         // --- List Rendering & Drag/Drop Event Handling (Unchanged) ---
         function renderAvailableList() {
             console.log('// Rendering operative roster...');
-            nameListElement.innerHTML = ''; // Clear current list
-
+            nameListElement.innerHTML = '';
             if (allNames.length === 0) {
-                noAvailableMessage.classList.remove('hidden'); // Show "empty" message
+                noAvailableMessage.classList.remove('hidden');
             } else {
-                 noAvailableMessage.classList.add('hidden'); // Hide "empty" message
+                 noAvailableMessage.classList.add('hidden');
                  allNames.forEach((operative) => {
                      const li = document.createElement('li');
                      li.className = `name-item ${operative.selected ? 'name-item-selected' : ''}`;
-                     li.dataset.name = operative.name; // Keep data-name for list item logic
-
-                     // Only allow dragging for non-selected items
+                     li.dataset.name = operative.name;
                      if (!operative.selected) {
                          li.draggable = true;
                          li.addEventListener('dragstart', handleDragStart);
@@ -695,30 +700,23 @@
                          li.addEventListener('dragleave', handleDragLeave);
                          li.addEventListener('drop', handleDrop);
                          li.addEventListener('dragend', handleDragEnd);
-                     } else {
-                         li.draggable = false; // Disable dragging for selected items
-                     }
-
-                     // Create span for the name text
+                     } else { li.draggable = false; }
                      const nameSpan = document.createElement('span');
                      nameSpan.textContent = operative.name;
-                     nameSpan.className = 'name-span flex-grow mr-2 truncate'; // Allow truncation
+                     nameSpan.className = 'name-span flex-grow mr-2 truncate';
                      li.appendChild(nameSpan);
-
-                     // Create remove button
                      const removeBtn = document.createElement('button');
-                     removeBtn.innerHTML = `[X]`; // Simple text icon
+                     removeBtn.innerHTML = `[X]`;
                      removeBtn.className = 'remove-name-btn flex-shrink-0';
                      removeBtn.title = `De-register ${operative.name}`;
-                     removeBtn.onclick = (e) => { e.stopPropagation(); removeName(operative.name); }; // Prevent triggering drag
-                     removeBtn.draggable = false; // Prevent button itself from being dragged
-                     removeBtn.addEventListener('dragstart', (e) => e.preventDefault()); // Extra safety
-
+                     removeBtn.onclick = (e) => { e.stopPropagation(); removeName(operative.name); };
+                     removeBtn.draggable = false;
+                     removeBtn.addEventListener('dragstart', (e) => e.preventDefault());
                      li.appendChild(removeBtn);
                      nameListElement.appendChild(li);
                  });
             }
-             checkEmptyStates(); // Update related UI elements
+             checkEmptyStates();
         }
 
         // Drag Handlers (Unchanged)
@@ -755,11 +753,9 @@
             document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
             const draggingElement = nameListElement.querySelector('.dragging');
             if (draggingElement) draggingElement.classList.remove('dragging');
-
             if (droppedOnName && droppedOnName !== draggedItemName && !targetItem.classList.contains('name-item-selected')) {
                 const draggedIndex = allNames.findIndex(op => op.name === draggedItemName);
                 const targetIndex = allNames.findIndex(op => op.name === droppedOnName);
-
                 if (draggedIndex !== -1 && targetIndex !== -1) {
                     const [draggedOperative] = allNames.splice(draggedIndex, 1);
                     const newTargetIndex = allNames.findIndex(op => op.name === droppedOnName);
@@ -813,38 +809,28 @@
                 rebootSystem(); return;
             }
             if (isPicking) { return; }
-
             const availableForPick = allNames.filter(op => !op.selected);
-
             if (availableForPick.length === 0) {
-                resetDisplayStyle(EMPTY_QUOTE, true);
-                return;
+                resetDisplayStyle(EMPTY_QUOTE, true); return;
             }
-
             isPicking = true;
             checkEmptyStates();
             selectedNameDisplay.textContent = '';
             selectedNameDisplay.classList.remove('typing');
             selectedNameDisplay.classList.remove('quote');
-
             const finalRandomIndex = Math.floor(Math.random() * availableForPick.length);
             const selectedOperative = availableForPick[finalRandomIndex];
-
             revealNameGradually(selectedOperative.name);
         }
         function revealNameGradually(name) {
             let i = 0;
             if (typeIntervalId) clearInterval(typeIntervalId);
-
             selectedNameDisplay.textContent = '';
-
             typeIntervalId = setInterval(() => {
                 if (i < name.length) {
-                    selectedNameDisplay.textContent += name.charAt(i);
-                    i++;
+                    selectedNameDisplay.textContent += name.charAt(i); i++;
                 } else {
-                    clearInterval(typeIntervalId);
-                    typeIntervalId = null;
+                    clearInterval(typeIntervalId); typeIntervalId = null;
                     finalizeSelection(name);
                 }
             }, TYPING_INTERVAL_MS);
@@ -852,50 +838,37 @@
         function finalizeSelection(selectedName) {
              selectedNameDisplay.classList.remove('typing');
              selectedNameDisplay.classList.remove('quote');
-
              const indexInAllNames = allNames.findIndex(op => op.name === selectedName);
-             if (indexInAllNames !== -1) {
-                 allNames[indexInAllNames].selected = true;
-             } else {
-                 console.warn(`// Selected name ${selectedName} not found in state array.`);
-             }
-
+             if (indexInAllNames !== -1) { allNames[indexInAllNames].selected = true; }
+             else { console.warn(`// Selected name ${selectedName} not found in state array.`); }
              const firstAvailableSegment = progressBar.querySelector('.progress-segment:not(.used)');
-             if (firstAvailableSegment) {
-                 firstAvailableSegment.classList.add('used');
-                 console.log(`// Progress segment updated (count-based).`);
-             } else {
-                  console.warn(`// No available progress segment found to mark as used.`);
-             }
-
+             if (firstAvailableSegment) { firstAvailableSegment.classList.add('used'); console.log(`// Progress segment updated (count-based).`); }
+             else { console.warn(`// No available progress segment found to mark as used.`); }
              renderAvailableList();
              isPicking = false;
              checkEmptyStates();
         }
 
 
-        // --- Reboot System Function (Modified for Brightness) ---
+        // --- Reboot System Function (Modified for Speed) ---
         function rebootSystem() {
             if (isPicking) { return; }
             console.log("// System Reboot Initialized via Reload...");
-
-            // Get current names and title
             const namesArray = allNames.map(op => op.name);
             const encodedNames = namesArray.map(name => encodeURIComponent(name)).join(',');
             const currentTitle = titleInput.value.trim();
             const encodedTitle = currentTitle ? encodeURIComponent(currentTitle) : '';
-
-            // Build URL parameters
             let params = [];
             if (encodedNames) { params.push('names=' + encodedNames); }
             if (encodedTitle) { params.push('title=' + encodedTitle); }
             // Add brightness parameter if not default (50)
-            if (currentBrightnessPercent !== 50) { // Check against new default
+            if (currentBrightnessPercent !== 50) {
                  params.push('brightness=' + currentBrightnessPercent);
             }
-
-
-            // Construct the new URL and reload the page
+            // Add speed parameter if not default (25)
+            if (currentRainFPS !== 25) {
+                 params.push('speed=' + currentRainFPS);
+            }
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
             window.location.href = newUrl;
         }
@@ -910,12 +883,8 @@
              selectedNameDisplay.textContent = displayName;
              selectedNameDisplay.classList.remove('quote');
              selectedNameDisplay.classList.remove('typing');
-
-             if (isQuote) {
-                 selectedNameDisplay.classList.add('quote');
-             } else if (displayName === '|') {
-                 selectedNameDisplay.classList.add('typing');
-             }
+             if (isQuote) { selectedNameDisplay.classList.add('quote'); }
+             else if (displayName === '|') { selectedNameDisplay.classList.add('typing'); }
         }
         function showTemporaryMessage(message, type = "info") {
             if (type === 'error') { console.error(message); }
@@ -942,21 +911,26 @@
         newNameInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') { addName(); }
         });
+        // Modified resize listener to clear timeout
         window.addEventListener('resize', () => {
-             if (rainAnimationId) cancelAnimationFrame(rainAnimationId);
+             if (rainAnimationId !== null) clearTimeout(rainAnimationId); // Use clearTimeout
              setupCanvas(); // Re-initialize drops and previousLeaders on resize
-             startMatrixRain();
+             startMatrixRain(); // Restart rain loop
         });
         // Brightness Slider Listener
         brightnessSlider.addEventListener('input', (event) => {
             updateBrightness(parseInt(event.target.value));
         });
+        // Speed Slider Listener
+        speedSlider.addEventListener('input', (event) => {
+            handleSpeedChange(parseInt(event.target.value)); // Use handler to restart loop
+        });
 
 
         // --- Initial Load ---
-        setupCanvas();
-        startMatrixRain();
-        initializeStateFromURL(); // Now handles brightness init
+        // setupCanvas(); // Moved setupCanvas into initializeStateFromURL
+        // startMatrixRain(); // Moved startMatrixRain into initializeStateFromURL
+        initializeStateFromURL(); // Handles setup, settings loading, and starting rain
 
     </script>
 
