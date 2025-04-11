@@ -432,12 +432,19 @@
                  </label>
                  <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="50">
              </div>
-             <div>
+             <div class="mb-3">
                  <label for="speedSlider" class="flex justify-between items-center">
                      <span>// Stream Velocity (FPS):</span>
                      <span id="speedValue" class="font-semibold text-sm">25 FPS</span>
                  </label>
                  <input type="range" id="speedSlider" min="10" max="60" step="1" value="25">
+             </div>
+             <div>
+                 <label for="fontSizeSlider" class="flex justify-between items-center">
+                     <span>// Character Size (px):</span>
+                     <span id="fontSizeValue" class="font-semibold text-sm">16px</span>
+                 </label>
+                 <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="16">
              </div>
         </div>
 
@@ -493,6 +500,8 @@
         const brightnessValue = document.getElementById('brightnessValue');
         const speedSlider = document.getElementById('speedSlider');
         const speedValue = document.getElementById('speedValue');
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
+        const fontSizeValue = document.getElementById('fontSizeValue');
 
 
         // --- State ---
@@ -502,6 +511,7 @@
         let draggedItemName = null;
         let currentBrightnessPercent = 50; // Default brightness
         let currentRainFPS = 25; // Default rain speed (Frames Per Second)
+        let currentFontSize = 16; // Default font size, will be overridden by URL/slider
         let rainAnimationId = null; // Holds timeoutID
 
         // --- Constants ---
@@ -509,8 +519,7 @@
         const TYPING_INTERVAL_MS = 20; // Speed of typing animation
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
-        const FONT_SIZE = 20; // Font size for matrix rain
-        const COLUMN_SPACING_FACTOR = 0.5; // Wider spacing for less rain
+        const COLUMN_SPACING_FACTOR = 1 // Wider spacing for less rain - INCREASED
         // Use the brighter green from CSS for the trail color
         const MATRIX_GREEN_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-green').trim();
         const MATRIX_LEAD_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-lead').trim(); // Get lead color from CSS variable
@@ -523,12 +532,18 @@
         function setupCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR;
-            columns = Math.floor(canvas.width / effectiveColumnWidth);
+
+            // Use the currentFontSize set by slider/URL
+            console.log(`// Setting up canvas with Font Size: ${currentFontSize}px`);
+
+            const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR; // Use current font size and spacing factor
+            // Prevent division by zero or negative columns if width is too small
+            columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
             drops = [];
             previousLeaders = [];
             for (let i = 0; i < columns; i++) {
-                drops[i] = Math.random() * canvas.height / FONT_SIZE;
+                // Use current font size for initial position calculation
+                drops[i] = Math.random() * canvas.height / currentFontSize;
                 previousLeaders[i] = null;
             }
         }
@@ -537,8 +552,11 @@
         function drawMatrixRain() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.font = `${FONT_SIZE}px ${getComputedStyle(document.body).fontFamily}`;
-            const effectiveColumnWidth = FONT_SIZE * COLUMN_SPACING_FACTOR;
+
+            // Set font for drawing using the dynamic currentFontSize
+            ctx.font = `${currentFontSize}px ${getComputedStyle(document.body).fontFamily}`;
+
+            const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR; // Use dynamic font size and spacing factor
 
             for (let i = 0; i < drops.length; i++) {
                 if (previousLeaders[i]) {
@@ -548,12 +566,14 @@
                 }
                 const newText = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
                 const newXPos = i * effectiveColumnWidth;
-                const newYPos = drops[i] * FONT_SIZE;
+                // Use dynamic font size for Y position
+                const newYPos = drops[i] * currentFontSize;
                 ctx.fillStyle = MATRIX_LEAD_COLOR;
                 ctx.fillText(newText, newXPos, newYPos);
                 previousLeaders[i] = { text: newText, xPos: newXPos, yPos: newYPos };
                 drops[i]++;
-                if (drops[i] * FONT_SIZE > canvas.height && Math.random() > 0.975) {
+                // Use dynamic font size for reset check
+                if (drops[i] * currentFontSize > canvas.height && Math.random() > 0.975) {
                     drops[i] = 0;
                     previousLeaders[i] = null;
                 }
@@ -571,7 +591,12 @@
                  const delay = 1000 / currentRainFPS;
                  rainAnimationId = setTimeout(animateRain, delay); // Schedule next frame
              }
-             animateRain(); // Start the loop
+             // Only start if canvas has dimensions
+             if (canvas.width > 0 && canvas.height > 0) {
+                animateRain(); // Start the loop
+             } else {
+                console.warn("// Canvas dimensions not ready, delaying rain start.");
+             }
         }
 
 
@@ -583,7 +608,8 @@
             let pageTitle = DEFAULT_TITLE;
             // Set defaults before checking params
             currentBrightnessPercent = 50;
-            currentRainFPS = 25; // Default FPS
+            currentRainFPS = 25;
+            currentFontSize = 16; // Default font size
 
             // Load Title
             if (urlParams.has('title')) {
@@ -605,12 +631,20 @@
             // Load Speed (FPS)
             if (urlParams.has('speed')) {
                 const speedParam = parseInt(urlParams.get('speed'), 10);
-                // Validate FPS range (e.g., 10-60)
                 if (!isNaN(speedParam) && speedParam >= 10 && speedParam <= 60) {
                     currentRainFPS = speedParam;
                 }
             }
             updateRainSpeedDisplay(currentRainFPS); // Update UI only
+
+            // Load Font Size
+            if (urlParams.has('fontSize')) {
+                const fontSizeParam = parseInt(urlParams.get('fontSize'), 10);
+                if (!isNaN(fontSizeParam) && fontSizeParam >= 8 && fontSizeParam <= 32) {
+                    currentFontSize = fontSizeParam;
+                }
+            }
+            updateFontSizeDisplay(currentFontSize); // Update UI only
 
             // Load Names
             if (urlParams.has('names')) {
@@ -632,11 +666,12 @@
             renderAvailableList();
             renderProgressBar();
             checkEmptyStates();
-            setupCanvas(); // Setup canvas dimensions and initial drops
-            startMatrixRain(); // Start rain AFTER FPS is set
+            setupCanvas(); // Setup canvas dimensions, font size, and initial drops
+            startMatrixRain(); // Start rain AFTER FPS and Font Size are set
             console.log("// System Initialized.");
             console.log(`// Initial Brightness: ${currentBrightnessPercent}%`);
             console.log(`// Initial Speed: ${currentRainFPS} FPS`);
+            console.log(`// Initial Font Size: ${currentFontSize}px`);
         }
 
         // --- Settings Controls ---
@@ -659,6 +694,21 @@
         function handleSpeedChange(fps) {
             updateRainSpeedDisplay(fps); // Update state var and UI
             startMatrixRain(); // Restart animation with new speed
+        }
+
+        // Updates display only
+        function updateFontSizeDisplay(size) {
+            currentFontSize = Math.max(8, Math.min(32, size)); // Clamp Font Size
+            if (fontSizeSlider) fontSizeSlider.value = currentFontSize;
+            if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`;
+        }
+
+        // Updates state, display, and restarts animation loop
+        function handleFontSizeChange(size) {
+            updateFontSizeDisplay(size); // Update state var and UI
+            // Need to re-setup canvas and restart rain completely
+            setupCanvas();
+            startMatrixRain();
         }
 
 
@@ -850,7 +900,7 @@
         }
 
 
-        // --- Reboot System Function (Modified for Speed) ---
+        // --- Reboot System Function (Modified for Font Size) ---
         function rebootSystem() {
             if (isPicking) { return; }
             console.log("// System Reboot Initialized via Reload...");
@@ -868,6 +918,10 @@
             // Add speed parameter if not default (25)
             if (currentRainFPS !== 25) {
                  params.push('speed=' + currentRainFPS);
+            }
+            // Add font size parameter if not default (16)
+            if (currentFontSize !== 16) {
+                 params.push('fontSize=' + currentFontSize);
             }
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
             window.location.href = newUrl;
@@ -911,10 +965,10 @@
         newNameInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') { addName(); }
         });
-        // Modified resize listener to clear timeout
+        // Modified resize listener to clear timeout and use dynamic font size
         window.addEventListener('resize', () => {
              if (rainAnimationId !== null) clearTimeout(rainAnimationId); // Use clearTimeout
-             setupCanvas(); // Re-initialize drops and previousLeaders on resize
+             setupCanvas(); // Recalculate font size, drops, etc.
              startMatrixRain(); // Restart rain loop
         });
         // Brightness Slider Listener
@@ -925,11 +979,13 @@
         speedSlider.addEventListener('input', (event) => {
             handleSpeedChange(parseInt(event.target.value)); // Use handler to restart loop
         });
+        // Font Size Slider Listener
+        fontSizeSlider.addEventListener('input', (event) => {
+            handleFontSizeChange(parseInt(event.target.value)); // Use handler to restart loop
+        });
 
 
         // --- Initial Load ---
-        // setupCanvas(); // Moved setupCanvas into initializeStateFromURL
-        // startMatrixRain(); // Moved startMatrixRain into initializeStateFromURL
         initializeStateFromURL(); // Handles setup, settings loading, and starting rain
 
     </script>
