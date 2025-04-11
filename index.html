@@ -534,12 +534,12 @@
         let drops = [];
 
         // --- Constants ---
-        const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン012345678901234567890123456789ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const TYPING_INTERVAL_MS = 10; // Speed of typing animation (Slightly slower (10ms))
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
         const COLUMN_SPACING_FACTOR = 1.0; // Wider spacing for less rain
-        const FLIP_CHANCE = 0.01; // Chance (0.0 to 1.0) for a character in the trail to flip
+        const FLIP_CHANCE = 0.0025; // Chance (0.0 to 1.0) for a character in the trail to flip
         const FLIP_DURATION_MS = 500; // Duration for the white flash (0.5 seconds)
         const MAX_TRAIL_LENGTH = 25; // Max number of characters in a trail
         const TARGET_ANIMATION_FPS = 60; // Target FPS for the main animation loop
