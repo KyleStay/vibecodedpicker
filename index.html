@@ -544,7 +544,8 @@
         const MAX_TRAIL_LENGTH = 25; // Max number of characters in a trail
         const TARGET_ANIMATION_FPS = 60; // Target FPS for the main animation loop
         const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS; // Delay for main loop
-        const MAX_FPS_OFFSET = 3; // Max speed difference (plus or minus) from base FPS
+        // const MAX_FPS_OFFSET = 3; // Absolute offset (No longer used)
+        const MAX_FPS_PERCENT_OFFSET = 0.33; // Max speed difference (+/- 33%) from base FPS <-- NEW
         const MATRIX_GREEN_COLOR_RGB = getComputedStyle(document.documentElement).getPropertyValue('--matrix-green-rgb').trim(); // Get RGB from CSS
         const MATRIX_LEAD_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-lead').trim(); // Get lead color from CSS variable
         const MATRIX_FLASH_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-flash').trim(); // Get flash color from CSS variable
@@ -555,12 +556,20 @@
 
         // Calculates the delay (ms) between updates for a single column based on target FPS
         function calculateColumnDelay(baseFps) {
-            // Generate a random float offset between -MAX_FPS_OFFSET and +MAX_FPS_OFFSET
-            const fpsOffset = (Math.random() - 0.5) * 2 * MAX_FPS_OFFSET;
-            // Calculate the target FPS for this column (ensure it's at least 1)
-            const columnFps = Math.max(1, baseFps + fpsOffset);
+            // Calculate the multiplier range (e.g., 0.67 to 1.33 for +/- 33%)
+            const minMultiplier = 1.0 - MAX_FPS_PERCENT_OFFSET;
+            const maxMultiplier = 1.0 + MAX_FPS_PERCENT_OFFSET;
+            // Generate a random multiplier within the range
+            const randomMultiplier = Math.random() * (maxMultiplier - minMultiplier) + minMultiplier;
+
+            // Calculate the target FPS for this column based on the base FPS and the multiplier
+            const columnFps = baseFps * randomMultiplier;
+
+            // Ensure the final FPS is at least 1 to prevent division by zero or infinite delay
+            const finalColumnFps = Math.max(1, columnFps);
+
             // Return the delay in milliseconds
-            return 1000 / columnFps;
+            return 1000 / finalColumnFps;
         }
 
         function setupCanvas() {
