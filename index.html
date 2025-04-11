@@ -17,6 +17,7 @@
             --matrix-bg-darker: #0a0a0a;
             --matrix-font: 'Source Code Pro', monospace;
             --matrix-lead: #ffffff; /* Near-white color for leading char */
+            --matrix-flash: #ffffff; /* White color for flipped char flash */
             --progress-bar-height: 10px; /* Height of the progress bar */
             --segment-gap: 2px; /* Gap between segments - FIXED */
         }
@@ -85,7 +86,7 @@
             justify-content: center;
             width: 80%; /* Limit width */
             text-align: center;
-            cursor: pointer;
+            cursor: pointer; /* Make wrapper clickable */
         }
         #selectedNameDisplay {
              font-family: var(--matrix-font);
@@ -95,10 +96,9 @@
              font-weight: 700;
              line-height: 1.1;
              word-break: break-word; /* Break long names */
-             /* Removed border, padding, and animation properties for cursor */
              min-height: 1.2em; /* Ensure space for character when blinking off */
              transition: font-size 0.3s ease-in-out; /* Add transition for quote size */
-             cursor: pointer;
+             /* Clicks handled by wrapper */
         }
          /* Apply blinking animation only when .typing class is present */
          #selectedNameDisplay.typing {
@@ -109,7 +109,6 @@
              font-size: 1.5rem; /* text-2xl */
              font-weight: 400; /* normal weight */
              color: rgba(57, 255, 20, 0.7); /* Slightly dimmer */
-             cursor: pointer; /* Ensure cursor indicates clickability */
              animation: none; /* Explicitly remove animation for quote */
          }
 
@@ -291,7 +290,7 @@
              overflow-y: auto;
              max-height: none;
              flex-grow: 1;
-             padding-right: 0.5rem;
+             padding-right: 0.5rem; /* Space for scrollbar */
          }
 
         #managementPanel .name-item {
@@ -313,10 +312,16 @@
             margin-bottom: 0;
         }
          #managementPanel .name-item.removing {
-             transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+             transition: opacity 0.3s ease-out, transform 0.3s ease-out, height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out; /* Added height/padding/margin */
              opacity: 0;
              transform: translateX(-20px);
              cursor: default;
+             height: 0; /* Collapse height */
+             padding-top: 0;
+             padding-bottom: 0;
+             margin-bottom: 0;
+             border: none; /* Remove border during removal */
+             overflow: hidden; /* Hide content during collapse */
          }
         #managementPanel .name-item-selected {
             opacity: 0.4;
@@ -357,6 +362,7 @@
          #managementPanel #noAvailableMessage {
              color: rgba(57, 255, 20, 0.5);
              font-style: italic;
+             padding: 0.5rem 0.25rem; /* Match item padding */
          }
 
         /* Progress Bar Styles */
@@ -380,13 +386,19 @@
             gap: var(--segment-gap); /* Use the gap */
             padding: var(--segment-gap); /* Use the gap for padding */
             box-sizing: border-box;
+            transition: opacity 0.3s ease-in-out; /* Fade in/out */
+        }
+        #progressBar.hidden {
+             opacity: 0;
+             pointer-events: none;
         }
         .progress-segment {
-            flex: 1;
+            flex: 1; /* Each segment takes equal width */
             background-color: var(--matrix-green);
             border-radius: 1px;
             transition: background-color 0.3s ease, opacity 0.3s ease;
             box-shadow: 0 0 3px var(--matrix-green);
+            min-width: 1px; /* Ensure segments are visible even with many names */
         }
         .progress-segment.used {
             background-color: var(--matrix-green-dark);
@@ -410,7 +422,8 @@
 </head>
 <body>
     <canvas id="matrixCanvas"></canvas>
-    <div id="brightnessOverlay"></div> <div id="clickTriggerArea"></div>
+    <div id="brightnessOverlay"></div>
+    <div id="clickTriggerArea"></div>
 
     <div id="selectedNameDisplayWrapper">
         <div id="selectedNameDisplay" class="typing">|</div>
@@ -430,18 +443,24 @@
              <div class="mb-3">
                  <label for="brightnessSlider" class="flex justify-between items-center">
                      <span>// Signal Intensity:</span>
-                     <span id="brightnessValue" class="font-semibold text-sm">60%</span> </label>
-                 <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="60"> </div>
+                     <span id="brightnessValue" class="font-semibold text-sm">60%</span>
+                 </label>
+                 <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="60">
+             </div>
              <div class="mb-3">
                  <label for="speedSlider" class="flex justify-between items-center">
-                     <span>// Stream Velocity (FPS):</span>
-                     <span id="speedValue" class="font-semibold text-sm">10 FPS</span> </label>
-                 <input type="range" id="speedSlider" min="1" max="100" step="1" value="10"> </div>
+                     <span>// Base Stream Velocity (FPS):</span>
+                     <span id="speedValue" class="font-semibold text-sm">10 FPS</span>
+                 </label>
+                 <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
+             </div>
              <div>
                  <label for="fontSizeSlider" class="flex justify-between items-center">
                      <span>// Character Size (px):</span>
-                     <span id="fontSizeValue" class="font-semibold text-sm">24px</span> </label>
-                 <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24"> </div>
+                     <span id="fontSizeValue" class="font-semibold text-sm">24px</span>
+                 </label>
+                 <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24">
+             </div>
         </div>
 
 
@@ -462,7 +481,8 @@
             </ul>
         </div>
 
-        <div class="mt-4"> <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
+        <div class="mt-4">
+            <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
                 [ ] Reboot System
             </button>
          </div>
@@ -470,8 +490,7 @@
          <p id="footerText">// System state is session-based (saved via URL on reboot).</p>
     </div>
     <div id="progressBarContainer">
-        <div id="progressBar">
-            </div>
+        <div id="progressBar"></div>
     </div>
 
     <script>
@@ -506,105 +525,168 @@
         let typeIntervalId = null;
         let draggedItemName = null;
         let currentBrightnessPercent = 60; // Default brightness
-        let currentRainFPS = 10; // Default rain speed
+        let currentRainFPS = 10; // Default BASE rain speed
         let currentFontSize = 24; // Default font size
-        let rainAnimationId = null; // Holds timeoutID
-        // trails[i] = array of objects: { char: 'A', flipped: false }
+        let rainAnimationId = null; // Holds requestAnimationFrame ID
+        // trails[i] = array of objects: { char: 'A', flipped: boolean, flipTimestamp?: number }
         let trails = [];
-        let drops = []; // Keep drops for leader Y position
+        // drops[i] = object: { y: number, delay: number, lastUpdateTime: number }
+        let drops = [];
 
         // --- Constants ---
         const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        const TYPING_INTERVAL_MS = 20; // Speed of typing animation
+        const TYPING_INTERVAL_MS = 10; // Speed of typing animation (Slightly slower (10ms))
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
         const COLUMN_SPACING_FACTOR = 1.0; // Wider spacing for less rain
         const FLIP_CHANCE = 0.01; // Chance (0.0 to 1.0) for a character in the trail to flip
+        const FLIP_DURATION_MS = 500; // Duration for the white flash (0.5 seconds)
         const MAX_TRAIL_LENGTH = 25; // Max number of characters in a trail
-        const MATRIX_GREEN_COLOR_RGB = "57, 255, 20"; // RGB for trail rgba calculation
+        const TARGET_ANIMATION_FPS = 60; // Target FPS for the main animation loop
+        const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS; // Delay for main loop
+        const MAX_FPS_OFFSET = 3; // Max speed difference (plus or minus) from base FPS
+        const MATRIX_GREEN_COLOR_RGB = getComputedStyle(document.documentElement).getPropertyValue('--matrix-green-rgb').trim(); // Get RGB from CSS
         const MATRIX_LEAD_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-lead').trim(); // Get lead color from CSS variable
+        const MATRIX_FLASH_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-flash').trim(); // Get flash color from CSS variable
+
 
         // --- Matrix Rain Setup ---
         let columns;
 
+        // Calculates the delay (ms) between updates for a single column based on target FPS
+        function calculateColumnDelay(baseFps) {
+            const fpsOffset = Math.floor(Math.random() * (MAX_FPS_OFFSET * 2 + 1)) - MAX_FPS_OFFSET;
+            const columnFps = Math.max(1, baseFps + fpsOffset);
+            return 1000 / columnFps;
+        }
+
         function setupCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            console.log(`// Setting up canvas with Font Size: ${currentFontSize}px`);
+            // console.log(`// Setting up canvas with Font Size: ${currentFontSize}px`);
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
-            drops = [];
-            trails = [];
+
+            drops = []; // Reset drops array
+            trails = []; // Reset trails array
+
             for (let i = 0; i < columns; i++) {
-                drops[i] = Math.floor(Math.random() * canvas.height / currentFontSize);
+                drops[i] = {
+                    y: Math.floor(Math.random() * canvas.height / currentFontSize),
+                    delay: calculateColumnDelay(currentRainFPS),
+                    lastUpdateTime: 0
+                };
                 trails[i] = [];
             }
         }
 
-        // Draw Matrix Rain Function
+        // Draw Matrix Rain Function - Called every animation frame (~60fps)
         function drawMatrixRain() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // Fade effect
             ctx.fillRect(0, 0, canvas.width, canvas.height);
+
             ctx.font = `${currentFontSize}px ${getComputedStyle(document.body).fontFamily}`;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
+            const now = Date.now();
 
             for (let i = 0; i < drops.length; i++) {
-                const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
-                if (!trails[i]) trails[i] = [];
-                trails[i].unshift({ char: newLeaderChar, flipped: false });
-                if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); }
+                const drop = drops[i];
 
-                for (let k = 0; k < trails[i].length; k++) {
-                    let trailItem = trails[i][k];
-                    const trailYPos = (drops[i] - k) * currentFontSize;
-                    if (trailYPos < 0) continue;
+                // --- Column Advancement Logic (Conditional) ---
+                if (now - drop.lastUpdateTime >= drop.delay) {
+                    const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
+                    if (!trails[i]) trails[i] = [];
+                    trails[i].unshift({ char: newLeaderChar, flipped: false });
+                    if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); }
 
-                    if (k > 0 && !trailItem.flipped && Math.random() < FLIP_CHANCE) {
-                        let flippedChar;
-                        do {
-                            flippedChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
-                        } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
-                        trailItem.char = flippedChar;
-                        trailItem.flipped = true;
+                    drop.y++;
+
+                    if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) {
+                        drop.y = 0;
+                        trails[i] = [];
+                        // drop.delay = calculateColumnDelay(currentRainFPS); // Optional: re-randomize speed on reset
                     }
-
-                    const opacity = Math.max(0, 1.0 - (k / MAX_TRAIL_LENGTH));
-                    ctx.fillStyle = `rgba(${MATRIX_GREEN_COLOR_RGB}, ${opacity})`;
-                    const trailXPos = i * effectiveColumnWidth;
-                    ctx.fillText(trailItem.char, trailXPos, trailYPos);
+                    drop.lastUpdateTime = now;
                 }
 
-                const leaderXPos = i * effectiveColumnWidth;
-                const leaderYPos = drops[i] * currentFontSize;
-                ctx.fillStyle = MATRIX_LEAD_COLOR;
-                ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos);
+                // --- Drawing Logic (Unconditional) ---
+                if (trails[i]) {
+                    for (let k = 0; k < trails[i].length; k++) {
+                        let trailItem = trails[i][k];
+                        const trailYPos = (drop.y - k) * currentFontSize;
 
-                drops[i]++;
-                if (drops[i] * currentFontSize > canvas.height && Math.random() > 0.975) {
-                    drops[i] = 0;
-                    trails[i] = [];
+                        if (trailYPos < -currentFontSize || trailYPos > canvas.height) continue; // Optimization: Don't draw far off-screen
+
+                        // Flip logic
+                        if (k > 0 && !trailItem.flipTimestamp && Math.random() < FLIP_CHANCE) {
+                            let flippedChar;
+                            do {
+                                flippedChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)];
+                            } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
+                            trailItem.char = flippedChar;
+                            trailItem.flipped = true;
+                            trailItem.flipTimestamp = now;
+                        }
+
+                        // Color logic (flash or trail)
+                        let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
+                        if (isHighlighting) {
+                            ctx.fillStyle = MATRIX_FLASH_COLOR;
+                        } else {
+                            const opacity = Math.max(0, 1.0 - (k / MAX_TRAIL_LENGTH));
+                            ctx.fillStyle = `rgba(${MATRIX_GREEN_COLOR_RGB}, ${opacity})`;
+                            if (trailItem.flipTimestamp && !isHighlighting) {
+                                trailItem.flipTimestamp = undefined;
+                                trailItem.flipped = false;
+                            }
+                        }
+
+                        // Draw character
+                        const trailXPos = i * effectiveColumnWidth;
+                        ctx.fillText(trailItem.char, trailXPos, trailYPos);
+                    }
+
+                    // Draw leader
+                    if (trails[i][0]) {
+                        const leaderXPos = i * effectiveColumnWidth;
+                        const leaderYPos = drop.y * currentFontSize;
+                        if (leaderYPos >= 0 && leaderYPos <= canvas.height) {
+                           ctx.fillStyle = MATRIX_LEAD_COLOR;
+                           ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos);
+                        }
+                    }
                 }
             }
         }
 
-        // Start/Restart Matrix Rain Animation Loop (with improved error handling)
+
+        // Start/Restart Matrix Rain Animation Loop using requestAnimationFrame
         function startMatrixRain() {
-             if (rainAnimationId !== null) { clearTimeout(rainAnimationId); }
-             function animateRain() {
-                 try {
-                    drawMatrixRain();
-                    const delay = 1000 / currentRainFPS;
-                    rainAnimationId = setTimeout(animateRain, delay);
-                 } catch(error) {
-                     console.error("Error during drawMatrixRain, stopping animation:", error);
-                     if (rainAnimationId !== null) {
-                         clearTimeout(rainAnimationId);
-                         rainAnimationId = null;
+             if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); }
+             let lastFrameTime = 0;
+
+             function animateRain(currentTime) {
+                 rainAnimationId = requestAnimationFrame(animateRain);
+                 const deltaTime = currentTime - lastFrameTime;
+
+                 if (deltaTime >= ANIMATION_FRAME_DELAY) {
+                     try {
+                         drawMatrixRain();
+                         lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY);
+                     } catch(error) {
+                         console.error("Error during drawMatrixRain, stopping animation:", error);
+                         if (rainAnimationId !== null) {
+                             cancelAnimationFrame(rainAnimationId);
+                             rainAnimationId = null;
+                         }
                      }
                  }
              }
-             if (canvas.width > 0 && canvas.height > 0) { animateRain(); }
-             else { console.warn("// Canvas dimensions not ready, delaying rain start."); }
+             if (canvas.width > 0 && canvas.height > 0) {
+                 rainAnimationId = requestAnimationFrame(animateRain);
+             } else {
+                 console.warn("// Canvas dimensions not ready, delaying rain start.");
+             }
         }
 
 
@@ -614,12 +696,11 @@
             allNames = [];
             let initialNames = [];
             let pageTitle = DEFAULT_TITLE;
-            // Set NEW defaults before checking params
-            currentBrightnessPercent = 60; // NEW Default
-            currentRainFPS = 10; // NEW Default
-            currentFontSize = 24; // Default
 
-            // Load Title
+            currentBrightnessPercent = 60;
+            currentRainFPS = 10;
+            currentFontSize = 24;
+
             if (urlParams.has('title')) {
                  const titleParam = urlParams.get('title').trim();
                  if (titleParam) { pageTitle = decodeURIComponent(titleParam); }
@@ -627,25 +708,22 @@
             document.title = pageTitle;
             titleInput.value = pageTitle === DEFAULT_TITLE ? '' : pageTitle;
 
-            // Load Brightness (override default if parameter exists and is valid)
             if (urlParams.has('brightness')) {
-                const brightnessParam = parseInt(urlParams.get('brightness'), 10);
-                if (!isNaN(brightnessParam) && brightnessParam >= 0 && brightnessParam <= 100) {
-                    currentBrightnessPercent = brightnessParam;
-                }
+                 const brightnessParam = parseInt(urlParams.get('brightness'), 10);
+                 if (!isNaN(brightnessParam) && brightnessParam >= 0 && brightnessParam <= 100) {
+                     currentBrightnessPercent = brightnessParam;
+                 }
             }
-            updateBrightness(currentBrightnessPercent); // Update UI
+            updateBrightness(currentBrightnessPercent);
 
-            // Load Speed (FPS) - Use new range 1-100
             if (urlParams.has('speed')) {
-                const speedParam = parseInt(urlParams.get('speed'), 10);
-                if (!isNaN(speedParam) && speedParam >= 1 && speedParam <= 100) { // Use range 1-100
-                    currentRainFPS = speedParam;
-                }
+                 const speedParam = parseInt(urlParams.get('speed'), 10);
+                 if (!isNaN(speedParam) && speedParam >= 1 && speedParam <= 100) {
+                     currentRainFPS = speedParam;
+                 }
             }
-            updateRainSpeedDisplay(currentRainFPS); // Update UI
+            updateRainSpeedDisplay(currentRainFPS);
 
-            // Load Font Size
             if (urlParams.has('fontSize')) {
                  const fontSizeParam = parseInt(urlParams.get('fontSize'), 10);
                  if (!isNaN(fontSizeParam) && fontSizeParam >= 8 && fontSizeParam <= 32) {
@@ -654,7 +732,6 @@
              }
             updateFontSizeDisplay(currentFontSize);
 
-            // Load Names
             if (urlParams.has('names')) {
                  const namesParam = urlParams.get('names');
                  if (namesParam) {
@@ -662,20 +739,20 @@
                                              .map(name => decodeURIComponent(name.trim()))
                                              .filter(name => name);
                  }
-             } else { initialNames = ['Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher']; }
+             } else {
+                initialNames = ['Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher'];
+             }
+            // Ensure loaded names are properly formatted into state objects
             allNames = initialNames.map(name => ({ name: name, selected: false }));
 
             // Render UI & Start Rain
-            resetDisplayStyle();
-            renderAvailableList();
-            renderProgressBar();
-            checkEmptyStates();
-            setupCanvas();
-            startMatrixRain();
+            resetDisplayStyle(); // Set initial display state
+            renderAvailableList(); // Populate the name list in the panel
+            renderProgressBar(); // Draw the initial progress bar state
+            checkEmptyStates(); // Update UI based on whether names exist
+            setupCanvas(); // Setup canvas dimensions, columns, and INITIAL drop delays
+            startMatrixRain(); // Start the animation loop
             console.log("// System Initialized.");
-            console.log(`// Initial Brightness: ${currentBrightnessPercent}%`);
-            console.log(`// Initial Speed: ${currentRainFPS} FPS`);
-            console.log(`// Initial Font Size: ${currentFontSize}px`);
         }
 
         // --- Settings Controls ---
@@ -687,207 +764,387 @@
             if (brightnessOverlay) brightnessOverlay.style.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
         }
 
-        // Updates display only - Use new range 1-100
         function updateRainSpeedDisplay(fps) {
-             currentRainFPS = Math.max(1, Math.min(100, fps)); // Use range 1-100
+             currentRainFPS = Math.max(1, Math.min(100, fps));
              if (speedSlider) speedSlider.value = currentRainFPS;
              if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`;
         }
 
-        // Updates state, display, and restarts animation loop
         function handleSpeedChange(fps) {
             updateRainSpeedDisplay(fps);
-            startMatrixRain();
+            if (drops && drops.length > 0) {
+                // console.log(`// Recalculating drop delays based on new base FPS: ${currentRainFPS}`);
+                drops.forEach(drop => {
+                    drop.delay = calculateColumnDelay(currentRainFPS);
+                });
+            }
         }
 
-        // Updates display only
         function updateFontSizeDisplay(size) {
             currentFontSize = Math.max(8, Math.min(32, size));
             if (fontSizeSlider) fontSizeSlider.value = currentFontSize;
             if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`;
         }
 
-        // Updates state, display, and restarts animation loop
         function handleFontSizeChange(size) {
             updateFontSizeDisplay(size);
+            if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
             setupCanvas();
             startMatrixRain();
         }
 
 
-        // --- Progress Bar Rendering ---
+        // --- Progress Bar Rendering --- Updated Logic
         function renderProgressBar() {
-            progressBar.innerHTML = '';
-            if (allNames.length === 0) {
-                progressBar.style.display = 'none'; return;
+            progressBar.innerHTML = ''; // Clear existing segments
+            const totalCount = allNames.length;
+
+            if (totalCount === 0) {
+                progressBar.classList.add('hidden');
+                return;
             }
-            progressBar.style.display = 'flex';
+            progressBar.classList.remove('hidden');
+
+            // Count how many operatives are selected
             const selectedCount = allNames.filter(op => op.selected).length;
-            // console.log(`Rendering progress: ${selectedCount} / ${allNames.length}`); // DEBUG
-            allNames.forEach((operative, index) => {
+
+            // Create one segment for each name total
+            for (let i = 0; i < totalCount; i++) {
                 const segment = document.createElement('div');
                 segment.className = 'progress-segment'; // Base class
-                if (index < selectedCount) {
-                    segment.classList.add('used'); // Add used class if applicable
+                // Add 'used' class if the current index is less than the selected count
+                if (i < selectedCount) {
+                    segment.classList.add('used');
                 }
-                // console.log(`Segment ${index}: Classes = ${segment.className}`); // DEBUG
                 progressBar.appendChild(segment);
+            }
+        }
+
+
+        // --- List Rendering & Drag/Drop Event Handling ---
+        function renderAvailableList() {
+            nameListElement.innerHTML = ''; // Clear current list
+            checkEmptyStates(); // Show/hide 'empty' message
+
+            allNames.forEach((operative) => { // No index needed here
+                const li = document.createElement('li');
+                li.className = 'name-item'; // Base class, specific styles in CSS
+                li.draggable = !operative.selected; // Only draggable if not selected
+                li.dataset.name = operative.name; // Store name for drag/drop/remove
+
+                if (operative.selected) {
+                    li.classList.add('name-item-selected');
+                }
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = operative.name;
+                nameSpan.className = 'name-span flex-grow mr-2 overflow-hidden text-ellipsis whitespace-nowrap';
+                if (operative.selected) {
+                    nameSpan.classList.add('line-through');
+                }
+                li.appendChild(nameSpan);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'X';
+                // Combine base and specific classes
+                removeBtn.className = 'remove-name-btn flex-shrink-0'; // Prevent button shrinking
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeName(operative.name);
+                };
+                removeBtn.disabled = operative.selected; // Disable if selected
+
+                li.appendChild(removeBtn);
+
+                if (!operative.selected) {
+                    li.addEventListener('dragstart', handleDragStart);
+                    li.addEventListener('dragover', handleDragOver);
+                    li.addEventListener('dragenter', handleDragEnter);
+                    li.addEventListener('dragleave', handleDragLeave);
+                    li.addEventListener('drop', handleDrop);
+                    li.addEventListener('dragend', handleDragEnd);
+                }
+
+                nameListElement.appendChild(li);
             });
         }
 
+        function handleDragStart(e) {
+            // Use optional chaining for safety, though target should exist
+            draggedItemName = e.target?.dataset?.name;
+            if (!draggedItemName) return;
 
-        // --- List Rendering & Drag/Drop Event Handling (Unchanged) ---
-        function renderAvailableList() { /* ... */ }
-        function handleDragStart(e) { /* ... */ }
-        function handleDragOver(e) { /* ... */ }
-        function handleDragEnter(e) { /* ... */ }
-        function handleDragLeave(e) { /* ... */ }
-        function handleDrop(e) { /* ... */ }
-        function handleDragEnd(e) { /* ... */ }
+            // Add dragging styles after a tiny delay to allow browser to capture drag image
+            setTimeout(() => {
+                 // Check if the element still exists before adding class
+                 if(e.target) e.target.classList.add('dragging');
+            }, 0);
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedItemName);
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); // Ensure target is valid
+            if (targetLi && targetLi.dataset.name !== draggedItemName) {
+                 targetLi.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            const targetLi = e.target.closest('.name-item');
+            // Check if the relatedTarget (where the mouse moved to) is outside the element
+            if (targetLi && !targetLi.contains(e.relatedTarget)) {
+                 targetLi.classList.remove('drag-over');
+            }
+        }
+
+        function handleDrop(e) {
+            e.stopPropagation();
+            e.preventDefault();
+
+            const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); // Ensure target is valid
+            const droppedName = e.dataTransfer.getData('text/plain'); // Get name from data transfer
+
+            // Clean up any lingering drag-over styles immediately
+            document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
+
+            if (!targetLi || !droppedName || targetLi.dataset.name === droppedName) {
+                return; // Invalid drop target or dropping on self
+            }
+
+            const draggedIndex = allNames.findIndex(op => op.name === droppedName);
+            let targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
+
+            if (draggedIndex > -1 && targetIndex > -1) {
+                const [draggedOperative] = allNames.splice(draggedIndex, 1);
+                // Re-find target index after removal
+                targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
+
+                if(targetIndex > -1) {
+                    allNames.splice(targetIndex, 0, draggedOperative); // Insert before target
+                } else {
+                    allNames.push(draggedOperative); // Append if target vanished
+                }
+                renderAvailableList(); // Re-render list
+            }
+        }
+
+        function handleDragEnd(e) {
+            // Clean up all dragging styles
+            document.querySelectorAll('.name-item.dragging').forEach(item => item.classList.remove('dragging'));
+            // Ensure drag-over is also cleaned, just in case leave/drop missed it
+            document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
+            draggedItemName = null;
+        }
 
 
-        // --- Name Management Functions (Unchanged) ---
-        function addName() { /* ... */ }
-        function removeName(nameToRemove) { /* ... */ }
+        // --- Name Management Functions ---
+        function addName() {
+            const name = newNameInput.value.trim();
+            if (name && !allNames.some(op => op.name.toLowerCase() === name.toLowerCase())) {
+                allNames.push({ name: name, selected: false });
+                newNameInput.value = '';
+                renderAvailableList();
+                renderProgressBar(); // Update progress bar
+                checkEmptyStates();
+                showTemporaryMessage(`// Operative "${name}" registered.`);
+            } else if (!name) {
+                 showTemporaryMessage("// Input field empty.", "warn");
+            } else {
+                showTemporaryMessage(`// Operative "${name}" already exists.`, "warn");
+            }
+        }
+
+        function removeName(nameToRemove) {
+            const itemElement = nameListElement.querySelector(`li[data-name="${nameToRemove}"]`);
+            if (itemElement && !itemElement.classList.contains('removing')) { // Prevent double clicks
+                itemElement.classList.add('removing');
+                // Wait for animation before removing from state
+                setTimeout(() => {
+                    allNames = allNames.filter(op => op.name !== nameToRemove);
+                    renderAvailableList(); // Re-render the list
+                    renderProgressBar(); // Update progress bar
+                    checkEmptyStates();
+                    showTemporaryMessage(`// Operative "${nameToRemove}" deregistered.`);
+                }, 300); // Match CSS transition duration
+            }
+        }
 
         // --- Picking Logic & Reveal Animation ---
         function pickRandomName() {
-            console.log("pickRandomName called");
+            // console.log("pickRandomName called, isPicking:", isPicking); // Debug log
             if (selectedNameDisplay.classList.contains('quote')) {
-                rebootSystem(); return;
-            }
-            if (isPicking) {
-                 console.log("Already picking, returning.");
-                 return;
-            }
-            const availableForPick = allNames.filter(op => !op.selected);
-            if (availableForPick.length === 0) {
-                console.log("No names available to pick.");
-                resetDisplayStyle(EMPTY_QUOTE, true); // Show quote
+                console.log("// Quote displayed, triggering reboot...");
+                rebootSystem();
                 return;
             }
-            console.log("Starting pick...");
-            isPicking = true;
-            checkEmptyStates();
+            if (isPicking) {
+                console.log("// Already picking, returning.");
+                return;
+            }
+
+            const availableForPick = allNames.filter(op => !op.selected);
+            if (availableForPick.length === 0) {
+                console.log("// No names available, displaying quote.");
+                resetDisplayStyle(EMPTY_QUOTE, true);
+                return;
+            }
+
+            console.log("// Starting pick...");
+            isPicking = true; // Set flag
+            // Disable click listeners temporarily to prevent re-triggering during animation
+            clickTriggerArea.style.pointerEvents = 'none';
+            selectedNameDisplayWrapper.style.pointerEvents = 'none';
+
             selectedNameDisplay.textContent = '';
-            selectedNameDisplay.classList.remove('typing');
-            selectedNameDisplay.classList.remove('quote');
+            selectedNameDisplay.classList.remove('typing', 'quote');
 
             const finalRandomIndex = Math.floor(Math.random() * availableForPick.length);
             const selectedOperative = availableForPick[finalRandomIndex];
+
             revealNameGradually(selectedOperative.name);
         }
+
         function revealNameGradually(name) {
-            console.log(`Revealing name: ${name}`);
+            // console.log(`Revealing name: ${name}`); // Debug log
             let i = 0;
             if (typeIntervalId) clearInterval(typeIntervalId);
             selectedNameDisplay.textContent = '';
-            selectedNameDisplay.classList.add('typing'); // Add typing class for cursor
+            selectedNameDisplay.classList.add('typing'); // Add cursor blink
+
             typeIntervalId = setInterval(() => {
                 if (i < name.length) {
-                    selectedNameDisplay.textContent += name.charAt(i); i++;
+                    selectedNameDisplay.textContent += name.charAt(i);
+                    i++;
                 } else {
-                    clearInterval(typeIntervalId); typeIntervalId = null;
-                    finalizeSelection(name);
+                    clearInterval(typeIntervalId);
+                    typeIntervalId = null;
+                    finalizeSelection(name); // Pass the selected name
                 }
             }, TYPING_INTERVAL_MS);
         }
-        function finalizeSelection(selectedName) {
-             console.log(`Finalizing selection: ${selectedName}`);
-             selectedNameDisplay.classList.remove('typing'); // Stop blinking
-             selectedNameDisplay.classList.remove('quote');
-             const indexInAllNames = allNames.findIndex(op => op.name === selectedName);
-             if (indexInAllNames !== -1) { allNames[indexInAllNames].selected = true; }
-             else { console.warn(`// Selected name ${selectedName} not found in state array.`); }
 
-             renderProgressBar(); // Update progress bar AFTER state change
-             renderAvailableList(); // Update list AFTER state change
-             isPicking = false;
+        function finalizeSelection(selectedName) {
+             // console.log(`Finalizing selection: ${selectedName}`); // Debug log
+             selectedNameDisplay.classList.remove('typing'); // Stop blinking
+
+             const indexInAllNames = allNames.findIndex(op => op.name === selectedName);
+             if (indexInAllNames !== -1) {
+                 allNames[indexInAllNames].selected = true;
+             } else {
+                 console.warn(`// Selected name ${selectedName} not found in state array.`);
+             }
+
+             renderProgressBar(); // Update progress bar
+             renderAvailableList(); // Update list appearance
+             isPicking = false; // Reset flag AFTER updates
+             // Re-enable click listeners
+             clickTriggerArea.style.pointerEvents = 'auto';
+             selectedNameDisplayWrapper.style.pointerEvents = 'auto';
              checkEmptyStates();
 
-             // ADDED CHECK: See if that was the last name
+             // Check if that was the last name AFTER updating state
              const remainingAvailable = allNames.filter(op => !op.selected);
              if (remainingAvailable.length === 0) {
-                 console.log("Last name selected, showing quote now.");
-                 // Use a slight delay so the user sees the name briefly before the quote appears
+                 console.log("// Last name selected, preparing to show quote.");
                  setTimeout(() => {
                      resetDisplayStyle(EMPTY_QUOTE, true);
-                 }, 500); // Delay of 500ms
+                 }, 750); // Delay to show name briefly
              }
         }
 
 
         // --- Reboot System Function ---
         function rebootSystem() {
-            if (isPicking) { return; }
+            if (isPicking) { return; } // Prevent reboot during animation
             console.log("// System Reboot Initialized via Reload...");
+
             const namesArray = allNames.map(op => op.name);
             const encodedNames = namesArray.map(name => encodeURIComponent(name)).join(',');
             const currentTitle = titleInput.value.trim();
             const encodedTitle = currentTitle ? encodeURIComponent(currentTitle) : '';
+
             let params = [];
             if (encodedNames) { params.push('names=' + encodedNames); }
-            if (encodedTitle) { params.push('title=' + encodedTitle); }
-            // Add brightness parameter if not default (60)
-            if (currentBrightnessPercent !== 60) {
-                 params.push('brightness=' + currentBrightnessPercent);
+            if (encodedTitle && encodedTitle !== encodeURIComponent(DEFAULT_TITLE)) { // Only add title if not default
+                 params.push('title=' + encodedTitle);
             }
-            // Add speed parameter if not default (10)
-            if (currentRainFPS !== 10) {
-                 params.push('speed=' + currentRainFPS);
-            }
-            // Add font size parameter if not default (24)
-            if (currentFontSize !== 24) {
-                 params.push('fontSize=' + currentFontSize);
-            }
+            // Add settings parameters only if they differ from defaults
+            if (currentBrightnessPercent !== 60) { params.push('brightness=' + currentBrightnessPercent); }
+            if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
+            if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
+
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
             window.location.href = newUrl;
         }
 
         // --- Utility Functions ---
         function checkEmptyStates() {
-            noAvailableMessage.classList.toggle('hidden', allNames.length === 0);
+            const isEmpty = allNames.length === 0;
+            noAvailableMessage.classList.toggle('hidden', !isEmpty);
+            // Disable reboot if list is empty? Maybe not necessary as it reloads anyway.
+            // rebootBtn.disabled = isEmpty;
         }
+
         function resetDisplayStyle(displayName = '|', isQuote = false) {
              if (typeIntervalId) clearInterval(typeIntervalId);
              typeIntervalId = null;
              selectedNameDisplay.textContent = displayName;
-             selectedNameDisplay.classList.remove('quote');
-             selectedNameDisplay.classList.remove('typing');
+             selectedNameDisplay.classList.remove('quote', 'typing');
              if (isQuote) {
                  selectedNameDisplay.classList.add('quote');
              } else if (displayName === '|') {
                  selectedNameDisplay.classList.add('typing');
              }
+             // Ensure clicks are enabled if resetting to initial state
+             clickTriggerArea.style.pointerEvents = 'auto';
+             selectedNameDisplayWrapper.style.pointerEvents = 'auto';
         }
-        function showTemporaryMessage(message, type = "info") { /* ... */ }
+
+        function showTemporaryMessage(message, type = "info") {
+            // Basic console logging, could be expanded to a UI element
+            if (type === "warn") { console.warn(message); }
+            else if (type === "error") { console.error(message); }
+            else { console.log(message); }
+        }
 
         // --- Menu Toggle Logic ---
         function toggleManagementPanel() {
-            console.log("toggleManagementPanel called");
-            managementPanel.classList.toggle('visible');
-            if (managementPanel.classList.contains('visible')) {
-                menuToggleBtn.innerHTML = '✕'; menuToggleBtn.classList.add('active');
+            // console.log("Toggling menu panel"); // Debug log
+            const isVisible = managementPanel.classList.toggle('visible');
+            if (isVisible) {
+                menuToggleBtn.innerHTML = '✕';
+                menuToggleBtn.classList.add('active');
             } else {
-                menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active');
+                menuToggleBtn.innerHTML = '☰';
+                menuToggleBtn.classList.remove('active');
             }
         }
 
         // --- Event Listeners ---
         menuToggleBtn.addEventListener('click', toggleManagementPanel);
-        clickTriggerArea.addEventListener('click', pickRandomName);
+        // Use the wrapper for primary click detection
         selectedNameDisplayWrapper.addEventListener('click', pickRandomName);
-        selectedNameDisplay.addEventListener('click', pickRandomName);
+        // Keep the background click area as a fallback
+        clickTriggerArea.addEventListener('click', pickRandomName);
+
         addNameBtn.addEventListener('click', addName);
-        rebootBtn.addEventListener('click', rebootSystem);
         newNameInput.addEventListener('keypress', (event) => {
             if (event.key === 'Enter') { addName(); }
         });
+        rebootBtn.addEventListener('click', rebootSystem);
+
         window.addEventListener('resize', () => {
-             if (rainAnimationId !== null) clearTimeout(rainAnimationId);
+             if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
              setupCanvas();
              startMatrixRain();
         });
+
         brightnessSlider.addEventListener('input', (event) => {
             updateBrightness(parseInt(event.target.value));
         });
@@ -900,7 +1157,10 @@
 
 
         // --- Initial Load ---
-        initializeStateFromURL();
+        // Ensure DOM is fully loaded before attaching listeners and initializing
+        document.addEventListener('DOMContentLoaded', () => {
+             initializeStateFromURL();
+        });
 
     </script>
 
