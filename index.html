@@ -442,9 +442,9 @@
              <div>
                  <label for="fontSizeSlider" class="flex justify-between items-center">
                      <span>// Character Size (px):</span>
-                     <span id="fontSizeValue" class="font-semibold text-sm">16px</span>
+                     <span id="fontSizeValue" class="font-semibold text-sm">px</span>
                  </label>
-                 <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="16">
+                 <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24">
              </div>
         </div>
 
@@ -511,11 +511,11 @@
         let draggedItemName = null;
         let currentBrightnessPercent = 50; // Default brightness
         let currentRainFPS = 25; // Default rain speed (Frames Per Second)
-        let currentFontSize = 16; // Default font size, will be overridden by URL/slider
+        let currentFontSize = 24; // Default font size, will be overridden by URL/slider
         let rainAnimationId = null; // Holds timeoutID
 
         // --- Constants ---
-        const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン012345678901234567890123456789012345678901234567890123456789ABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZABCDEFGHIJKLMNOPQRSTUVWXYZ";
         const TYPING_INTERVAL_MS = 20; // Speed of typing animation
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
@@ -609,7 +609,7 @@
             // Set defaults before checking params
             currentBrightnessPercent = 50;
             currentRainFPS = 25;
-            currentFontSize = 16; // Default font size
+            currentFontSize = 24; // Default font size
 
             // Load Title
             if (urlParams.has('title')) {
@@ -919,8 +919,8 @@
             if (currentRainFPS !== 25) {
                  params.push('speed=' + currentRainFPS);
             }
-            // Add font size parameter if not default (16)
-            if (currentFontSize !== 16) {
+            // Add font size parameter if not default (24)
+            if (currentFontSize !== 24) {
                  params.push('fontSize=' + currentFontSize);
             }
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
