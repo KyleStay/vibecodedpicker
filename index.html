@@ -759,13 +759,35 @@
         }
 
         // --- Fullscreen Toggle Logic ---
-        function toggleFullScreen() { /* ... (unchanged) ... */
+        function toggleFullScreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen() .then(() => { fullscreenBtn.textContent = '[FS] Exit Full'; }) .catch(err => { console.error(`FS Error: ${err.message}`); showTemporaryMessage("Fullscreen failed.", "warn"); });
+                // Enter fullscreen
+                // Close panel *before* requesting fullscreen
+                if (managementPanel.classList.contains('visible')) {
+                    toggleManagementPanel();
+                }
+                document.documentElement.requestFullscreen()
+                    .then(() => {
+                         fullscreenBtn.textContent = '[FS] Exit Full';
+                    })
+                    .catch(err => {
+                        console.error(`FS Error: ${err.message}`);
+                        showTemporaryMessage("Fullscreen failed.", "warn");
+                    });
             } else {
-                if (document.exitFullscreen) { document.exitFullscreen() .then(() => { fullscreenBtn.textContent = '[FS] Fullscreen'; }) .catch(err => { console.error(`Exit FS Error: ${err.message}`); }); }
+                // Exit fullscreen
+                if (document.exitFullscreen) {
+                    document.exitFullscreen()
+                     .then(() => {
+                          fullscreenBtn.textContent = '[FS] Fullscreen';
+                     })
+                     .catch(err => {
+                         console.error(`Exit FS Error: ${err.message}`);
+                     });
+                }
             }
         }
+
 
         // --- Matrix Mode Logic ---
         function enterMatrixMode() {
@@ -817,7 +839,7 @@
         speedSlider.addEventListener('input', (event) => { handleSpeedChange(parseInt(event.target.value)); });
         fontSizeSlider.addEventListener('input', (event) => { handleFontSizeChange(parseInt(event.target.value)); });
         titleInput.addEventListener('input', (event) => { updateSchemaTitle(event.target.value); });
-        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        fullscreenBtn.addEventListener('click', toggleFullScreen); // MODIFIED: Calls updated function
         enterMatrixBtn.addEventListener('click', () => { if (isInMatrixMode) { exitMatrixMode(); } else { enterMatrixMode(); } });
         document.addEventListener('fullscreenchange', handleFullscreenChange);
 
