@@ -599,17 +599,20 @@
         const MAX_TRAIL_LENGTH = 25;
         const TARGET_ANIMATION_FPS = 60;
         const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS;
-        const MAX_FPS_PERCENT_OFFSET = 0.33;
+        const MAX_FPS_PERCENT_OFFSET = 0.90; // UPDATED
         const MATRIX_GREEN_COLOR_RGB = getComputedStyle(document.documentElement).getPropertyValue('--matrix-green-rgb').trim();
         const MATRIX_LEAD_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-lead').trim();
         const MATRIX_FLASH_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-flash').trim();
 
         // --- Matrix Rain Setup ---
         let columns;
-        function calculateColumnDelay(baseFps) { /* ... (unchanged) ... */
-            const minMultiplier = 1.0 - MAX_FPS_PERCENT_OFFSET; const maxMultiplier = 1.0 + MAX_FPS_PERCENT_OFFSET;
+        function calculateColumnDelay(baseFps) {
+            const minMultiplier = 1.0 - MAX_FPS_PERCENT_OFFSET; 
+            const maxMultiplier = 1.0 + MAX_FPS_PERCENT_OFFSET;
             const randomMultiplier = Math.random() * (maxMultiplier - minMultiplier) + minMultiplier;
-            const columnFps = baseFps * randomMultiplier; const finalColumnFps = Math.max(1, columnFps); return 1000 / finalColumnFps;
+            const columnFps = baseFps * randomMultiplier; 
+            const finalColumnFps = Math.max(0.05, columnFps);
+            return 1000 / finalColumnFps;
         }
         function setupCanvas() { /* ... (unchanged) ... */
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
