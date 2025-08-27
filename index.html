@@ -247,7 +247,6 @@
             display: flex;
             align-items: center;
             width: 100%;
-            margin-bottom: 0.75rem;
         }
         .control-group button {
             flex-grow: 1;
@@ -263,7 +262,6 @@
             transition: all 0.2s ease-in-out;
             border: 1px solid rgba(var(--matrix-green-rgb), 0.2);
             flex-shrink: 0; /* Prevent LED from shrinking */
-            margin-bottom: .75rem; /*line up with button */
         }
         .led-indicator.active {
             background-color: var(--matrix-green);
@@ -509,8 +507,8 @@
              <input type="text" id="newNameInput" placeholder="Enter name..." class="outline-none">
              <!-- Value Input Wrapper -->
              <div id="newValueWrapper">
-                <label for="newValueInput" class="text-xs">// Extraction Value (Optional):</label>
-                <input type="text" id="newValueInput" placeholder="Value to copy..." class="outline-none">
+                <label for="newValueInput" class="text-xs">// Extraction Alias (Optional):</label>
+                <input type="text" id="newValueInput" placeholder="Alias to copy..." class="outline-none">
              </div>
              <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
                  <span class="text-xl leading-none">[+]</span>
@@ -875,7 +873,7 @@
                 valueRow.classList.toggle('hidden', !isExtractionMode);
                 const valueInput = document.createElement('input');
                 valueInput.type = 'text';
-                valueInput.placeholder = '// Extraction Value...';
+                valueInput.placeholder = '// Extraction Alias...';
                 valueInput.value = operative.value || '';
                 valueInput.disabled = operative.selected;
                 valueInput.addEventListener('input', (e) => {
