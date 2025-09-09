@@ -615,7 +615,7 @@
             const finalColumnFps = Math.max(0.05, columnFps);
             return 1000 / finalColumnFps;
         }
-        function setupCanvas() { /* ... (unchanged) ... */
+        function setupCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
@@ -625,7 +625,7 @@
                 trails[i] = [];
             }
         }
-        function drawMatrixRain() { /* ... (unchanged) ... */
+        function drawMatrixRain() {
              ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
              ctx.font = `${currentFontSize}px ${getComputedStyle(document.body).fontFamily}`;
              const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR; const now = Date.now();
@@ -634,7 +634,12 @@
                  if (now - drop.lastUpdateTime >= drop.delay) {
                      const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
                      trails[i].unshift({ char: newLeaderChar, flipped: false }); if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); } drop.y++;
-                     if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) { drop.y = 0; trails[i] = []; } drop.lastUpdateTime = now;
+                     if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) { 
+                        drop.y = 0; 
+                        trails[i] = []; 
+                        drop.delay = calculateColumnDelay(currentRainFPS); // Randomize speed on reset
+                     } 
+                     drop.lastUpdateTime = now;
                  }
                  if (trails[i]) {
                      for (let k = 0; k < trails[i].length; k++) {
@@ -657,7 +662,7 @@
                  }
              }
         }
-        function startMatrixRain() { /* ... (unchanged) ... */
+        function startMatrixRain() {
              if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); } let lastFrameTime = 0;
              function animateRain(currentTime) {
                  rainAnimationId = requestAnimationFrame(animateRain); const deltaTime = currentTime - lastFrameTime;
@@ -670,7 +675,7 @@
         }
 
         // --- Title Update Function ---
-        function updateSchemaTitle(title) { /* ... (unchanged) ... */
+        function updateSchemaTitle(title) {
             const displayTitle = title.trim(); if (schemaTitleDisplay) { schemaTitleDisplay.textContent = displayTitle || ''; } document.title = displayTitle || DEFAULT_TITLE;
         }
 
@@ -789,20 +794,20 @@
 
 
         // --- Settings Controls ---
-        function updateBrightness(percent) { /* ... (unchanged) ... */
+        function updateBrightness(percent) {
             currentBrightnessPercent = Math.max(0, Math.min(100, percent)); if (brightnessSlider) brightnessSlider.value = currentBrightnessPercent; if (brightnessValue) brightnessValue.textContent = `${currentBrightnessPercent}%`;
             const alpha = (100 - currentBrightnessPercent) / 100; if (brightnessOverlay) brightnessOverlay.style.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
         }
-        function updateRainSpeedDisplay(fps) { /* ... (unchanged) ... */
+        function updateRainSpeedDisplay(fps) {
              currentRainFPS = Math.max(1, Math.min(100, fps)); if (speedSlider) speedSlider.value = currentRainFPS; if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`;
         }
-        function handleSpeedChange(fps) { /* ... (unchanged) ... */
+        function handleSpeedChange(fps) {
             updateRainSpeedDisplay(fps); if (drops && drops.length > 0) { drops.forEach(drop => { drop.delay = calculateColumnDelay(currentRainFPS); }); }
         }
-        function updateFontSizeDisplay(size) { /* ... (unchanged) ... */
+        function updateFontSizeDisplay(size) {
              currentFontSize = Math.max(8, Math.min(32, size)); if (fontSizeSlider) fontSizeSlider.value = currentFontSize; if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`;
         }
-        function handleFontSizeChange(size) { /* ... (unchanged) ... */
+        function handleFontSizeChange(size) {
             updateFontSizeDisplay(size); if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain();
         }
         function updateExtractionButton() {
@@ -822,7 +827,7 @@
         }
 
         // --- Progress Bar Rendering ---
-        function renderProgressBar() { /* ... (unchanged, hides if in matrix mode) ... */
+        function renderProgressBar() {
             progressBar.innerHTML = ''; const totalCount = allNames.length;
             if (totalCount === 0 || isInMatrixMode) { progressBarContainer.classList.add('hidden'); }
             else {
@@ -835,7 +840,7 @@
         }
 
         // --- Body Padding Update ---
-        function updateBodyPadding() { /* ... (unchanged) ... */
+        function updateBodyPadding() {
             if (!progressBarContainer.classList.contains('hidden') && !isInMatrixMode) { bodyElement.style.paddingBottom = `calc(var(--progress-bar-height) + 1rem)`; }
             else { bodyElement.style.paddingBottom = '0'; }
         }
@@ -902,13 +907,13 @@
                 nameListElement.appendChild(li);
             });
         }
-        function handleDragStart(e) { /* ... (unchanged) ... */
+        function handleDragStart(e) {
             draggedItemName = e.target?.dataset?.name; if (!draggedItemName) return; setTimeout(() => { if(e.target) e.target.classList.add('dragging'); }, 0);
             e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', draggedItemName);
         }
-        function handleDragOver(e) { /* ... (unchanged) ... */ e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
-        function handleDragEnter(e) { /* ... (unchanged) ... */ const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); if (targetLi && targetLi.dataset.name !== draggedItemName) { targetLi.classList.add('drag-over'); } }
-        function handleDragLeave(e) { /* ... (unchanged) ... */ const targetLi = e.target.closest('.name-item'); if (targetLi && !targetLi.contains(e.relatedTarget)) { targetLi.classList.remove('drag-over'); } }
+        function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+        function handleDragEnter(e) { const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); if (targetLi && targetLi.dataset.name !== draggedItemName) { targetLi.classList.add('drag-over'); } }
+        function handleDragLeave(e) { const targetLi = e.target.closest('.name-item'); if (targetLi && !targetLi.contains(e.relatedTarget)) { targetLi.classList.remove('drag-over'); } }
         function handleDrop(e) {
              e.stopPropagation(); e.preventDefault(); const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); const droppedName = e.dataTransfer.getData('text/plain');
              document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); if (!targetLi || !droppedName || targetLi.dataset.name === droppedName) { return; }
@@ -920,7 +925,7 @@
                  updateURL(); // Save new order to URL
              }
         }
-        function handleDragEnd(e) { /* ... (unchanged) ... */
+        function handleDragEnd(e) {
              document.querySelectorAll('.name-item.dragging').forEach(item => item.classList.remove('dragging')); document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); draggedItemName = null;
         }
 
@@ -957,13 +962,13 @@
         }
 
         // --- Picking Logic & Reveal Animation ---
-        function pickRandomName() { /* ... (unchanged) ... */
+        function pickRandomName() {
             if (selectedNameDisplay.classList.contains('quote')) { rebootSystem(); return; } if (allNames.length > 0 && allNames.every(op => op.selected)) { resetDisplayStyle(EMPTY_QUOTE, true); return; } if (isPicking) { return; }
             const availableForPick = allNames.filter(op => !op.selected); if (availableForPick.length === 0) { if (allNames.length === 0) { resetDisplayStyle('|'); } else { resetDisplayStyle(EMPTY_QUOTE, true); } return; }
             isPicking = true; clickTriggerArea.style.pointerEvents = 'none'; selectedNameDisplayWrapper.style.pointerEvents = 'none'; selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.remove('typing', 'quote');
             const finalRandomIndex = Math.floor(Math.random() * availableForPick.length); const selectedOperative = availableForPick[finalRandomIndex]; revealNameGradually(selectedOperative.name);
         }
-        function revealNameGradually(name) { /* ... (unchanged) ... */
+        function revealNameGradually(name) {
             let i = 0; if (typeIntervalId) clearInterval(typeIntervalId); selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.add('typing');
             typeIntervalId = setInterval(() => { if (i < name.length) { selectedNameDisplay.textContent += name.charAt(i); i++; } else { clearInterval(typeIntervalId); typeIntervalId = null; finalizeSelection(name); } }, TYPING_INTERVAL_MS);
         }
@@ -1001,15 +1006,15 @@
 
 
         // --- Utility Functions ---
-        function checkEmptyStates() { /* ... (unchanged) ... */
+        function checkEmptyStates() {
              const isEmpty = allNames.length === 0; noAvailableMessage.classList.toggle('hidden', !isEmpty);
         }
-        function resetDisplayStyle(displayName = '|', isQuote = false) { /* ... (unchanged) ... */
+        function resetDisplayStyle(displayName = '|', isQuote = false) {
              if (typeIntervalId) clearInterval(typeIntervalId); typeIntervalId = null; selectedNameDisplay.textContent = displayName; selectedNameDisplay.classList.remove('quote', 'typing');
              if (isQuote) { selectedNameDisplay.classList.add('quote'); } else if (displayName === '|') { selectedNameDisplay.classList.add('typing'); }
              clickTriggerArea.style.pointerEvents = 'auto'; selectedNameDisplayWrapper.style.pointerEvents = 'auto';
         }
-        function showTemporaryMessage(message, type = "info") { /* ... (unchanged) ... */
+        function showTemporaryMessage(message, type = "info") {
             if (type === "warn") { console.warn(message); } else if (type === "error") { console.error(message); } else { console.log(message); }
         }
         function copyToClipboard(text) {
@@ -1101,7 +1106,7 @@
             menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active');
         }
 
-        function handleFullscreenChange() { /* ... (unchanged) ... */
+        function handleFullscreenChange() {
             const isFullscreen = !!document.fullscreenElement; if (!isFullscreen && isInMatrixMode) { console.log("// FS exited externally, exiting Matrix Mode."); exitMatrixMode(); }
             if (fullscreenBtn) { fullscreenBtn.textContent = isFullscreen ? '[FS] Exit Full' : '[FS] Fullscreen'; }
         }
