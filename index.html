@@ -482,17 +482,27 @@
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
-            z-index: 50; display: flex; justify-content: center; align-items: flex-start;
-            padding-top: 15vh; opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out;
+            z-index: 50; display: flex; justify-content: center; align-items: center;
+            padding: 2rem;
+            opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out;
         }
         .modal-overlay.visible { opacity: 1; pointer-events: auto; }
         .modal-content {
+            position: relative;
             width: 90%; max-width: 600px;
             background-color: rgba(var(--matrix-bg-darker), 0.95);
             border: 2px solid var(--primary-color);
             box-shadow: 0 0 20px rgba(var(--primary-color-rgb), 0.3);
-            border-radius: 4px; padding: 1.5rem;
+            border-radius: 4px;
             color: var(--font-color);
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            transform: translate3d(0,0,0);
+        }
+        .modal-content.dragging {
+            user-select: none;
+            opacity: 0.95;
         }
         .construct-mode .modal-content {
              background-color: rgba(var(--construct-bg-rgb), 0.95);
@@ -502,12 +512,21 @@
         }
         .modal-content h2 {
              font-size: 1.5rem; font-weight: 600;
-             margin-bottom: 1.5rem; border-bottom: 1px solid var(--primary-color-dark); padding-bottom: 0.75rem;
+             border-bottom: 1px solid var(--primary-color-dark);
+             padding: 1rem 1.5rem;
+             margin: 0;
+             flex-shrink: 0;
+             cursor: move;
         }
         .construct-mode .modal-content h2 { border-bottom-color: var(--construct-bg-darker); }
 
+        .modal-scroll-content {
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
         /* Command Palette Specific */
-        #commandPaletteInput {
+        .modal-scroll-content #commandPaletteInput {
              width: 100%; padding: 0.75rem; margin-bottom: 1rem;
              background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
              color: var(--font-color); font-family: var(--matrix-font);
@@ -536,17 +555,17 @@
         }
 
         /* Help Modal & General Shortcut Display */
-        .shortcut-list li {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            padding: 0.75rem 0;
+        .shortcut-list li { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: flex-start; 
+            padding: 0.75rem 0; 
         }
         .shortcut-list li > div { flex-grow: 1; margin-right: 1rem; }
         .shortcut-list li:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
         .construct-mode .shortcut-list li:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
         .shortcut-list span:last-of-type { flex-shrink: 0; }
-
+        
         kbd {
             background-color: var(--bg-color-darker);
             border: 1px solid var(--primary-color-dark);
@@ -702,77 +721,82 @@
     <div id="progressBarContainer">
         <div id="progressBar"></div>
     </div>
-
+    
     <!-- Command Palette Modal -->
     <div id="commandPaletteOverlay" class="modal-overlay">
         <div id="commandPalette" class="modal-content">
-            <input type="text" id="commandPaletteInput" placeholder="// Type a command...">
-            <ul id="commandPaletteList"></ul>
+            <h2 id="commandPaletteHeader">// Command Palette</h2>
+            <div class="modal-scroll-content">
+                <input type="text" id="commandPaletteInput" placeholder="// Type a command...">
+                <ul id="commandPaletteList"></ul>
+            </div>
         </div>
     </div>
 
     <!-- Help Modal -->
     <div id="helpModalOverlay" class="modal-overlay">
-        <div class="modal-content">
-            <h2>// System Manual</h2>
-            <ul class="shortcut-list">
-                <li>
-                    <div>
-                        <span>Open Command Palette</span>
-                        <p class="text-sm opacity-70 mt-1">Quickly access all system commands by typing.</p>
-                    </div>
-                    <span><kbd>⌘</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>/</kbd></span>
-                </li>
-                 <li>
-                    <div>
-                        <span>Open Help Manual</span>
-                         <p class="text-sm opacity-70 mt-1">Displays this list of commands and shortcuts.</p>
-                    </div>
-                    <span><kbd>⌘</kbd><kbd>Shift</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>/</kbd></span>
-                </li>
-                <li>
-                    <div>
-                        <span>Toggle Main Menu</span>
-                        <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
-                    </div>
-                    <span><kbd>Esc</kbd></span>
-                </li>
-                <li>
-                    <div>
-                        <span>Toggle Construct Mode</span>
-                        <p class="text-sm opacity-70 mt-1">Switches to a clean, high-contrast "light mode" interface.</p>
-                    </div>
-                    <span><kbd>C</kbd></span>
-                </li>
-                <li>
-                    <div>
-                        <span>Toggle Extraction Mode</span>
-                        <p class="text-sm opacity-70 mt-1">When engaged, picking an operative automatically copies their name or alias to the clipboard.</p>
-                    </div>
-                    <span><kbd>E</kbd></span>
-                </li>
-                 <li>
-                    <div>
-                        <span>Toggle Fullscreen</span>
-                         <p class="text-sm opacity-70 mt-1">Expands the interface to fill the entire screen.</p>
-                    </div>
-                    <span><kbd>F</kbd></span>
-                </li>
-                <li>
-                    <div>
-                        <span>Enter/Exit Matrix Mode</span>
-                        <p class="text-sm opacity-70 mt-1">Engages a fullscreen, immersive digital rain experience. Click or press 'M' to exit.</p>
-                    </div>
-                    <span><kbd>M</kbd></span>
-                </li>
-                <li>
-                    <div>
-                        <span>Reboot System</span>
-                        <p class="text-sm opacity-70 mt-1">Resets the selection state, making all operatives available to be picked again.</p>
-                    </div>
-                    <span><kbd>R</kbd></span>
-                </li>
-            </ul>
+        <div id="helpModal" class="modal-content">
+            <h2 id="helpModalHeader">// System Manual</h2>
+            <div class="modal-scroll-content">
+                <ul class="shortcut-list">
+                    <li>
+                        <div>
+                            <span>Open Command Palette</span>
+                            <p class="text-sm opacity-70 mt-1">Quickly access all system commands by typing.</p>
+                        </div>
+                        <span><kbd>⌘</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>/</kbd></span>
+                    </li>
+                     <li>
+                        <div>
+                            <span>Open Help Manual</span>
+                             <p class="text-sm opacity-70 mt-1">Displays this list of commands and shortcuts.</p>
+                        </div>
+                        <span><kbd>⌘</kbd><kbd>Shift</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>/</kbd></span>
+                    </li>
+                    <li>
+                        <div>
+                            <span>Toggle Main Menu</span>
+                            <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
+                        </div>
+                        <span><kbd>Esc</kbd></span>
+                    </li>
+                    <li>
+                        <div>
+                            <span>Toggle Construct Mode</span>
+                            <p class="text-sm opacity-70 mt-1">Switches to a clean, high-contrast "light mode" interface.</p>
+                        </div>
+                        <span><kbd>C</kbd></span>
+                    </li>
+                    <li>
+                        <div>
+                            <span>Toggle Extraction Mode</span>
+                            <p class="text-sm opacity-70 mt-1">When engaged, picking an operative automatically copies their name or alias to the clipboard.</p>
+                        </div>
+                        <span><kbd>E</kbd></span>
+                    </li>
+                     <li>
+                        <div>
+                            <span>Toggle Fullscreen</span>
+                             <p class="text-sm opacity-70 mt-1">Expands the interface to fill the entire screen.</p>
+                        </div>
+                        <span><kbd>F</kbd></span>
+                    </li>
+                    <li>
+                        <div>
+                            <span>Enter/Exit Matrix Mode</span>
+                            <p class="text-sm opacity-70 mt-1">Engages a fullscreen, immersive digital rain experience. Click or press 'M' to exit.</p>
+                        </div>
+                        <span><kbd>M</kbd></span>
+                    </li>
+                    <li>
+                        <div>
+                            <span>Reboot System</span>
+                            <p class="text-sm opacity-70 mt-1">Resets the selection state, making all operatives available to be picked again.</p>
+                        </div>
+                        <span><kbd>R</kbd></span>
+                    </li>
+                </ul>
+            </div>
         </div>
     </div>
 
@@ -819,9 +843,13 @@
 
         // Command Palette & Help Modal Elements
         const commandPaletteOverlay = document.getElementById('commandPaletteOverlay');
+        const commandPalette = document.getElementById('commandPalette');
+        const commandPaletteHeader = document.getElementById('commandPaletteHeader');
         const commandPaletteInput = document.getElementById('commandPaletteInput');
         const commandPaletteList = document.getElementById('commandPaletteList');
         const helpModalOverlay = document.getElementById('helpModalOverlay');
+        const helpModal = document.getElementById('helpModal');
+        const helpModalHeader = document.getElementById('helpModalHeader');
 
 
         // --- State ---
@@ -1387,7 +1415,7 @@
             const isFullscreen = !!document.fullscreenElement; if (!isFullscreen && isInMatrixMode) { console.log("// FS exited externally, exiting Matrix Mode."); exitMatrixMode(); }
             if (fullscreenBtn) { fullscreenBtn.textContent = isFullscreen ? '[FS] Exit Full' : '[FS] Fullscreen'; }
         }
-
+        
         // --- Command Palette and Help Modal Logic ---
 
         const commands = [
@@ -1399,11 +1427,61 @@
             { name: "Open Help Manual", action: () => toggleHelpModal(true) },
             { name: "Toggle Main Menu", action: toggleManagementPanel },
         ];
+        
+        function makeDraggable(modal, header) {
+            let isDragging = false;
+            let currentX, currentY, initialX, initialY;
+            let xOffset = 0;
+            let yOffset = 0;
 
+            header.addEventListener("mousedown", dragStart, false);
+            document.addEventListener("mouseup", dragEnd, false);
+            document.addEventListener("mousemove", drag, false);
+
+            function dragStart(e) {
+                if (e.target === header) {
+                    initialX = e.clientX - xOffset;
+                    initialY = e.clientY - yOffset;
+                    isDragging = true;
+                    modal.classList.add('dragging');
+                }
+            }
+
+            function dragEnd(e) {
+                if (isDragging) {
+                    initialX = currentX;
+                    initialY = currentY;
+                    isDragging = false;
+                    modal.classList.remove('dragging');
+                }
+            }
+
+            function drag(e) {
+                if (isDragging) {
+                    e.preventDefault();
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                    xOffset = currentX;
+                    yOffset = currentY;
+                    setTranslate(currentX, currentY, modal);
+                }
+            }
+
+            function setTranslate(xPos, yPos, el) {
+                el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+            }
+
+            modal.resetPosition = () => {
+                xOffset = 0;
+                yOffset = 0;
+                modal.style.transform = `translate3d(0, 0, 0)`;
+            };
+        }
+        
         function renderCommands(filter = '') {
             commandPaletteList.innerHTML = '';
             const filteredCommands = commands.filter(cmd => cmd.name.toLowerCase().includes(filter.toLowerCase()));
-
+            
             if (filteredCommands.length === 0) {
                  commandPaletteList.innerHTML = `<li class="command-item text-gray-500">// No commands found</li>`;
                  return;
@@ -1424,7 +1502,7 @@
             });
              updateCommandSelection();
         }
-
+        
         function updateCommandSelection() {
             const items = commandPaletteList.querySelectorAll('.command-item');
             items.forEach((item, index) => {
@@ -1434,7 +1512,7 @@
                  }
             });
         }
-
+        
         function executeCommand(index) {
             const filter = commandPaletteInput.value;
             const filteredCommands = commands.filter(cmd => cmd.name.toLowerCase().includes(filter.toLowerCase()));
@@ -1458,18 +1536,20 @@
             } else {
                 commandPaletteOverlay.classList.remove('visible');
                 commandPaletteInput.blur();
+                if (commandPalette.resetPosition) commandPalette.resetPosition();
             }
         }
-
+        
         function toggleHelpModal(forceOpen) {
             const isVisible = helpModalOverlay.classList.contains('visible');
             if (forceOpen === true || !isVisible) {
                 helpModalOverlay.classList.add('visible');
             } else {
                 helpModalOverlay.classList.remove('visible');
+                if (helpModal.resetPosition) helpModal.resetPosition();
             }
         }
-
+        
 
         // --- Click Trigger Area Logic ---
         function handleScreenClick(event) {
@@ -1493,7 +1573,7 @@
         newValueInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { addName(); } });
         rebootBtn.addEventListener('click', rebootSystem);
         window.addEventListener('resize', () => { if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain(); });
-
+        
         // Settings Listeners
         brightnessSlider.addEventListener('input', (event) => {
             updateBrightness(parseInt(event.target.value));
@@ -1511,7 +1591,7 @@
             updateSchemaTitle(event.target.value);
             updateURL();
         });
-
+        
         // Action Button Listeners
         themeToggleBtn.addEventListener('click', () => {
             isConstructMode = !isConstructMode;
@@ -1521,7 +1601,7 @@
         fullscreenBtn.addEventListener('click', toggleFullScreen);
         enterMatrixBtn.addEventListener('click', () => { if (isInMatrixMode) { exitMatrixMode(); } else { enterMatrixMode(); } });
         document.addEventListener('fullscreenchange', handleFullscreenChange);
-
+        
         // Mode Button Listeners
         extractionModeBtn.addEventListener('click', () => {
             isExtractionMode = !isExtractionMode;
@@ -1544,7 +1624,7 @@
         document.addEventListener('keydown', (e) => {
             const isModalOpen = commandPaletteOverlay.classList.contains('visible') || helpModalOverlay.classList.contains('visible');
             const isInputFocused = document.activeElement.tagName === 'INPUT';
-
+            
             // Command Palette Shortcuts
             if (commandPaletteOverlay.classList.contains('visible')) {
                 if (e.key === 'ArrowDown') {
@@ -1600,7 +1680,11 @@
 
 
         // --- Initial Load ---
-        document.addEventListener('DOMContentLoaded', () => { initializeStateFromURL(); });
+        document.addEventListener('DOMContentLoaded', () => { 
+            initializeStateFromURL(); 
+            makeDraggable(helpModal, helpModalHeader);
+            makeDraggable(commandPalette, commandPaletteHeader);
+        });
 
     </script>
 </body>
