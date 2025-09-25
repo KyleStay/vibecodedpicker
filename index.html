@@ -40,1570 +40,1569 @@
             --lead-color: var(--matrix-lead);
             --flash-color: var(--matrix-flash);
 
-                        /* -- General UI -- */
-                        --progress-bar-height: 10px;
-                        --segment-gap: 2px;
-                        --menu-btn-top: 1.5rem;
-                        --menu-btn-right: 1.5rem;
-                        --menu-btn-height: calc(1.8rem + 0.6rem + 4px); /* font + padding + border */
-                    }
-                    body.construct-mode {
-                        --primary-color: var(--construct-accent);
-                        --primary-color-rgb: var(--construct-accent-rgb);
-                        --primary-color-dark: var(--construct-accent-dark);
-                        --bg-color: var(--construct-bg);
-                        --bg-color-darker: var(--construct-bg-darker);
-                        --font-color: var(--construct-text);
-                        --lead-color: var(--construct-lead);
-                        --flash-color: var(--construct-flash);
-                    }
+            /* -- General UI -- */
+            --progress-bar-height: 10px;
+            --segment-gap: 2px;
+            --menu-btn-top: 1.5rem;
+            --menu-btn-right: 1.5rem;
+            --menu-btn-height: calc(1.8rem + 0.6rem + 4px); /* font + padding + border */
+        }
+        body.construct-mode {
+            --primary-color: var(--construct-accent);
+            --primary-color-rgb: var(--construct-accent-rgb);
+            --primary-color-dark: var(--construct-accent-dark);
+            --bg-color: var(--construct-bg);
+            --bg-color-darker: var(--construct-bg-darker);
+            --font-color: var(--construct-text);
+            --lead-color: var(--construct-lead);
+            --flash-color: var(--construct-flash);
+        }
 
-                    html, body {
-                        height: 100%; /* Ensure html and body take full height */
-                        overflow: hidden; /* Prevent scrolling on body */
-                    }
-                    body {
-                        font-family: var(--matrix-font);
-                        background-color: var(--bg-color);
-                        color: var(--font-color);
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        min-height: 100%; /* Use min-height */
-                        position: relative;
-                        /* padding-bottom applied dynamically via JS */
-                    }
-                    /* Canvas for background digital rain */
-                    #matrixCanvas {
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        z-index: 0;
-                        display: block;
-                    }
-                    /* Brightness Overlay */
-                    #brightnessOverlay {
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        background-color: rgba(0, 0, 0, 0);
-                        z-index: 1;
-                        pointer-events: none;
-                        transition: background-color 0.1s ease-in-out;
-                    }
-                    /* Click Trigger Area */
-                    #clickTriggerArea {
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        cursor: pointer;
-                        z-index: 5; /* Below main display, above overlay */
-                        transition: opacity 0.3s ease-out;
-                    }
-                    /* Container for Schema Title and Main Name Display */
-                    #mainDisplayContainer {
-                        position: fixed;
-                        top: 50%;
-                        left: 50%;
-                        transform: translate(-50%, -50%);
-                        z-index: 6; /* Above click area */
-                        width: 90%;
-                        max-width: 800px;
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        pointer-events: none; /* Allow clicks to pass through container */
-                        transition: opacity 0.3s ease-out;
-                    }
-                    /* Schema Title Display Area */
-                    #schemaTitleDisplay {
-                        font-family: var(--matrix-font);
-                        color: var(--font-color);
-                        text-shadow: 0 0 5px rgba(var(--primary-color-rgb), 0.5);
-                        font-size: 4rem;
-                        font-weight: 700;
-                        margin-bottom: 1rem;
-                        text-align: center;
-                        width: 100%;
-                        min-height: 1.2em;
-                        line-height: 1.1;
-                        word-break: break-word;
-                    }
-                    .construct-mode #schemaTitleDisplay { text-shadow: 1px 1px 0px var(--primary-color-dark); }
-                    /* Picker display area - Centered within container */
-                    #selectedNameDisplayWrapper {
-                        position: relative;
-                        min-height: 4rem;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        width: 100%;
-                        text-align: center;
-                        cursor: pointer;
-                        pointer-events: auto; /* Enable pointer events for this specific wrapper */
-                    }
-                    #selectedNameDisplay {
-                        font-family: var(--matrix-font);
-                        color: var(--primary-color);
-                        text-shadow: 0 0 8px var(--primary-color), 0 0 15px var(--primary-color);
-                        font-size: 3rem;
-                        font-weight: 700;
-                        line-height: 1.1;
-                        word-break: break-word;
-                        min-height: 1.2em;
-                        transition: font-size 0.3s ease-in-out;
-                    }
-                    .construct-mode #selectedNameDisplay { text-shadow: 1px 1px 0px var(--primary-color-dark); }
-                    #selectedNameDisplay.typing {
-                        animation: blink-pipe .75s step-end infinite;
-                    }
-                    #selectedNameDisplay.quote {
-                        font-size: 1.5rem;
-                        font-weight: 400;
-                        color: rgba(var(--primary-color-rgb), 0.7);
-                        animation: none;
-                    }
-                    .construct-mode #selectedNameDisplay.quote { color: var(--construct-text-light); }
+        html, body {
+            height: 100%; /* Ensure html and body take full height */
+            overflow: hidden; /* Prevent scrolling on body */
+        }
+        body {
+            font-family: var(--matrix-font);
+            background-color: var(--bg-color);
+            color: var(--font-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100%; /* Use min-height */
+            position: relative;
+            /* padding-bottom applied dynamically via JS */
+        }
+        /* Canvas for background digital rain */
+        #matrixCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            display: block;
+        }
+        /* Brightness Overlay */
+        #brightnessOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0);
+            z-index: 1;
+            pointer-events: none;
+            transition: background-color 0.1s ease-in-out;
+        }
+        /* Click Trigger Area */
+        #clickTriggerArea {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            z-index: 5; /* Below main display, above overlay */
+            transition: opacity 0.3s ease-out;
+        }
+        /* Container for Schema Title and Main Name Display */
+        #mainDisplayContainer {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 6; /* Above click area */
+            width: 90%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none; /* Allow clicks to pass through container */
+            transition: opacity 0.3s ease-out;
+        }
+        /* Schema Title Display Area */
+        #schemaTitleDisplay {
+            font-family: var(--matrix-font);
+            color: var(--font-color);
+            text-shadow: 0 0 5px rgba(var(--primary-color-rgb), 0.5);
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-align: center;
+            width: 100%;
+            min-height: 1.2em;
+            line-height: 1.1;
+            word-break: break-word;
+        }
+        .construct-mode #schemaTitleDisplay { color: var(--primary-color); text-shadow: 1px 1px 0px var(--primary-color-dark); }
+        /* Picker display area - Centered within container */
+        #selectedNameDisplayWrapper {
+            position: relative;
+            min-height: 4rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            text-align: center;
+            cursor: pointer;
+            pointer-events: auto; /* Enable pointer events for this specific wrapper */
+        }
+        #selectedNameDisplay {
+            font-family: var(--matrix-font);
+            color: var(--primary-color);
+            text-shadow: 0 0 8px var(--primary-color), 0 0 15px var(--primary-color);
+            font-size: 3rem;
+            font-weight: 700;
+            line-height: 1.1;
+            word-break: break-word;
+            min-height: 1.2em;
+            transition: font-size 0.3s ease-in-out;
+        }
+        .construct-mode #selectedNameDisplay { text-shadow: 1px 1px 0px var(--primary-color-dark); }
+        #selectedNameDisplay.typing {
+            animation: blink-pipe .75s step-end infinite;
+        }
+        #selectedNameDisplay.quote {
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: rgba(var(--primary-color-rgb), 0.7);
+            animation: none;
+        }
+        .construct-mode #selectedNameDisplay.quote { color: rgba(var(--primary-color-rgb), 0.7); }
 
-                    @keyframes blink-pipe {
-                        from, to { opacity: 1 }
-                        50% { opacity: 0 }
-                    }
-                    /* Hamburger Menu Button */
-                    #menuToggleBtn {
-                        position: fixed;
-                        top: var(--menu-btn-top);
-                        right: var(--menu-btn-right);
-                        z-index: 15; /* Above panel */
-                        font-family: var(--matrix-font);
-                        font-size: 1.8rem;
-                        font-weight: 600;
-                        background-color: transparent;
-                        color: var(--primary-color);
-                        border: 2px solid var(--primary-color);
-                        padding: 0.3rem 0.6rem;
-                        border-radius: 0.25rem;
-                        cursor: pointer;
-                        transition: all 0.2s ease-in-out, opacity 0.3s ease-out; /* Ensure opacity transition */
-                        text-shadow: 0 0 3px var(--primary-color);
-                        line-height: 1;
-                        opacity: 1;
-                    }
-                    .construct-mode #menuToggleBtn { text-shadow: none; }
-                    #menuToggleBtn:hover {
-                        background-color: var(--primary-color-dark);
-                        color: var(--bg-color);
-                        box-shadow: 0 0 10px var(--primary-color);
-                        text-shadow: none;
-                    }
-                    .construct-mode #menuToggleBtn:hover {
-                        background-color: var(--primary-color);
-                        color: var(--construct-bg);
-                        box-shadow: none;
-                    }
-                    #menuToggleBtn.active { }
+        @keyframes blink-pipe {
+            from, to { opacity: 1 }
+            50% { opacity: 0 }
+        }
+        /* Hamburger Menu Button */
+        #menuToggleBtn {
+            position: fixed;
+            top: var(--menu-btn-top);
+            right: var(--menu-btn-right);
+            z-index: 15; /* Above panel */
+            font-family: var(--matrix-font);
+            font-size: 1.8rem;
+            font-weight: 600;
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            padding: 0.3rem 0.6rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out, opacity 0.3s ease-out; /* Ensure opacity transition */
+            text-shadow: 0 0 3px var(--primary-color);
+            line-height: 1;
+            opacity: 1;
+        }
+        .construct-mode #menuToggleBtn { text-shadow: none; }
+        #menuToggleBtn:hover {
+            background-color: var(--primary-color-dark);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--primary-color);
+            text-shadow: none;
+        }
+        .construct-mode #menuToggleBtn:hover {
+            background-color: var(--primary-color);
+            color: var(--construct-bg);
+            box-shadow: none;
+        }
+        #menuToggleBtn.active { }
 
-                    /* Management Panel */
-                    #managementPanel {
-                        position: fixed;
-                        top: 0;
-                        right: 0;
-                        width: 90%;
-                        max-width: 350px;
-                        height: 100vh; /* Full viewport height */
-                        background-color: rgba(0, 0, 0, 0.95);
-                        border-left: 2px solid var(--primary-color);
-                        box-shadow: -5px 0 15px rgba(var(--primary-color-rgb), 0.2);
-                        transform: translateX(100%);
-                        transition: transform 0.35s ease-in-out, opacity 0.3s ease-out;
-                        z-index: 10; /* Below menu button */
-                        padding: 1.5rem;
-                        overflow-y: auto; /* Make the entire panel scrollable if content overflows */
-                        display: flex;
-                        flex-direction: column;
-                        opacity: 1;
-                    }
-                    .construct-mode #managementPanel {
-                        background-color: rgba(var(--construct-bg-rgb), 0.95);
-                        box-shadow: -5px 0 15px rgba(var(--construct-accent-rgb), 0.2);
-                    }
-                    #managementPanel.visible {
-                        transform: translateX(0);
-                    }
-                    /* Styling for ALL Buttons inside the panel */
-                    #managementPanel button {
-                        font-family: var(--matrix-font);
-                        font-weight: 600;
-                        background-color: transparent;
-                        border: 2px solid var(--primary-color); /* Default green border */
-                        color: var(--primary-color); /* Default green text */
-                        transition: all 0.2s ease-in-out;
-                        text-shadow: 0 0 3px var(--primary-color); /* Default green shadow */
-                        padding: 0.5rem 0.5rem; /* Consistent padding */
-                        border-radius: 0.25rem;
-                        cursor: pointer;
-                        text-align: center;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 0.25rem;
-                        line-height: 1.2;
-                        margin-bottom: 0.75rem; /* Default margin */
-                    }
-                    .construct-mode #managementPanel button { text-shadow: none; border-width: 1px; color: var(--construct-text); border-color: var(--primary-color-dark); }
-                    /* Hover/Active States for ALL Panel Buttons */
-                    #managementPanel button:hover:not(:disabled) {
-                        background-color: var(--primary-color-dark); /* Dark green background */
-                        color: var(--bg-color); /* Black text */
-                        box-shadow: 0 0 10px var(--primary-color); /* Green glow */
-                        text-shadow: none;
-                        transform: translateY(-1px);
-                    }
-                    .construct-mode #managementPanel button:hover:not(:disabled) {
-                        background-color: var(--primary-color);
-                        color: var(--construct-bg);
-                        box-shadow: none;
-                        border-color: var(--primary-color);
-                    }
-                    #managementPanel button:active:not(:disabled) {
-                        transform: translateY(0px);
-                        background-color: rgba(var(--primary-color-rgb), 0.3); /* Slightly lighter green background */
-                    }
-                    #managementPanel button:disabled {
-                        opacity: 0.4;
-                        cursor: not-allowed;
-                        border-color: var(--primary-color-dark); /* Darker border for disabled */
-                        color: var(--primary-color-dark); /* Darker text for disabled */
-                        text-shadow: none;
-                    }
-                    .construct-mode #managementPanel button:disabled { color: var(--construct-text-light); border-color: var(--construct-text-light); }
-                    /* Active state for toggle-like buttons */
-                    #managementPanel button.active {
-                        background-color: var(--primary-color-dark);
-                        color: var(--bg-color);
-                        box-shadow: 0 0 10px var(--primary-color);
-                        text-shadow: none;
-                    }
-                    .construct-mode #managementPanel button.active {
-                        background-color: var(--primary-color);
-                        color: var(--construct-bg);
-                        box-shadow: none;
-                        border-color: var(--primary-color);
-                    }
+        /* Management Panel */
+        #managementPanel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 90%;
+            max-width: 350px;
+            height: 100vh; /* Full viewport height */
+            background-color: rgba(0, 0, 0, 0.95);
+            border-left: 2px solid var(--primary-color);
+            box-shadow: -5px 0 15px rgba(var(--primary-color-rgb), 0.2);
+            transform: translateX(100%);
+            transition: transform 0.35s ease-in-out, opacity 0.3s ease-out;
+            z-index: 10; /* Below menu button */
+            padding: 1.5rem;
+            overflow-y: auto; /* Make the entire panel scrollable if content overflows */
+            display: flex;
+            flex-direction: column;
+            opacity: 1;
+        }
+        .construct-mode #managementPanel {
+            background-color: rgba(var(--construct-bg-rgb), 0.95);
+            box-shadow: -5px 0 15px rgba(var(--construct-accent-rgb), 0.2);
+        }
+        #managementPanel.visible {
+            transform: translateX(0);
+        }
+        /* Styling for ALL Buttons inside the panel */
+        #managementPanel button {
+            font-family: var(--matrix-font);
+            font-weight: 600;
+            background-color: transparent;
+            border: 2px solid var(--primary-color); /* Default green border */
+            color: var(--primary-color); /* Default green text */
+            transition: all 0.2s ease-in-out;
+            text-shadow: 0 0 3px var(--primary-color); /* Default green shadow */
+            padding: 0.5rem 0.5rem; /* Consistent padding */
+            border-radius: 0.25rem;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            line-height: 1.2;
+            margin-bottom: 0.75rem; /* Default margin */
+        }
+        .construct-mode #managementPanel button { text-shadow: none; border-width: 1px; color: var(--construct-text); border-color: var(--primary-color-dark); }
+        /* Hover/Active States for ALL Panel Buttons */
+        #managementPanel button:hover:not(:disabled) {
+            background-color: var(--primary-color-dark); /* Dark green background */
+            color: var(--bg-color); /* Black text */
+            box-shadow: 0 0 10px var(--primary-color); /* Green glow */
+            text-shadow: none;
+            transform: translateY(-1px);
+        }
+        .construct-mode #managementPanel button:hover:not(:disabled) {
+            background-color: var(--primary-color);
+            color: var(--construct-bg);
+            box-shadow: none;
+            border-color: var(--primary-color);
+        }
+        #managementPanel button:active:not(:disabled) {
+            transform: translateY(0px);
+            background-color: rgba(var(--primary-color-rgb), 0.3); /* Slightly lighter green background */
+        }
+        #managementPanel button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: var(--primary-color-dark); /* Darker border for disabled */
+            color: var(--primary-color-dark); /* Darker text for disabled */
+            text-shadow: none;
+        }
+        .construct-mode #managementPanel button:disabled { color: var(--construct-text-light); border-color: var(--construct-text-light); }
+        /* Active state for toggle-like buttons */
+        #managementPanel button.active {
+            background-color: var(--primary-color-dark);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--primary-color);
+            text-shadow: none;
+        }
+        .construct-mode #managementPanel button.active {
+            background-color: var(--primary-color);
+            color: var(--construct-bg);
+            box-shadow: none;
+            border-color: var(--primary-color);
+        }
 
-                    /* LED Indicator Styles */
-                    .control-group {
-                        display: flex;
-                        align-items: center;
-                        width: 100%;
-                    }
-                    .control-group button {
-                        flex-grow: 1;
-                        margin-bottom: 0; /* Remove margin from the button itself */
-                    }
-                    .led-indicator {
-                        width: 14px;
-                        height: 14px;
-                        background-color: var(--primary-color-dark);
-                        border-radius: 50%;
-                        margin-left: 0.75rem;
-                        box-shadow: inset 0 0 4px rgba(0,0,0,0.7);
-                        transition: all 0.2s ease-in-out;
-                        border: 1px solid rgba(var(--primary-color-rgb), 0.2);
-                        flex-shrink: 0; /* Prevent LED from shrinking */
-                        margin-bottom: .75rem; /* line up with button */
-                    }
-                    .construct-mode .led-indicator { background-color: var(--construct-bg-darker); border-color: var(--primary-color-dark); box-shadow: inset 0 0 4px rgba(0,0,0,0.2); }
-                    .led-indicator.active {
-                        background-color: var(--primary-color);
-                        border-color: rgba(var(--primary-color-rgb), 0.5);
-                        box-shadow: 0 0 10px var(--primary-color), 0 0 20px rgba(var(--primary-color-rgb), 0.5), inset 0 0 2px rgba(255,255,255,0.5);
-                    }
-                    .construct-mode .led-indicator.active {
-                        box-shadow: 0 0 10px var(--primary-color), inset 0 0 2px rgba(255,255,255,0.5);
-                    }
+        /* LED Indicator Styles */
+        .control-group {
+            display: flex;
+            align-items: center;
+            width: 100%;
+        }
+        .control-group button {
+            flex-grow: 1;
+            margin-bottom: 0; /* Remove margin from the button itself */
+        }
+        .led-indicator {
+            width: 14px;
+            height: 14px;
+            background-color: var(--primary-color-dark);
+            border-radius: 50%;
+            margin-left: 0.75rem;
+            box-shadow: inset 0 0 4px rgba(0,0,0,0.7);
+            transition: all 0.2s ease-in-out;
+            border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+            flex-shrink: 0; /* Prevent LED from shrinking */
+            margin-bottom: .75rem; /* line up with button */
+        }
+        .construct-mode .led-indicator { background-color: var(--construct-bg-darker); border-color: var(--primary-color-dark); box-shadow: inset 0 0 4px rgba(0,0,0,0.2); }
+        .led-indicator.active {
+            background-color: var(--primary-color);
+            border-color: rgba(var(--primary-color-rgb), 0.5);
+            box-shadow: 0 0 10px var(--primary-color), 0 0 20px rgba(var(--primary-color-rgb), 0.5), inset 0 0 2px rgba(255,255,255,0.5);
+        }
+        .construct-mode .led-indicator.active {
+            box-shadow: 0 0 10px var(--primary-color), inset 0 0 2px rgba(255,255,255,0.5);
+        }
 
-                    /* Specific Layout for Action Buttons Row */
-                    #managementPanel .action-button-row {
-                        display: flex;
-                        gap: 0.5rem;
-                        padding-top: 4rem; /* INCREASED padding above this row */
-                        flex-wrap: wrap; /* Allow wrapping */
-                    }
-                    #managementPanel .action-button-row button {
-                        flex: 1 1 0; /* Allow buttons to grow/shrink evenly */
-                        width: auto; /* Let flexbox handle width */
-                        margin-bottom: 0; /* Remove bottom margin for this row */
-                    }
-                    #helpBtn {
-                         width: 100%;
-                         margin-top: 0.5rem;
-                    }
-                    /* Specific Layout/Overrides for Add/Reboot Buttons */
-                    #managementPanel .panel-section button:not(.remove-name-btn):not(.action-button-row button):not(.control-group button) {
-                        width: 100%; /* Make Add/Reboot full width */
-                        padding: 0.5rem 1rem; /* Restore original padding if needed */
-                    }
-                    #addNameBtn { border-width: 2px !important; } /* Make add button bolder */
-                    .construct-mode #addNameBtn { background-color: var(--primary-color); color: var(--construct-bg); border-color: var(--primary-color); }
-                    .construct-mode #addNameBtn:hover:not(:disabled) { background-color: var(--primary-color-dark); border-color: var(--primary-color-dark); }
-                    #managementPanel .panel-section:last-of-type button:last-of-type:not(.remove-name-btn) {
-                        margin-bottom: 0; /* Remove margin from last button (Reboot) */
-                    }
-                    /* Remove Name Button ('X') - Keep specific small style */
-                    #managementPanel .remove-name-btn {
-                        border: 1px solid var(--primary-color-dark); /* Keep slightly dimmer border */
-                        padding: 2px 4px;
-                        line-height: 1;
-                        pointer-events: auto !important;
-                        opacity: 1 !important;
-                        width: auto;
-                        flex: none;
-                        margin-left: 0.5rem;
-                        margin-bottom: 0;
-                        /* Use general hover/active state from above */
-                    }
-                    .construct-mode #managementPanel .remove-name-btn { border-color: var(--construct-text-light); color: var(--construct-text-light); }
-                    .construct-mode #managementPanel .remove-name-btn:hover:not(:disabled) { border-color: var(--primary-color); color: var(--construct-bg); background-color: var(--primary-color); }
+        /* Specific Layout for Action Buttons Row */
+        #managementPanel .action-button-row {
+            display: flex;
+            gap: 0.5rem;
+            padding-top: 4rem; /* INCREASED padding above this row */
+            flex-wrap: wrap; /* Allow wrapping */
+        }
+        #managementPanel .action-button-row button {
+            flex: 1 1 0; /* Allow buttons to grow/shrink evenly */
+            width: auto; /* Let flexbox handle width */
+            margin-bottom: 0; /* Remove bottom margin for this row */
+        }
+        #helpBtn {
+             width: 100%;
+             margin-top: 0.5rem;
+        }
+        /* Specific Layout/Overrides for Add/Reboot Buttons */
+        #managementPanel .panel-section button:not(.remove-name-btn):not(.action-button-row button):not(.control-group button) {
+            width: 100%; /* Make Add/Reboot full width */
+            padding: 0.5rem 1rem; /* Restore original padding if needed */
+        }
+        #addNameBtn { border-width: 2px !important; } /* Make add button bolder */
+        .construct-mode #addNameBtn { background-color: var(--primary-color); color: var(--construct-bg); border-color: var(--primary-color); }
+        .construct-mode #addNameBtn:hover:not(:disabled) { background-color: var(--primary-color-dark); border-color: var(--primary-color-dark); }
+        #managementPanel .panel-section:last-of-type button:last-of-type:not(.remove-name-btn) {
+            margin-bottom: 0; /* Remove margin from last button (Reboot) */
+        }
+        /* Remove Name Button ('X') - Keep specific small style */
+        #managementPanel .remove-name-btn {
+            border: 1px solid var(--primary-color-dark); /* Keep slightly dimmer border */
+            padding: 2px 4px;
+            line-height: 1;
+            pointer-events: auto !important;
+            opacity: 1 !important;
+            width: auto;
+            flex: none;
+            margin-left: 0.5rem;
+            margin-bottom: 0;
+            /* Use general hover/active state from above */
+        }
+        .construct-mode #managementPanel .remove-name-btn { border-color: var(--construct-text-light); color: var(--construct-text-light); }
+        .construct-mode #managementPanel .remove-name-btn:hover:not(:disabled) { border-color: var(--primary-color); color: var(--construct-bg); background-color: var(--primary-color); }
 
-                    /* Input field styling */
-                    #managementPanel input[type="text"] {
-                        background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark); color: var(--font-color); font-family: var(--matrix-font);
-                        caret-color: var(--primary-color); width: 100%; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem;
-                    }
-                    #managementPanel input[type="text"]::placeholder { color: rgba(var(--primary-color-rgb), 0.4); }
-                    #managementPanel input[type="text"]:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 5px var(--primary-color); }
-                    .construct-mode #managementPanel input[type="text"] { background-color: var(--construct-bg-darker); border-color: #cccccc; color: var(--construct-text); }
-                    .construct-mode #managementPanel input[type="text"]::placeholder { color: var(--construct-text-light); }
-                    .construct-mode #managementPanel input[type="text"]:focus { box-shadow: 0 0 5px var(--primary-color); }
-                    /* Label styling */
-                    #managementPanel label { display: block; font-size: 0.875rem; color: rgba(var(--primary-color-rgb), 0.7); margin-bottom: 0.25rem; }
-                    .construct-mode #managementPanel label { color: var(--construct-text-light); }
-                    /* Slider styling */
-                    #managementPanel input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary-color); margin-top: 0.25rem; margin-bottom: 0.25rem; }
-                    /* Panel Sections for better structure and scrolling */
-                    .panel-section {
-                        margin-bottom: 1rem;
-                        padding-top: 0.5rem;
-                        border-top: 1px solid var(--primary-color-dark);
-                        flex-shrink: 0; /* Prevent sections from shrinking when panel scrolls */
-                    }
-                    .construct-mode .panel-section { border-top-color: var(--construct-bg-darker); }
-                    .panel-section.action-button-row {
-                        border-top: none; /* No top border for the action button row */
-                        padding-top: 1rem;
-                        margin-bottom: 1rem; /* Ensure margin below action buttons */
-                    }
-                    .panel-section:last-of-type {
-                        margin-bottom: 0; /* No bottom margin for the last section */
-                    }
+        /* Input field styling */
+        #managementPanel input[type="text"] {
+            background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark); color: var(--font-color); font-family: var(--matrix-font);
+            caret-color: var(--primary-color); width: 100%; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem;
+        }
+        #managementPanel input[type="text"]::placeholder { color: rgba(var(--primary-color-rgb), 0.4); }
+        #managementPanel input[type="text"]:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 5px var(--primary-color); }
+        .construct-mode #managementPanel input[type="text"] { background-color: var(--construct-bg-darker); border-color: #cccccc; color: var(--construct-text); }
+        .construct-mode #managementPanel input[type="text"]::placeholder { color: var(--construct-text-light); }
+        .construct-mode #managementPanel input[type="text"]:focus { box-shadow: 0 0 5px var(--primary-color); }
+        /* Label styling */
+        #managementPanel label { display: block; font-size: 0.875rem; color: rgba(var(--primary-color-rgb), 0.7); margin-bottom: 0.25rem; }
+        .construct-mode #managementPanel label { color: var(--construct-text-light); }
+        /* Slider styling */
+        #managementPanel input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary-color); margin-top: 0.25rem; margin-bottom: 0.25rem; }
+        /* Panel Sections for better structure and scrolling */
+        .panel-section {
+            margin-bottom: 1rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--primary-color-dark);
+            flex-shrink: 0; /* Prevent sections from shrinking when panel scrolls */
+        }
+        .construct-mode .panel-section { border-top-color: var(--construct-bg-darker); }
+        .panel-section.action-button-row {
+            border-top: none; /* No top border for the action button row */
+            padding-top: 1rem;
+            margin-bottom: 1rem; /* Ensure margin below action buttons */
+        }
+        .panel-section:last-of-type {
+            margin-bottom: 0; /* No bottom margin for the last section */
+        }
 
-                    /* List styling inside panel */
-                    #managementPanel .list-container {
-                        border: 1px solid var(--primary-color-dark); background-color: rgba(0, 0, 0, 0.3); padding: 0.75rem; border-radius: 0.375rem;
-                        /* REMOVED: flex-grow: 1; */ /* Let container size naturally */
-                        display: flex; flex-direction: column;
-                        min-height: 100px; /* Ensure it has some minimum height */
-                    }
-                    .construct-mode #managementPanel .list-container { border-color: var(--construct-bg-darker); background-color: rgba(var(--construct-bg-rgb), 0.3); }
-                    #managementPanel #nameList {
-                        /* REMOVED: overflow-y: auto; */ /* Panel handles scrolling */
-                        /* REMOVED: flex-grow: 1; */
-                        padding-right: 0; /* No need for scrollbar padding */
-                        /* REMOVED: max-height: 100%; */
-                    }
-                    #managementPanel .name-item {
-                        background-color: transparent; border-bottom: 1px dashed var(--primary-color-dark); padding: 0.5rem 0.25rem; color: var(--font-color);
-                        transition: all 0.3s ease-out; opacity: 1; transform: translateX(0); display: flex; flex-direction: column; /* Changed to column */
-                        cursor: grab; margin-bottom: 0.25rem;
-                    }
-                    .construct-mode #managementPanel .name-item { border-bottom-color: var(--construct-bg-darker); }
-                    #managementPanel .name-item .name-row {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        width: 100%;
-                    }
-                    #managementPanel .name-item .value-row {
-                        margin-top: 0.5rem;
-                    }
-                    #managementPanel .name-item .value-row input {
-                        font-size: 0.8rem;
-                        padding: 0.25rem 0.5rem;
-                        margin-bottom: 0;
-                    }
-                    #managementPanel .name-item:last-child { border-bottom: none; margin-bottom: 0; }
-                    #managementPanel .name-item.removing {
-                        transition: opacity 0.3s ease-out, transform 0.3s ease-out, height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
-                        opacity: 0; transform: translateX(-20px); cursor: default; height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: 0; border: none; overflow: hidden;
-                    }
-                    #managementPanel .name-item-selected { opacity: 0.4; color: rgba(var(--primary-color-rgb), 0.4); pointer-events: none; cursor: default; }
-                    .construct-mode #managementPanel .name-item-selected { color: var(--construct-text-light); }
-                    #managementPanel .name-item-selected .name-span { text-decoration: line-through; }
-                    /* Drag & Drop Styles */
-                    #managementPanel .name-item.dragging { opacity: 0.5; background-color: var(--primary-color-dark); cursor: grabbing; border-style: solid; }
-                    .construct-mode #managementPanel .name-item.dragging { background-color: var(--construct-bg-darker); }
-                    #managementPanel .name-item.drag-over { border-top: 2px solid var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.1); }
-                    .construct-mode #managementPanel .name-item.drag-over { border-top-color: var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.2); }
+        /* List styling inside panel */
+        #managementPanel .list-container {
+            border: 1px solid var(--primary-color-dark); background-color: rgba(0, 0, 0, 0.3); padding: 0.75rem; border-radius: 0.375rem;
+            /* REMOVED: flex-grow: 1; */ /* Let container size naturally */
+            display: flex; flex-direction: column;
+            min-height: 100px; /* Ensure it has some minimum height */
+        }
+        .construct-mode #managementPanel .list-container { border-color: var(--construct-bg-darker); background-color: rgba(var(--construct-bg-rgb), 0.3); }
+        #managementPanel #nameList {
+            /* REMOVED: overflow-y: auto; */ /* Panel handles scrolling */
+            /* REMOVED: flex-grow: 1; */
+            padding-right: 0; /* No need for scrollbar padding */
+            /* REMOVED: max-height: 100%; */
+        }
+        #managementPanel .name-item {
+            background-color: transparent; border-bottom: 1px dashed var(--primary-color-dark); padding: 0.5rem 0.25rem; color: var(--font-color);
+            transition: all 0.3s ease-out; opacity: 1; transform: translateX(0); display: flex; flex-direction: column; /* Changed to column */
+            cursor: grab; margin-bottom: 0.25rem;
+        }
+        .construct-mode #managementPanel .name-item { border-bottom-color: var(--construct-bg-darker); }
+        #managementPanel .name-item .name-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        #managementPanel .name-item .value-row {
+            margin-top: 0.5rem;
+        }
+        #managementPanel .name-item .value-row input {
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0;
+        }
+        #managementPanel .name-item:last-child { border-bottom: none; margin-bottom: 0; }
+        #managementPanel .name-item.removing {
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out, height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
+            opacity: 0; transform: translateX(-20px); cursor: default; height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: 0; border: none; overflow: hidden;
+        }
+        #managementPanel .name-item-selected { opacity: 0.4; color: rgba(var(--primary-color-rgb), 0.4); pointer-events: none; cursor: default; }
+        .construct-mode #managementPanel .name-item-selected { color: var(--construct-text-light); }
+        #managementPanel .name-item-selected .name-span { text-decoration: line-through; }
+        /* Drag & Drop Styles */
+        #managementPanel .name-item.dragging { opacity: 0.5; background-color: var(--primary-color-dark); cursor: grabbing; border-style: solid; }
+        .construct-mode #managementPanel .name-item.dragging { background-color: var(--construct-bg-darker); }
+        #managementPanel .name-item.drag-over { border-top: 2px solid var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.1); }
+        .construct-mode #managementPanel .name-item.drag-over { border-top-color: var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.2); }
 
-                    /* Text & Titles inside panel */
-                    #managementPanel h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem; margin-top: 0.5rem; }
-                    #managementPanel p#footerText {
-                        font-size: 0.75rem; color: rgba(var(--primary-color-rgb), 0.6); text-align: center;
-                        margin-top: 1rem; /* Add space above footer */
-                        flex-shrink: 0; /* Prevent footer from shrinking */
-                    }
-                    .construct-mode #managementPanel p#footerText { color: var(--construct-text-light); }
-                    #managementPanel #noAvailableMessage { color: rgba(var(--primary-color-rgb), 0.5); font-style: italic; padding: 0.5rem 0.25rem; }
-                    .construct-mode #managementPanel #noAvailableMessage { color: var(--construct-text-light); }
+        /* Text & Titles inside panel */
+        #managementPanel h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem; margin-top: 0.5rem; }
+        #managementPanel p#footerText {
+            font-size: 0.75rem; color: rgba(var(--primary-color-rgb), 0.6); text-align: center;
+            margin-top: 1rem; /* Add space above footer */
+            flex-shrink: 0; /* Prevent footer from shrinking */
+        }
+        .construct-mode #managementPanel p#footerText { color: var(--construct-text-light); }
+        #managementPanel #noAvailableMessage { color: rgba(var(--primary-color-rgb), 0.5); font-style: italic; padding: 0.5rem 0.25rem; }
+        .construct-mode #managementPanel #noAvailableMessage { color: var(--construct-text-light); }
 
-                    /* Progress Bar Styles */
-                    #progressBarContainer {
-                        position: fixed; bottom: 0; left: 0; width: 100%; padding: 0.5rem 1rem; z-index: 20; box-sizing: border-box; transition: opacity 0.3s ease-in-out;
-                    }
-                    #progressBar {
-                        display: flex; width: 100%; height: var(--progress-bar-height); background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
-                        border-radius: 2px; overflow: hidden; gap: var(--segment-gap); padding: var(--segment-gap); box-sizing: border-box; transition: opacity 0.3s ease-in-out;
-                    }
-                    .construct-mode #progressBar { border-color: var(--construct-bg-darker); }
-                    #progressBar.hidden { opacity: 0; pointer-events: none; }
-                    .progress-segment { flex: 1; background-color: var(--primary-color); border-radius: 1px; transition: background-color 0.3s ease, opacity 0.3s ease; box-shadow: 0 0 3px var(--primary-color); min-width: 1px; }
-                    .construct-mode .progress-segment { box-shadow: none; }
-                    .progress-segment.used { background-color: var(--primary-color-dark); opacity: 0.5; box-shadow: none; }
-                    .construct-mode .progress-segment.used { background-color: var(--construct-bg-darker); }
+        /* Progress Bar Styles */
+        #progressBarContainer {
+            position: fixed; bottom: 0; left: 0; width: 100%; padding: 0.5rem 1rem; z-index: 20; box-sizing: border-box; transition: opacity 0.3s ease-in-out;
+        }
+        #progressBar {
+            display: flex; width: 100%; height: var(--progress-bar-height); background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
+            border-radius: 2px; overflow: hidden; gap: var(--segment-gap); padding: var(--segment-gap); box-sizing: border-box; transition: opacity 0.3s ease-in-out;
+        }
+        .construct-mode #progressBar { border-color: var(--construct-bg-darker); }
+        #progressBar.hidden { opacity: 0; pointer-events: none; }
+        .progress-segment { flex: 1; background-color: var(--primary-color); border-radius: 1px; transition: background-color 0.3s ease, opacity 0.3s ease; box-shadow: 0 0 3px var(--primary-color); min-width: 1px; }
+        .construct-mode .progress-segment { box-shadow: none; }
+        .progress-segment.used { background-color: var(--primary-color-dark); opacity: 0.5; box-shadow: none; }
+        .construct-mode .progress-segment.used { background-color: var(--construct-bg-darker); }
 
-                    /* ---- Command Palette & Help Modal Styles ---- */
-                    .modal-overlay {
-                        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                        background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
-                        z-index: 50; display: flex; justify-content: center; align-items: flex-start;
-                        padding-top: 15vh; opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out;
-                    }
-                    .modal-overlay.visible { opacity: 1; pointer-events: auto; }
-                    .modal-content {
-                        width: 90%; max-width: 600px;
-                        background-color: rgba(var(--matrix-bg-darker), 0.95);
-                        border: 2px solid var(--primary-color);
-                        box-shadow: 0 0 20px rgba(var(--primary-color-rgb), 0.3);
-                        border-radius: 4px; padding: 1.5rem;
-                        color: var(--font-color);
-                    }
-                    .construct-mode .modal-content {
-                         background-color: rgba(var(--construct-bg-rgb), 0.95);
-                         border: 1px solid var(--primary-color-dark);
-                         box-shadow: 0 5px 20px rgba(var(--construct-accent-rgb), 0.2);
-                         color: var(--construct-text);
-                    }
-                    .modal-content h2 {
-                         font-size: 1.5rem; font-weight: 600;
-                         margin-bottom: 1.5rem; border-bottom: 1px solid var(--primary-color-dark); padding-bottom: 0.75rem;
-                    }
-                    .construct-mode .modal-content h2 { border-bottom-color: var(--construct-bg-darker); }
+        /* ---- Command Palette & Help Modal Styles ---- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
+            z-index: 50; display: flex; justify-content: center; align-items: flex-start;
+            padding-top: 15vh; opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out;
+        }
+        .modal-overlay.visible { opacity: 1; pointer-events: auto; }
+        .modal-content {
+            width: 90%; max-width: 600px;
+            background-color: rgba(var(--matrix-bg-darker), 0.95);
+            border: 2px solid var(--primary-color);
+            box-shadow: 0 0 20px rgba(var(--primary-color-rgb), 0.3);
+            border-radius: 4px; padding: 1.5rem;
+            color: var(--font-color);
+        }
+        .construct-mode .modal-content {
+             background-color: rgba(var(--construct-bg-rgb), 0.95);
+             border: 1px solid var(--primary-color-dark);
+             box-shadow: 0 5px 20px rgba(var(--construct-accent-rgb), 0.2);
+             color: var(--construct-text);
+        }
+        .modal-content h2 {
+             font-size: 1.5rem; font-weight: 600;
+             margin-bottom: 1.5rem; border-bottom: 1px solid var(--primary-color-dark); padding-bottom: 0.75rem;
+        }
+        .construct-mode .modal-content h2 { border-bottom-color: var(--construct-bg-darker); }
 
-                    /* Command Palette Specific */
-                    #commandPaletteInput {
-                         width: 100%; padding: 0.75rem; margin-bottom: 1rem;
-                         background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
-                         color: var(--font-color); font-family: var(--matrix-font);
-                         font-size: 1.1rem; border-radius: 2px;
-                         caret-color: var(--primary-color);
-                    }
-                    #commandPaletteInput:focus {
-                         outline: none; border-color: var(--primary-color); box-shadow: 0 0 8px var(--primary-color);
-                    }
-                    .construct-mode #commandPaletteInput {
-                        background-color: var(--construct-bg-darker); border-color: #ccc; color: var(--construct-text);
-                    }
-                    #commandPaletteList { max-height: 40vh; overflow-y: auto; }
-                    .command-item {
-                        display: flex; justify-content: space-between; align-items: center;
-                        padding: 0.75rem; border-radius: 2px;
-                        cursor: pointer; transition: background-color 0.15s ease;
-                    }
-                    .command-item:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
-                    .construct-mode .command-item:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
-                    .command-item.selected, .command-item:hover {
-                        background-color: var(--primary-color-dark); color: var(--bg-color);
-                    }
-                    .construct-mode .command-item.selected, .construct-mode .command-item:hover {
-                        background-color: var(--primary-color); color: var(--construct-bg);
-                    }
+        /* Command Palette Specific */
+        #commandPaletteInput {
+             width: 100%; padding: 0.75rem; margin-bottom: 1rem;
+             background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
+             color: var(--font-color); font-family: var(--matrix-font);
+             font-size: 1.1rem; border-radius: 2px;
+             caret-color: var(--primary-color);
+        }
+        #commandPaletteInput:focus {
+             outline: none; border-color: var(--primary-color); box-shadow: 0 0 8px var(--primary-color);
+        }
+        .construct-mode #commandPaletteInput {
+            background-color: var(--construct-bg-darker); border-color: #ccc; color: var(--construct-text);
+        }
+        #commandPaletteList { max-height: 40vh; overflow-y: auto; }
+        .command-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.75rem; border-radius: 2px;
+            cursor: pointer; transition: background-color 0.15s ease;
+        }
+        .command-item:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
+        .construct-mode .command-item:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
+        .command-item.selected, .command-item:hover {
+            background-color: var(--primary-color-dark); color: var(--bg-color);
+        }
+        .construct-mode .command-item.selected, .construct-mode .command-item:hover {
+            background-color: var(--primary-color); color: var(--construct-bg);
+        }
 
-                    /* Help Modal & General Shortcut Display */
-                    .shortcut-list li {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: flex-start;
-                        padding: 0.75rem 0;
-                    }
-                    .shortcut-list li > div { flex-grow: 1; margin-right: 1rem; }
-                    .shortcut-list li:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
-                    .construct-mode .shortcut-list li:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
-                    .shortcut-list span:last-of-type { flex-shrink: 0; }
+        /* Help Modal & General Shortcut Display */
+        .shortcut-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.75rem 0;
+        }
+        .shortcut-list li > div { flex-grow: 1; margin-right: 1rem; }
+        .shortcut-list li:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
+        .construct-mode .shortcut-list li:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
+        .shortcut-list span:last-of-type { flex-shrink: 0; }
 
-                    kbd {
-                        background-color: var(--bg-color-darker);
-                        border: 1px solid var(--primary-color-dark);
-                        border-radius: 3px; padding: 0.2em 0.5em;
-                        font-size: 0.9em; font-family: var(--matrix-font);
-                        box-shadow: 0 1px 1px rgba(0,0,0,0.5);
-                        margin-left: 0.25rem;
-                    }
-                    .construct-mode kbd {
-                        background-color: var(--construct-bg-darker);
-                        border-color: #ccc;
-                        box-shadow: 0 1px 1px rgba(0,0,0,0.1);
-                    }
+        kbd {
+            background-color: var(--bg-color-darker);
+            border: 1px solid var(--primary-color-dark);
+            border-radius: 3px; padding: 0.2em 0.5em;
+            font-size: 0.9em; font-family: var(--matrix-font);
+            box-shadow: 0 1px 1px rgba(0,0,0,0.5);
+            margin-left: 0.25rem;
+        }
+        .construct-mode kbd {
+            background-color: var(--construct-bg-darker);
+            border-color: #ccc;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        }
 
 
-                    /* ---- MATRIX MODE STYLES ---- */
-                    /* Hide menu button COMPLETELY in matrix mode */
-                    body.matrix-mode-active #menuToggleBtn {
-                        opacity: 0 !important; /* Use important to override other states if needed */
-                        pointer-events: none !important;
-                        transition: opacity 0.3s ease-out; /* Allow fade out */
-                        z-index: -1; /* Ensure it's behind everything */
-                    }
-                    /* Hide other UI elements in matrix mode */
-                    body.matrix-mode-active #mainDisplayContainer,
-                    body.matrix-mode-active #managementPanel, /* Hide panel */
-                    body.matrix-mode-active #progressBarContainer,
-                    body.matrix-mode-active #clickTriggerArea {
-                        opacity: 0; pointer-events: none; transition: opacity 0.3s ease-out;
-                    }
-                    body.matrix-mode-active #managementPanel { transform: translateX(100%); } /* Ensure panel transforms out */
-                    /* Make click trigger area inactive in matrix mode to prevent accidental name picks */
-                    body.matrix-mode-active #clickTriggerArea {
-                        cursor: default; /* Change cursor */
-                        /* Keep pointer-events: none from above */
-                    }
+        /* ---- MATRIX MODE STYLES ---- */
+        /* Hide menu button COMPLETELY in matrix mode */
+        body.matrix-mode-active #menuToggleBtn {
+            opacity: 0 !important; /* Use important to override other states if needed */
+            pointer-events: none !important;
+            transition: opacity 0.3s ease-out; /* Allow fade out */
+            z-index: -1; /* Ensure it's behind everything */
+        }
+        /* Hide other UI elements in matrix mode */
+        body.matrix-mode-active #mainDisplayContainer,
+        body.matrix-mode-active #managementPanel, /* Hide panel */
+        body.matrix-mode-active #progressBarContainer,
+        body.matrix-mode-active #clickTriggerArea {
+            opacity: 0; pointer-events: none; transition: opacity 0.3s ease-out;
+        }
+        body.matrix-mode-active #managementPanel { transform: translateX(100%); } /* Ensure panel transforms out */
+        /* Make click trigger area inactive in matrix mode to prevent accidental name picks */
+        body.matrix-mode-active #clickTriggerArea {
+            cursor: default; /* Change cursor */
+            /* Keep pointer-events: none from above */
+        }
 
-                    /* Responsive adjustments */
-                    @media (max-width: 768px) {
-                        :root { --menu-btn-top: 1rem; --menu-btn-right: 1rem; }
-                        #schemaTitleDisplay { font-size: 3.5rem; margin-bottom: 0.75rem; }
-                        #selectedNameDisplay { font-size: 2.25rem; }
-                        #selectedNameDisplay.quote { font-size: 1.25rem; }
-                        #menuToggleBtn { font-size: 1.5rem; padding: 0.2rem 0.5rem; }
-                        #managementPanel { padding: 1rem; } /* Reduce padding on mobile */
-                        /* Stack action buttons row on mobile */
-                        #managementPanel .action-button-row {
-                            flex-direction: column;
-                            gap: 0.5rem;
-                            padding-top: 3rem; /* Adjust mobile padding */
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            :root { --menu-btn-top: 1rem; --menu-btn-right: 1rem; }
+            #schemaTitleDisplay { font-size: 3.5rem; margin-bottom: 0.75rem; }
+            #selectedNameDisplay { font-size: 2.25rem; }
+            #selectedNameDisplay.quote { font-size: 1.25rem; }
+            #menuToggleBtn { font-size: 1.5rem; padding: 0.2rem 0.5rem; }
+            #managementPanel { padding: 1rem; } /* Reduce padding on mobile */
+            /* Stack action buttons row on mobile */
+            #managementPanel .action-button-row {
+                flex-direction: column;
+                gap: 0.5rem;
+                padding-top: 3rem; /* Adjust mobile padding */
+            }
+            #managementPanel .action-button-row button { width: 100%; } /* Make stacked buttons full width */
+
+            #progressBarContainer { padding: 0.25rem 0.5rem; }
+        }
+    </style>
+</head>
+<body class="">
+    <canvas id="matrixCanvas"></canvas>
+    <div id="brightnessOverlay"></div>
+    <div id="clickTriggerArea"></div>
+
+    <div id="mainDisplayContainer">
+        <div id="schemaTitleDisplay"></div>
+        <div id="selectedNameDisplayWrapper">
+            <div id="selectedNameDisplay" class="typing">|</div>
+        </div>
+    </div>
+
+    <button id="menuToggleBtn">☰</button>
+
+    <div id="managementPanel">
+        <div class="action-button-row panel-section">
+            <button id="themeToggleBtn" class="font-medium">
+                [C] Construct Mode
+            </button>
+            <button id="fullscreenBtn" class="font-medium">
+                [FS] Fullscreen
+            </button>
+            <button id="enterMatrixBtn" class="font-medium">
+                [M] Enter Matrix
+            </button>
+            <button id="helpBtn" class="font-medium">
+                [?] Help
+            </button>
+        </div>
+
+        <div class="panel-section">
+            <label for="titleInput">// Operative Schema:</label>
+            <input type="text" id="titleInput" placeholder="Define schema name..." class="outline-none">
+        </div>
+
+        <div class="panel-section">
+            <h3 class="// System Parameters:"></h3>
+            <div class="mb-3">
+                <label for="brightnessSlider" class="flex justify-between items-center">
+                    <span id="brightnessLabel">// Intensity:</span>
+                    <span id="brightnessValue" class="font-semibold text-sm">60%</span>
+                </label>
+                <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="60">
+            </div>
+            <div class="mb-3">
+                <label for="speedSlider" class="flex justify-between items-center">
+                    <span>// Velocity (FPS):</span>
+                    <span id="speedValue" class="font-semibold text-sm">10 FPS</span>
+                </label>
+                <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
+            </div>
+            <div class="mb-3">
+                <label for="fontSizeSlider" class="flex justify-between items-center">
+                    <span>// Size (px):</span>
+                    <span id="fontSizeValue" class="font-semibold text-sm">24px</span>
+                </label>
+                <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24">
+            </div>
+            <!-- Extraction Mode Button with LED -->
+            <div class="control-group">
+                <button id="extractionModeBtn">[E] Engage Extraction</button>
+                <div id="extractionModeLed" class="led-indicator"></div>
+            </div>
+        </div>
+
+        <div class="panel-section">
+            <h3 class="// Manage Operatives:"></h3>
+            <label for="newNameInput">// Register New Operative:</label>
+            <input type="text" id="newNameInput" placeholder="Enter name..." class="outline-none">
+            <!-- Value Input Wrapper -->
+            <div id="newValueWrapper">
+                <label for="newValueInput" class="text-xs">// Extraction Alias (Optional):</label>
+                <input type="text" id="newValueInput" placeholder="Alias to copy..." class="outline-none">
+            </div>
+            <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
+                <span class="text-xl leading-none">[+]</span>
+                Add
+            </button>
+        </div>
+
+        <div class="list-container panel-section"> <h3 class="// Operative Roster (Drag to Reorder):"></h3>
+            <ul id="nameList">
+                <li id="noAvailableMessage" class="hidden">Roster empty...</li>
+            </ul>
+        </div>
+
+        <div class="panel-section">
+            <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
+                [R] Reboot System
+            </button>
+        </div>
+
+        <p id="footerText">// System state is saved to the URL automatically.</p>
+    </div>
+
+    <div id="progressBarContainer">
+        <div id="progressBar"></div>
+    </div>
+
+    <!-- Command Palette Modal -->
+    <div id="commandPaletteOverlay" class="modal-overlay">
+        <div id="commandPalette" class="modal-content">
+            <input type="text" id="commandPaletteInput" placeholder="// Type a command...">
+            <ul id="commandPaletteList"></ul>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="helpModalOverlay" class="modal-overlay">
+        <div class="modal-content">
+            <h2>// System Manual</h2>
+            <ul class="shortcut-list">
+                <li>
+                    <div>
+                        <span>Open Command Palette</span>
+                        <p class="text-sm opacity-70 mt-1">Quickly access all system commands by typing.</p>
+                    </div>
+                    <span><kbd>⌘</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>/</kbd></span>
+                </li>
+                 <li>
+                    <div>
+                        <span>Open Help Manual</span>
+                         <p class="text-sm opacity-70 mt-1">Displays this list of commands and shortcuts.</p>
+                    </div>
+                    <span><kbd>⌘</kbd><kbd>Shift</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>/</kbd></span>
+                </li>
+                <li>
+                    <div>
+                        <span>Toggle Main Menu</span>
+                        <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
+                    </div>
+                    <span><kbd>Esc</kbd></span>
+                </li>
+                <li>
+                    <div>
+                        <span>Toggle Construct Mode</span>
+                        <p class="text-sm opacity-70 mt-1">Switches to a clean, high-contrast "light mode" interface.</p>
+                    </div>
+                    <span><kbd>C</kbd></span>
+                </li>
+                <li>
+                    <div>
+                        <span>Toggle Extraction Mode</span>
+                        <p class="text-sm opacity-70 mt-1">When engaged, picking an operative automatically copies their name or alias to the clipboard.</p>
+                    </div>
+                    <span><kbd>E</kbd></span>
+                </li>
+                 <li>
+                    <div>
+                        <span>Toggle Fullscreen</span>
+                         <p class="text-sm opacity-70 mt-1">Expands the interface to fill the entire screen.</p>
+                    </div>
+                    <span><kbd>F</kbd></span>
+                </li>
+                <li>
+                    <div>
+                        <span>Enter/Exit Matrix Mode</span>
+                        <p class="text-sm opacity-70 mt-1">Engages a fullscreen, immersive digital rain experience. Click or press 'M' to exit.</p>
+                    </div>
+                    <span><kbd>M</kbd></span>
+                </li>
+                <li>
+                    <div>
+                        <span>Reboot System</span>
+                        <p class="text-sm opacity-70 mt-1">Resets the selection state, making all operatives available to be picked again.</p>
+                    </div>
+                    <span><kbd>R</kbd></span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+
+    <script>
+        // --- DOM Elements ---
+        const nameListElement = document.getElementById('nameList');
+        const newNameInput = document.getElementById('newNameInput');
+        const newValueInput = document.getElementById('newValueInput');
+        const newValueWrapper = document.getElementById('newValueWrapper');
+        const addNameBtn = document.getElementById('addNameBtn');
+        const selectedNameDisplay = document.getElementById('selectedNameDisplay');
+        const selectedNameDisplayWrapper = document.getElementById('selectedNameDisplayWrapper');
+        const schemaTitleDisplay = document.getElementById('schemaTitleDisplay');
+        const noAvailableMessage = document.getElementById('noAvailableMessage');
+        const canvas = document.getElementById('matrixCanvas');
+        const ctx = canvas.getContext('2d');
+        const clickTriggerArea = document.getElementById('clickTriggerArea');
+        const menuToggleBtn = document.getElementById('menuToggleBtn');
+        const managementPanel = document.getElementById('managementPanel');
+        const rebootBtn = document.getElementById('rebootBtn');
+        const titleInput = document.getElementById('titleInput');
+        const progressBarContainer = document.getElementById('progressBarContainer');
+        const progressBar = document.getElementById('progressBar');
+        const mainDisplayContainer = document.getElementById('mainDisplayContainer');
+        const bodyElement = document.body;
+
+        // Setting Elements
+        const brightnessOverlay = document.getElementById('brightnessOverlay');
+        const brightnessSlider = document.getElementById('brightnessSlider');
+        const brightnessValue = document.getElementById('brightnessValue');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        const fontSizeSlider = document.getElementById('fontSizeSlider');
+        const fontSizeValue = document.getElementById('fontSizeValue');
+        const extractionModeBtn = document.getElementById('extractionModeBtn');
+        const extractionModeLed = document.getElementById('extractionModeLed');
+
+        // Action Buttons (Inside Panel)
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const enterMatrixBtn = document.getElementById('enterMatrixBtn');
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
+        const helpBtn = document.getElementById('helpBtn');
+
+        // Command Palette & Help Modal Elements
+        const commandPaletteOverlay = document.getElementById('commandPaletteOverlay');
+        const commandPaletteInput = document.getElementById('commandPaletteInput');
+        const commandPaletteList = document.getElementById('commandPaletteList');
+        const helpModalOverlay = document.getElementById('helpModalOverlay');
+
+
+        // --- State ---
+        let allNames = [];
+        let isPicking = false;
+        let typeIntervalId = null;
+        let draggedItemName = null;
+        let currentBrightnessPercent = 60;
+        let currentRainFPS = 10;
+        let currentFontSize = 24;
+        let rainAnimationId = null;
+        let isInMatrixMode = false;
+        let isExtractionMode = false;
+        let isConstructMode = false; // New theme state
+        let trails = [];
+        let drops = [];
+        let commandPaletteSelectedIndex = 0;
+
+        // --- Constants ---
+        const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const TYPING_INTERVAL_MS = 10;
+        const EMPTY_QUOTE = "Everything that has a beginning has an end.";
+        const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
+        const COLUMN_SPACING_FACTOR = 1.0;
+        const FLIP_CHANCE = 0.0025;
+        const FLIP_DURATION_MS = 500;
+        const MAX_TRAIL_LENGTH = 25;
+        const TARGET_ANIMATION_FPS = 60;
+        const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS;
+        const MAX_FPS_PERCENT_OFFSET = 0.90; // UPDATED
+
+        // --- Matrix Rain Setup ---
+        let columns;
+        function calculateColumnDelay(baseFps) {
+            const minMultiplier = 1.0 - MAX_FPS_PERCENT_OFFSET;
+            const maxMultiplier = 1.0 + MAX_FPS_PERCENT_OFFSET;
+            const randomMultiplier = Math.random() * (maxMultiplier - minMultiplier) + minMultiplier;
+            const columnFps = baseFps * randomMultiplier;
+            const finalColumnFps = Math.max(0.05, columnFps);
+            return 1000 / finalColumnFps;
+        }
+        function setupCanvas() {
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
+            columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
+            drops = []; trails = [];
+            for (let i = 0; i < columns; i++) {
+                drops[i] = { y: Math.floor(Math.random() * canvas.height / currentFontSize), delay: calculateColumnDelay(currentRainFPS), lastUpdateTime: 0 };
+                trails[i] = [];
+            }
+        }
+        function drawMatrixRain() {
+            const computedStyle = getComputedStyle(document.body);
+            // Determine colors based on the current theme
+            const bgColor = isConstructMode ? `rgba(${computedStyle.getPropertyValue('--construct-bg-rgb').trim()}, 0.1)` : 'rgba(0, 0, 0, 0.1)';
+            const trailColorRgb = isConstructMode ? computedStyle.getPropertyValue('--construct-text-rgb').trim() : computedStyle.getPropertyValue('--matrix-green-rgb').trim();
+            const leadColor = computedStyle.getPropertyValue('--lead-color').trim();
+            const flashColor = computedStyle.getPropertyValue('--flash-color').trim();
+
+            ctx.fillStyle = bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = `${currentFontSize}px ${getComputedStyle(document.body).fontFamily}`;
+            const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR; const now = Date.now();
+            for (let i = 0; i < drops.length; i++) {
+                const drop = drops[i];
+                if (now - drop.lastUpdateTime >= drop.delay) {
+                    const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
+                    trails[i].unshift({ char: newLeaderChar, flipped: false }); if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); } drop.y++;
+                    if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) {
+                        drop.y = 0;
+                        trails[i] = [];
+                        drop.delay = calculateColumnDelay(currentRainFPS); // Randomize speed on reset
+                    }
+                    drop.lastUpdateTime = now;
+                }
+                if (trails[i]) {
+                    for (let k = 0; k < trails[i].length; k++) {
+                        let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
+                        if (k > 0 && !trailItem.flipTimestamp && Math.random() < FLIP_CHANCE) {
+                            let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
+                            trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now;
                         }
-                        #managementPanel .action-button-row button { width: 100%; } /* Make stacked buttons full width */
-
-                        #progressBarContainer { padding: 0.25rem 0.5rem; }
-                    }
-                </style>
-            </head>
-            <body class="">
-                <canvas id="matrixCanvas"></canvas>
-                <div id="brightnessOverlay"></div>
-                <div id="clickTriggerArea"></div>
-
-                <div id="mainDisplayContainer">
-                    <div id="schemaTitleDisplay"></div>
-                    <div id="selectedNameDisplayWrapper">
-                        <div id="selectedNameDisplay" class="typing">|</div>
-                    </div>
-                </div>
-
-                <button id="menuToggleBtn">☰</button>
-
-                <div id="managementPanel">
-                    <div class="action-button-row panel-section">
-                        <button id="themeToggleBtn" class="font-medium">
-                            [C] Construct Mode
-                        </button>
-                        <button id="fullscreenBtn" class="font-medium">
-                            [FS] Fullscreen
-                        </button>
-                        <button id="enterMatrixBtn" class="font-medium">
-                            [M] Enter Matrix
-                        </button>
-                        <button id="helpBtn" class="font-medium">
-                            [?] Help
-                        </button>
-                    </div>
-
-                    <div class="panel-section">
-                        <label for="titleInput">// Operative Schema:</label>
-                        <input type="text" id="titleInput" placeholder="Define schema name..." class="outline-none">
-                    </div>
-
-                    <div class="panel-section">
-                        <h3 class="// System Parameters:"></h3>
-                        <div class="mb-3">
-                            <label for="brightnessSlider" class="flex justify-between items-center">
-                                <span id="brightnessLabel">// Intensity:</span>
-                                <span id="brightnessValue" class="font-semibold text-sm">60%</span>
-                            </label>
-                            <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="60">
-                        </div>
-                        <div class="mb-3">
-                            <label for="speedSlider" class="flex justify-between items-center">
-                                <span>// Velocity (FPS):</span>
-                                <span id="speedValue" class="font-semibold text-sm">10 FPS</span>
-                            </label>
-                            <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
-                        </div>
-                        <div class="mb-3">
-                            <label for="fontSizeSlider" class="flex justify-between items-center">
-                                <span>// Size (px):</span>
-                                <span id="fontSizeValue" class="font-semibold text-sm">24px</span>
-                            </label>
-                            <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24">
-                        </div>
-                        <!-- Extraction Mode Button with LED -->
-                        <div class="control-group">
-                            <button id="extractionModeBtn">[E] Engage Extraction</button>
-                            <div id="extractionModeLed" class="led-indicator"></div>
-                        </div>
-                    </div>
-
-                    <div class="panel-section">
-                        <h3 class="// Manage Operatives:"></h3>
-                        <label for="newNameInput">// Register New Operative:</label>
-                        <input type="text" id="newNameInput" placeholder="Enter name..." class="outline-none">
-                        <!-- Value Input Wrapper -->
-                        <div id="newValueWrapper">
-                            <label for="newValueInput" class="text-xs">// Extraction Alias (Optional):</label>
-                            <input type="text" id="newValueInput" placeholder="Alias to copy..." class="outline-none">
-                        </div>
-                        <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
-                            <span class="text-xl leading-none">[+]</span>
-                            Add
-                        </button>
-                    </div>
-
-                    <div class="list-container panel-section"> <h3 class="// Operative Roster (Drag to Reorder):"></h3>
-                        <ul id="nameList">
-                            <li id="noAvailableMessage" class="hidden">Roster empty...</li>
-                        </ul>
-                    </div>
-
-                    <div class="panel-section">
-                        <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
-                            [R] Reboot System
-                        </button>
-                    </div>
-
-                    <p id="footerText">// System state is saved to the URL automatically.</p>
-                </div>
-
-                <div id="progressBarContainer">
-                    <div id="progressBar"></div>
-                </div>
-
-                <!-- Command Palette Modal -->
-                <div id="commandPaletteOverlay" class="modal-overlay">
-                    <div id="commandPalette" class="modal-content">
-                        <input type="text" id="commandPaletteInput" placeholder="// Type a command...">
-                        <ul id="commandPaletteList"></ul>
-                    </div>
-                </div>
-
-                <!-- Help Modal -->
-                <div id="helpModalOverlay" class="modal-overlay">
-                    <div class="modal-content">
-                        <h2>// System Manual</h2>
-                        <ul class="shortcut-list">
-                            <li>
-                                <div>
-                                    <span>Open Command Palette</span>
-                                    <p class="text-sm opacity-70 mt-1">Quickly access all system commands by typing.</p>
-                                </div>
-                                <span><kbd>⌘</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>/</kbd></span>
-                            </li>
-                             <li>
-                                <div>
-                                    <span>Open Help Manual</span>
-                                     <p class="text-sm opacity-70 mt-1">Displays this list of commands and shortcuts.</p>
-                                </div>
-                                <span><kbd>⌘</kbd><kbd>Shift</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>/</kbd></span>
-                            </li>
-                            <li>
-                                <div>
-                                    <span>Toggle Main Menu</span>
-                                    <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
-                                </div>
-                                <span><kbd>Esc</kbd></span>
-                            </li>
-                            <li>
-                                <div>
-                                    <span>Toggle Construct Mode</span>
-                                    <p class="text-sm opacity-70 mt-1">Switches to a clean, high-contrast "light mode" interface.</p>
-                                </div>
-                                <span><kbd>C</kbd></span>
-                            </li>
-                            <li>
-                                <div>
-                                    <span>Toggle Extraction Mode</span>
-                                    <p class="text-sm opacity-70 mt-1">When engaged, picking an operative automatically copies their name or alias to the clipboard.</p>
-                                </div>
-                                <span><kbd>E</kbd></span>
-                            </li>
-                             <li>
-                                <div>
-                                    <span>Toggle Fullscreen</span>
-                                     <p class="text-sm opacity-70 mt-1">Expands the interface to fill the entire screen.</p>
-                                </div>
-                                <span><kbd>F</kbd></span>
-                            </li>
-                            <li>
-                                <div>
-                                    <span>Enter/Exit Matrix Mode</span>
-                                    <p class="text-sm opacity-70 mt-1">Engages a fullscreen, immersive digital rain experience. Click or press 'M' to exit.</p>
-                                </div>
-                                <span><kbd>M</kbd></span>
-                            </li>
-                            <li>
-                                <div>
-                                    <span>Reboot System</span>
-                                    <p class="text-sm opacity-70 mt-1">Resets the selection state, making all operatives available to be picked again.</p>
-                                </div>
-                                <span><kbd>R</kbd></span>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-
-
-                <script>
-                    // --- DOM Elements ---
-                    const nameListElement = document.getElementById('nameList');
-                    const newNameInput = document.getElementById('newNameInput');
-                    const newValueInput = document.getElementById('newValueInput');
-                    const newValueWrapper = document.getElementById('newValueWrapper');
-                    const addNameBtn = document.getElementById('addNameBtn');
-                    const selectedNameDisplay = document.getElementById('selectedNameDisplay');
-                    const selectedNameDisplayWrapper = document.getElementById('selectedNameDisplayWrapper');
-                    const schemaTitleDisplay = document.getElementById('schemaTitleDisplay');
-                    const noAvailableMessage = document.getElementById('noAvailableMessage');
-                    const canvas = document.getElementById('matrixCanvas');
-                    const ctx = canvas.getContext('2d');
-                    const clickTriggerArea = document.getElementById('clickTriggerArea');
-                    const menuToggleBtn = document.getElementById('menuToggleBtn');
-                    const managementPanel = document.getElementById('managementPanel');
-                    const rebootBtn = document.getElementById('rebootBtn');
-                    const titleInput = document.getElementById('titleInput');
-                    const progressBarContainer = document.getElementById('progressBarContainer');
-                    const progressBar = document.getElementById('progressBar');
-                    const mainDisplayContainer = document.getElementById('mainDisplayContainer');
-                    const bodyElement = document.body;
-
-                    // Setting Elements
-                    const brightnessOverlay = document.getElementById('brightnessOverlay');
-                    const brightnessSlider = document.getElementById('brightnessSlider');
-                    const brightnessValue = document.getElementById('brightnessValue');
-                    const speedSlider = document.getElementById('speedSlider');
-                    const speedValue = document.getElementById('speedValue');
-                    const fontSizeSlider = document.getElementById('fontSizeSlider');
-                    const fontSizeValue = document.getElementById('fontSizeValue');
-                    const extractionModeBtn = document.getElementById('extractionModeBtn');
-                    const extractionModeLed = document.getElementById('extractionModeLed');
-
-                    // Action Buttons (Inside Panel)
-                    const fullscreenBtn = document.getElementById('fullscreenBtn');
-                    const enterMatrixBtn = document.getElementById('enterMatrixBtn');
-                    const themeToggleBtn = document.getElementById('themeToggleBtn');
-                    const helpBtn = document.getElementById('helpBtn');
-
-                    // Command Palette & Help Modal Elements
-                    const commandPaletteOverlay = document.getElementById('commandPaletteOverlay');
-                    const commandPaletteInput = document.getElementById('commandPaletteInput');
-                    const commandPaletteList = document.getElementById('commandPaletteList');
-                    const helpModalOverlay = document.getElementById('helpModalOverlay');
-
-
-                    // --- State ---
-                    let allNames = [];
-                    let isPicking = false;
-                    let typeIntervalId = null;
-                    let draggedItemName = null;
-                    let currentBrightnessPercent = 60;
-                    let currentRainFPS = 10;
-                    let currentFontSize = 24;
-                    let rainAnimationId = null;
-                    let isInMatrixMode = false;
-                    let isExtractionMode = false;
-                    let isConstructMode = false; // New theme state
-                    let trails = [];
-                    let drops = [];
-                    let commandPaletteSelectedIndex = 0;
-
-                    // --- Constants ---
-                    const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                    const TYPING_INTERVAL_MS = 10;
-                    const EMPTY_QUOTE = "Everything that has a beginning has an end.";
-                    const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
-                    const COLUMN_SPACING_FACTOR = 1.0;
-                    const FLIP_CHANCE = 0.0025;
-                    const FLIP_DURATION_MS = 500;
-                    const MAX_TRAIL_LENGTH = 25;
-                    const TARGET_ANIMATION_FPS = 60;
-                    const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS;
-                    const MAX_FPS_PERCENT_OFFSET = 0.90; // UPDATED
-
-                    // --- Matrix Rain Setup ---
-                    let columns;
-                    function calculateColumnDelay(baseFps) {
-                        const minMultiplier = 1.0 - MAX_FPS_PERCENT_OFFSET;
-                        const maxMultiplier = 1.0 + MAX_FPS_PERCENT_OFFSET;
-                        const randomMultiplier = Math.random() * (maxMultiplier - minMultiplier) + minMultiplier;
-                        const columnFps = baseFps * randomMultiplier;
-                        const finalColumnFps = Math.max(0.05, columnFps);
-                        return 1000 / finalColumnFps;
-                    }
-                    function setupCanvas() {
-                        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-                        const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
-                        columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
-                        drops = []; trails = [];
-                        for (let i = 0; i < columns; i++) {
-                            drops[i] = { y: Math.floor(Math.random() * canvas.height / currentFontSize), delay: calculateColumnDelay(currentRainFPS), lastUpdateTime: 0 };
-                            trails[i] = [];
+                        let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
+                        if (isHighlighting) { ctx.fillStyle = flashColor; } else {
+                            const opacity = Math.max(0, 1.0 - (k / MAX_TRAIL_LENGTH));
+                            ctx.fillStyle = `rgba(${trailColorRgb}, ${opacity})`;
+                            if (trailItem.flipTimestamp && !isHighlighting) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
                         }
+                        const trailXPos = i * effectiveColumnWidth; ctx.fillText(trailItem.char, trailXPos, trailYPos);
                     }
-                    function drawMatrixRain() {
-                        const computedStyle = getComputedStyle(document.body);
-                        // Determine colors based on the current theme
-                        const bgColor = isConstructMode ? `rgba(${computedStyle.getPropertyValue('--construct-bg-rgb').trim()}, 0.1)` : 'rgba(0, 0, 0, 0.1)';
-                        const trailColorRgb = isConstructMode ? computedStyle.getPropertyValue('--construct-text-rgb').trim() : computedStyle.getPropertyValue('--matrix-green-rgb').trim();
-                        const leadColor = computedStyle.getPropertyValue('--lead-color').trim();
-                        const flashColor = computedStyle.getPropertyValue('--flash-color').trim();
+                    if (trails[i][0]) {
+                        const leaderXPos = i * effectiveColumnWidth; const leaderYPos = drop.y * currentFontSize;
+                        if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) { ctx.fillStyle = leadColor; ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos); }
+                    }
+                }
+            }
+        }
+        function startMatrixRain() {
+            if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); } let lastFrameTime = 0;
+            function animateRain(currentTime) {
+                rainAnimationId = requestAnimationFrame(animateRain); const deltaTime = currentTime - lastFrameTime;
+                if (deltaTime >= ANIMATION_FRAME_DELAY) {
+                    try { drawMatrixRain(); lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY); }
+                    catch(error) { console.error("Error during drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
+                }
+            }
+            if (canvas.width > 0 && canvas.height > 0) { rainAnimationId = requestAnimationFrame(animateRain); } else { console.warn("// Canvas dimensions not ready."); }
+        }
 
-                        ctx.fillStyle = bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
-                        ctx.font = `${currentFontSize}px ${getComputedStyle(document.body).fontFamily}`;
-                        const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR; const now = Date.now();
-                        for (let i = 0; i < drops.length; i++) {
-                            const drop = drops[i];
-                            if (now - drop.lastUpdateTime >= drop.delay) {
-                                const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
-                                trails[i].unshift({ char: newLeaderChar, flipped: false }); if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); } drop.y++;
-                                if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) {
-                                    drop.y = 0;
-                                    trails[i] = [];
-                                    drop.delay = calculateColumnDelay(currentRainFPS); // Randomize speed on reset
-                                }
-                                drop.lastUpdateTime = now;
-                            }
-                            if (trails[i]) {
-                                for (let k = 0; k < trails[i].length; k++) {
-                                    let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
-                                    if (k > 0 && !trailItem.flipTimestamp && Math.random() < FLIP_CHANCE) {
-                                        let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
-                                        trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now;
-                                    }
-                                    let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
-                                    if (isHighlighting) { ctx.fillStyle = flashColor; } else {
-                                        const opacity = Math.max(0, 1.0 - (k / MAX_TRAIL_LENGTH));
-                                        ctx.fillStyle = `rgba(${trailColorRgb}, ${opacity})`;
-                                        if (trailItem.flipTimestamp && !isHighlighting) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
-                                    }
-                                    const trailXPos = i * effectiveColumnWidth; ctx.fillText(trailItem.char, trailXPos, trailYPos);
-                                }
-                                if (trails[i][0]) {
-                                    const leaderXPos = i * effectiveColumnWidth; const leaderYPos = drop.y * currentFontSize;
-                                    if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) { ctx.fillStyle = leadColor; ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos); }
-                                }
-                            }
-                        }
-                    }
-                    function startMatrixRain() {
-                        if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); } let lastFrameTime = 0;
-                        function animateRain(currentTime) {
-                            rainAnimationId = requestAnimationFrame(animateRain); const deltaTime = currentTime - lastFrameTime;
-                            if (deltaTime >= ANIMATION_FRAME_DELAY) {
-                                try { drawMatrixRain(); lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY); }
-                                catch(error) { console.error("Error during drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
-                            }
-                        }
-                        if (canvas.width > 0 && canvas.height > 0) { rainAnimationId = requestAnimationFrame(animateRain); } else { console.warn("// Canvas dimensions not ready."); }
-                    }
+        // --- Title Update Function ---
+        function updateSchemaTitle(title) {
+            const displayTitle = title.trim(); if (schemaTitleDisplay) { schemaTitleDisplay.textContent = displayTitle || ''; } document.title = displayTitle || DEFAULT_TITLE;
+        }
 
-                    // --- Title Update Function ---
-                    function updateSchemaTitle(title) {
-                        const displayTitle = title.trim(); if (schemaTitleDisplay) { schemaTitleDisplay.textContent = displayTitle || ''; } document.title = displayTitle || DEFAULT_TITLE;
-                    }
+        // --- URL State Management ---
+        function updateURL() {
+            const namesArray = allNames.map(op => {
+                const encodedName = encodeURIComponent(op.name);
+                const encodedValue = encodeURIComponent(op.value || '');
+                return `${encodedName}|${encodedValue}`;
+            });
+            const encodedNames = namesArray.join(',');
 
-                    // --- URL State Management ---
-                    function updateURL() {
-                        const namesArray = allNames.map(op => {
-                            const encodedName = encodeURIComponent(op.name);
-                            const encodedValue = encodeURIComponent(op.value || '');
-                            return `${encodedName}|${encodedValue}`;
+            const currentTitle = titleInput.value.trim();
+            const encodedTitle = currentTitle ? encodeURIComponent(currentTitle) : '';
+
+            let params = [];
+            if (encodedNames) { params.push('names=' + encodedNames); }
+            if (encodedTitle) { params.push('title=' + encodedTitle); }
+            if (currentBrightnessPercent !== 60) { params.push('brightness=' + currentBrightnessPercent); }
+            if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
+            if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
+            if (isExtractionMode) { params.push('extract=true'); }
+            if (isConstructMode) { params.push('theme=construct'); }
+
+            const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
+            history.pushState({path: newUrl}, '', newUrl);
+        }
+
+        // --- Initialization ---
+        function initializeStateFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            allNames = [];
+            let initialNames = [];
+            let pageTitle = DEFAULT_TITLE;
+            let schemaTitle = '';
+            // Reset settings to default before loading from URL
+            currentBrightnessPercent = 60;
+            currentRainFPS = 10;
+            currentFontSize = 24;
+            isExtractionMode = false;
+            isConstructMode = false;
+
+            if (urlParams.has('title')) {
+                const titleParam = urlParams.get('title').trim();
+                if (titleParam) {
+                    pageTitle = decodeURIComponent(titleParam);
+                    schemaTitle = pageTitle;
+                }
+            }
+            titleInput.value = schemaTitle;
+            updateSchemaTitle(schemaTitle);
+
+            if (urlParams.has('brightness')) {
+                const brightnessParam = parseInt(urlParams.get('brightness'), 10);
+                if (!isNaN(brightnessParam) && brightnessParam >= 0 && brightnessParam <= 100) {
+                    currentBrightnessPercent = brightnessParam;
+                }
+            }
+            updateBrightness(currentBrightnessPercent);
+
+            if (urlParams.has('speed')) {
+                const speedParam = parseInt(urlParams.get('speed'), 10);
+                if (!isNaN(speedParam) && speedParam >= 1 && speedParam <= 100) {
+                    currentRainFPS = speedParam;
+                }
+            }
+            updateRainSpeedDisplay(currentRainFPS);
+
+            if (urlParams.has('fontSize')) {
+                const fontSizeParam = parseInt(urlParams.get('fontSize'), 10);
+                if (!isNaN(fontSizeParam) && fontSizeParam >= 8 && fontSizeParam <= 32) {
+                    currentFontSize = fontSizeParam;
+                }
+            }
+            updateFontSizeDisplay(currentFontSize);
+            if (urlParams.has('extract')) {
+                isExtractionMode = urlParams.get('extract') === 'true';
+            }
+            updateExtractionButton();
+            updateExtractionUIVisibility();
+
+            if (urlParams.has('theme') && urlParams.get('theme') === 'construct') {
+                isConstructMode = true;
+            }
+            updateTheme();
+
+            if (urlParams.has('names')) {
+                const namesParam = urlParams.get('names');
+                if (namesParam) {
+                    initialNames = namesParam.split(',').map(pair => {
+                        const parts = pair.split('|').map(part => decodeURIComponent(part.trim()));
+                        const name = parts[0];
+                        const value = parts[1] || '';
+                        return name ? { name, value, selected: false } : null;
+                    }).filter(Boolean);
+                }
+            } else {
+                initialNames = [
+                    { name: 'Neo', value: 'The One', selected: false },
+                    { name: 'Trinity', value: 'Hacker', selected: false },
+                    { name: 'Morpheus', value: 'Captain', selected: false },
+                    { name: 'Agent Smith', value: 'Virus', selected: false },
+                    { name: 'Oracle', value: 'Prophet', selected: false },
+                    { name: 'Cypher', value: 'Traitor', selected: false }
+                ];
+            }
+            allNames = initialNames;
+            resetDisplayStyle();
+            renderAvailableList();
+            renderProgressBar();
+            checkEmptyStates();
+            setupCanvas();
+            startMatrixRain();
+            isInMatrixMode = false;
+            bodyElement.classList.remove('matrix-mode-active');
+            updateBodyPadding();
+            console.log("// System Initialized.");
+        }
+
+        // --- Settings Controls ---
+        function updateBrightness(percent) {
+            currentBrightnessPercent = Math.max(0, Math.min(100, percent)); if (brightnessSlider) brightnessSlider.value = currentBrightnessPercent; if (brightnessValue) brightnessValue.textContent = `${currentBrightnessPercent}%`;
+            const alpha = (100 - currentBrightnessPercent) / 100;
+            const overlayColor = isConstructMode ? '255, 255, 255' : '0, 0, 0';
+            if (brightnessOverlay) brightnessOverlay.style.backgroundColor = `rgba(${overlayColor}, ${alpha})`;
+        }
+        function updateRainSpeedDisplay(fps) {
+            currentRainFPS = Math.max(1, Math.min(100, fps)); if (speedSlider) speedSlider.value = currentRainFPS; if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`;
+        }
+        function handleSpeedChange(fps) {
+            updateRainSpeedDisplay(fps); if (drops && drops.length > 0) { drops.forEach(drop => { drop.delay = calculateColumnDelay(currentRainFPS); }); }
+        }
+        function updateFontSizeDisplay(size) {
+            currentFontSize = Math.max(8, Math.min(32, size)); if (fontSizeSlider) fontSizeSlider.value = currentFontSize; if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`;
+        }
+        function handleFontSizeChange(size) {
+            updateFontSizeDisplay(size); if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain();
+        }
+        function updateExtractionButton() {
+            if (isExtractionMode) {
+                extractionModeBtn.textContent = '[E] Extraction Engaged';
+                extractionModeBtn.classList.add('active');
+                extractionModeLed.classList.add('active');
+            } else {
+                extractionModeBtn.textContent = '[E] Engage Extraction';
+                extractionModeBtn.classList.remove('active');
+                extractionModeLed.classList.remove('active');
+            }
+        }
+        function updateExtractionUIVisibility() {
+            newValueWrapper.classList.toggle('hidden', !isExtractionMode);
+            renderAvailableList();
+        }
+
+        // --- Theme Toggle ---
+        function updateTheme() {
+            const brightnessLabel = document.getElementById('brightnessLabel');
+            if (isConstructMode) {
+                bodyElement.classList.add('construct-mode');
+                themeToggleBtn.textContent = '[C] Exit Construct';
+                themeToggleBtn.classList.add('active');
+                if(brightnessLabel) brightnessLabel.textContent = '// Glare:';
+            } else {
+                bodyElement.classList.remove('construct-mode');
+                themeToggleBtn.textContent = '[C] Construct Mode';
+                themeToggleBtn.classList.remove('active');
+                if(brightnessLabel) brightnessLabel.textContent = '// Intensity:';
+            }
+            // Re-apply brightness with the correct color overlay
+            updateBrightness(currentBrightnessPercent);
+            // Redraw canvas with new colors
+            if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
+            startMatrixRain();
+        }
+
+        // --- Progress Bar Rendering ---
+        function renderProgressBar() {
+            progressBar.innerHTML = ''; const totalCount = allNames.length;
+            if (totalCount === 0 || isInMatrixMode) { progressBarContainer.classList.add('hidden'); }
+            else {
+                progressBarContainer.classList.remove('hidden'); const selectedCount = allNames.filter(op => op.selected).length;
+                for (let i = 0; i < totalCount; i++) {
+                    const segment = document.createElement('div'); segment.className = 'progress-segment'; if (i < selectedCount) { segment.classList.add('used'); } progressBar.appendChild(segment);
+                }
+            }
+            updateBodyPadding();
+        }
+
+        // --- Body Padding Update ---
+        function updateBodyPadding() {
+            if (!progressBarContainer.classList.contains('hidden') && !isInMatrixMode) { bodyElement.style.paddingBottom = `calc(var(--progress-bar-height) + 1rem)`; }
+            else { bodyElement.style.paddingBottom = '0'; }
+        }
+
+        // --- List Rendering & Drag/Drop Event Handling ---
+        function renderAvailableList() {
+            nameListElement.innerHTML = '';
+            checkEmptyStates();
+            allNames.forEach((operative) => {
+                const li = document.createElement('li');
+                li.className = 'name-item';
+                li.draggable = !operative.selected;
+                li.dataset.name = operative.name;
+                if (operative.selected) {
+                    li.classList.add('name-item-selected');
+                }
+
+                const nameRow = document.createElement('div');
+                nameRow.className = 'name-row';
+
+                const nameSpan = document.createElement('span');
+                nameSpan.textContent = operative.name;
+                nameSpan.className = 'name-span flex-grow mr-2 overflow-hidden text-ellipsis whitespace-nowrap';
+                if (operative.selected) {
+                    nameSpan.classList.add('line-through');
+                }
+                nameRow.appendChild(nameSpan);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = 'X';
+                removeBtn.className = 'remove-name-btn flex-shrink-0';
+                removeBtn.onclick = (e) => { e.stopPropagation(); removeName(operative.name); };
+                removeBtn.disabled = operative.selected;
+                nameRow.appendChild(removeBtn);
+                li.appendChild(nameRow);
+
+                const valueRow = document.createElement('div');
+                valueRow.className = 'value-row';
+                valueRow.classList.toggle('hidden', !isExtractionMode);
+                const valueInput = document.createElement('input');
+                valueInput.type = 'text';
+                valueInput.placeholder = '// Extraction Alias...';
+                valueInput.value = operative.value || '';
+                valueInput.disabled = operative.selected;
+                valueInput.addEventListener('input', (e) => {
+                    const opIndex = allNames.findIndex(op => op.name === operative.name);
+                    if (opIndex > -1) {
+                        allNames[opIndex].value = e.target.value;
+                        updateURL(); // Save value change to URL
+                    }
+                });
+                valueRow.appendChild(valueInput);
+                li.appendChild(valueRow);
+
+                if (!operative.selected) {
+                    li.addEventListener('dragstart', handleDragStart);
+                    li.addEventListener('dragover', handleDragOver);
+                    li.addEventListener('dragenter', handleDragEnter);
+                    li.addEventListener('dragleave', handleDragLeave);
+                    li.addEventListener('drop', handleDrop);
+                    li.addEventListener('dragend', handleDragEnd);
+                }
+                nameListElement.appendChild(li);
+            });
+        }
+        function handleDragStart(e) {
+            draggedItemName = e.target?.dataset?.name; if (!draggedItemName) return; setTimeout(() => { if(e.target) e.target.classList.add('dragging'); }, 0);
+            e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', draggedItemName);
+        }
+        function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+        function handleDragEnter(e) { const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); if (targetLi && targetLi.dataset.name !== draggedItemName) { targetLi.classList.add('drag-over'); } }
+        function handleDragLeave(e) { const targetLi = e.target.closest('.name-item'); if (targetLi && !targetLi.contains(e.relatedTarget)) { targetLi.classList.remove('drag-over'); } }
+        function handleDrop(e) {
+            e.stopPropagation(); e.preventDefault(); const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); const droppedName = e.dataTransfer.getData('text/plain');
+            document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); if (!targetLi || !droppedName || targetLi.dataset.name === droppedName) { return; }
+            const draggedIndex = allNames.findIndex(op => op.name === droppedName); let targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
+            if (draggedIndex > -1 && targetIndex > -1) {
+                const [draggedOperative] = allNames.splice(draggedIndex, 1); targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
+                if(targetIndex > -1) { allNames.splice(targetIndex, 0, draggedOperative); } else { allNames.push(draggedOperative); }
+                renderAvailableList();
+                updateURL(); // Save new order to URL
+            }
+        }
+        function handleDragEnd(e) {
+            document.querySelectorAll('.name-item.dragging').forEach(item => item.classList.remove('dragging')); document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); draggedItemName = null;
+        }
+
+        // --- Name Management Functions ---
+        function addName() {
+            const name = newNameInput.value.trim();
+            const value = newValueInput.value.trim();
+            if (name && !allNames.some(op => op.name.toLowerCase() === name.toLowerCase())) {
+                allNames.push({ name: name, value: value, selected: false });
+                newNameInput.value = '';
+                newValueInput.value = '';
+                renderAvailableList();
+                renderProgressBar();
+                checkEmptyStates();
+                showTemporaryMessage(`// Operative "${name}" registered.`);
+                updateURL(); // Save new name to URL
+            } else if (!name) {
+                showTemporaryMessage("// Input field empty.", "warn");
+            } else {
+                showTemporaryMessage(`// Operative "${name}" already exists.`, "warn");
+            }
+        }
+        function removeName(nameToRemove) {
+            const itemElement = nameListElement.querySelector(`li[data-name="${nameToRemove}"]`); if (itemElement && !itemElement.classList.contains('removing')) {
+                itemElement.classList.add('removing'); setTimeout(() => {
+                    allNames = allNames.filter(op => op.name !== nameToRemove);
+                    renderAvailableList();
+                    renderProgressBar();
+                    checkEmptyStates();
+                    showTemporaryMessage(`// Operative "${nameToRemove}" deregistered.`);
+                    updateURL(); // Save removal to URL
+                }, 300);
+            }
+        }
+
+        // --- Picking Logic & Reveal Animation ---
+        function pickRandomName() {
+            if (selectedNameDisplay.classList.contains('quote')) { rebootSystem(); return; } if (allNames.length > 0 && allNames.every(op => op.selected)) { resetDisplayStyle(EMPTY_QUOTE, true); return; } if (isPicking) { return; }
+            const availableForPick = allNames.filter(op => !op.selected); if (availableForPick.length === 0) { if (allNames.length === 0) { resetDisplayStyle('|'); } else { resetDisplayStyle(EMPTY_QUOTE, true); } return; }
+            isPicking = true; clickTriggerArea.style.pointerEvents = 'none'; selectedNameDisplayWrapper.style.pointerEvents = 'none'; selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.remove('typing', 'quote');
+            const finalRandomIndex = Math.floor(Math.random() * availableForPick.length); const selectedOperative = availableForPick[finalRandomIndex]; revealNameGradually(selectedOperative.name);
+        }
+        function revealNameGradually(name) {
+            let i = 0; if (typeIntervalId) clearInterval(typeIntervalId); selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.add('typing');
+            typeIntervalId = setInterval(() => { if (i < name.length) { selectedNameDisplay.textContent += name.charAt(i); i++; } else { clearInterval(typeIntervalId); typeIntervalId = null; finalizeSelection(name); } }, TYPING_INTERVAL_MS);
+        }
+        function finalizeSelection(selectedName) {
+            selectedNameDisplay.classList.remove('typing');
+            const operative = allNames.find(op => op.name === selectedName);
+            if (operative) {
+                operative.selected = true;
+                if (isExtractionMode) {
+                    const valueToCopy = operative.value || operative.name;
+                    copyToClipboard(valueToCopy);
+                }
+            } else {
+                console.warn(`// Selected name "${selectedName}" not found.`);
+            }
+            renderProgressBar();
+            renderAvailableList();
+            checkEmptyStates();
+            isPicking = false;
+            clickTriggerArea.style.pointerEvents = 'auto';
+            selectedNameDisplayWrapper.style.pointerEvents = 'auto';
+        }
+
+        // --- Reboot System Function ---
+        function rebootSystem() {
+            if (isPicking) { return; }
+            console.log("// System state reset.");
+            allNames.forEach(op => op.selected = false);
+            renderAvailableList();
+            renderProgressBar();
+            resetDisplayStyle();
+            showTemporaryMessage("// Operative roster reset.");
+        }
+
+        // --- Utility Functions ---
+        function checkEmptyStates() {
+            const isEmpty = allNames.length === 0; noAvailableMessage.classList.toggle('hidden', !isEmpty);
+        }
+        function resetDisplayStyle(displayName = '|', isQuote = false) {
+            if (typeIntervalId) clearInterval(typeIntervalId); typeIntervalId = null; selectedNameDisplay.textContent = displayName; selectedNameDisplay.classList.remove('quote', 'typing');
+            if (isQuote) { selectedNameDisplay.classList.add('quote'); } else if (displayName === '|') { selectedNameDisplay.classList.add('typing'); }
+            clickTriggerArea.style.pointerEvents = 'auto'; selectedNameDisplayWrapper.style.pointerEvents = 'auto';
+        }
+        function showTemporaryMessage(message, type = "info") {
+            if (type === "warn") { console.warn(message); } else if (type === "error") { console.error(message); } else { console.log(message); }
+        }
+        function copyToClipboard(text) {
+             try {
+                // Use the modern clipboard API
+                navigator.clipboard.writeText(text).then(() => {
+                    showTemporaryMessage(`// EXTRACTED: "${text}" copied.`);
+                }).catch(err => {
+                    console.warn('// Clipboard API failed, falling back.', err);
+                    fallbackCopyToClipboard(text);
+                });
+            } catch (e) {
+                 fallbackCopyToClipboard(text);
+            }
+        }
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.top = '0';
+            textArea.style.left = '0';
+            textArea.style.opacity = '0';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showTemporaryMessage(`// EXTRACTED: "${text}" copied.`);
+                } else {
+                    showTemporaryMessage('// Extraction failed.', 'error');
+                }
+            } catch (err) {
+                showTemporaryMessage('// Extraction failed.', 'error');
+                console.error('// Fallback copy failed', err);
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // --- Menu Toggle Logic ---
+        function toggleManagementPanel() {
+            if (isInMatrixMode) { return; }
+            const isVisible = managementPanel.classList.toggle('visible');
+            menuToggleBtn.innerHTML = isVisible ? '✕' : '☰';
+            menuToggleBtn.classList.toggle('active', isVisible);
+        }
+
+        // --- Fullscreen Toggle Logic ---
+        function toggleFullScreen() {
+            if (!document.fullscreenElement) {
+                if (managementPanel.classList.contains('visible')) {
+                    toggleManagementPanel();
+                }
+                document.documentElement.requestFullscreen()
+                    .then(() => {
+                        fullscreenBtn.textContent = '[FS] Exit Full';
+                    })
+                    .catch(err => {
+                        console.error(`FS Error: ${err.message}`);
+                        showTemporaryMessage("Fullscreen failed.", "warn");
+                    });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen()
+                        .then(() => {
+                            fullscreenBtn.textContent = '[FS] Fullscreen';
+                        })
+                        .catch(err => {
+                            console.error(`Exit FS Error: ${err.message}`);
                         });
-                        const encodedNames = namesArray.join(',');
+                }
+            }
+        }
 
-                        const currentTitle = titleInput.value.trim();
-                        const encodedTitle = currentTitle ? encodeURIComponent(currentTitle) : '';
+        // --- Matrix Mode Logic ---
+        function enterMatrixMode() {
+            if (isInMatrixMode) return; isInMatrixMode = true; console.log("// Entering Matrix Mode");
+            if (managementPanel.classList.contains('visible')) { managementPanel.classList.remove('visible'); menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active'); }
+            if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => { console.warn(`FS request failed: ${err.message}`); }); }
+            bodyElement.classList.add('matrix-mode-active');
+            enterMatrixBtn.textContent = '[M] Exit Matrix'; renderProgressBar();
+        }
+        function exitMatrixMode() {
+            if (!isInMatrixMode) return; isInMatrixMode = false; console.log("// Exiting Matrix Mode");
+            if (document.fullscreenElement && document.exitFullscreen) { document.exitFullscreen().catch(err => { console.warn(`Exit FS Error: ${err.message}`); }); }
+            bodyElement.classList.remove('matrix-mode-active');
+            enterMatrixBtn.textContent = '[M] Enter Matrix'; renderProgressBar();
+            menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active');
+        }
 
-                        let params = [];
-                        if (encodedNames) { params.push('names=' + encodedNames); }
-                        if (encodedTitle) { params.push('title=' + encodedTitle); }
-                        if (currentBrightnessPercent !== 60) { params.push('brightness=' + currentBrightnessPercent); }
-                        if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
-                        if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
-                        if (isExtractionMode) { params.push('extract=true'); }
-                        if (isConstructMode) { params.push('theme=construct'); }
+        function handleFullscreenChange() {
+            const isFullscreen = !!document.fullscreenElement; if (!isFullscreen && isInMatrixMode) { console.log("// FS exited externally, exiting Matrix Mode."); exitMatrixMode(); }
+            if (fullscreenBtn) { fullscreenBtn.textContent = isFullscreen ? '[FS] Exit Full' : '[FS] Fullscreen'; }
+        }
 
-                        const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
-                        history.pushState({path: newUrl}, '', newUrl);
-                    }
+        // --- Command Palette and Help Modal Logic ---
 
-                    // --- Initialization ---
-                    function initializeStateFromURL() {
-                        const urlParams = new URLSearchParams(window.location.search);
-                        allNames = [];
-                        let initialNames = [];
-                        let pageTitle = DEFAULT_TITLE;
-                        let schemaTitle = '';
-                        // Reset settings to default before loading from URL
-                        currentBrightnessPercent = 60;
-                        currentRainFPS = 10;
-                        currentFontSize = 24;
-                        isExtractionMode = false;
-                        isConstructMode = false;
+        const commands = [
+            { name: "Toggle Construct Mode", action: () => themeToggleBtn.click(), shortcut: 'C' },
+            { name: "Toggle Extraction Mode", action: () => extractionModeBtn.click(), shortcut: 'E' },
+            { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
+            { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
+            { name: "Reboot System (Clear Picks)", action: rebootSystem, shortcut: 'R' },
+            { name: "Open Help Manual", action: () => toggleHelpModal(true) },
+            { name: "Toggle Main Menu", action: toggleManagementPanel },
+        ];
 
-                        if (urlParams.has('title')) {
-                            const titleParam = urlParams.get('title').trim();
-                            if (titleParam) {
-                                pageTitle = decodeURIComponent(titleParam);
-                                schemaTitle = pageTitle;
-                            }
-                        }
-                        titleInput.value = schemaTitle;
-                        updateSchemaTitle(schemaTitle);
+        function renderCommands(filter = '') {
+            commandPaletteList.innerHTML = '';
+            const filteredCommands = commands.filter(cmd => cmd.name.toLowerCase().includes(filter.toLowerCase()));
 
-                        if (urlParams.has('brightness')) {
-                            const brightnessParam = parseInt(urlParams.get('brightness'), 10);
-                            if (!isNaN(brightnessParam) && brightnessParam >= 0 && brightnessParam <= 100) {
-                                currentBrightnessPercent = brightnessParam;
-                            }
-                        }
-                        updateBrightness(currentBrightnessPercent);
+            if (filteredCommands.length === 0) {
+                 commandPaletteList.innerHTML = `<li class="command-item text-gray-500">// No commands found</li>`;
+                 return;
+            }
 
-                        if (urlParams.has('speed')) {
-                            const speedParam = parseInt(urlParams.get('speed'), 10);
-                            if (!isNaN(speedParam) && speedParam >= 1 && speedParam <= 100) {
-                                currentRainFPS = speedParam;
-                            }
-                        }
-                        updateRainSpeedDisplay(currentRainFPS);
+            filteredCommands.forEach((cmd, index) => {
+                const li = document.createElement('li');
+                li.className = 'command-item';
+                li.textContent = cmd.name;
+                li.dataset.actionIndex = commands.indexOf(cmd); // Use original index for action
+                if (index === commandPaletteSelectedIndex) {
+                    li.classList.add('selected');
+                }
+                li.addEventListener('click', () => {
+                    executeCommand(commands.indexOf(cmd));
+                });
+                commandPaletteList.appendChild(li);
+            });
+             updateCommandSelection();
+        }
 
-                        if (urlParams.has('fontSize')) {
-                            const fontSizeParam = parseInt(urlParams.get('fontSize'), 10);
-                            if (!isNaN(fontSizeParam) && fontSizeParam >= 8 && fontSizeParam <= 32) {
-                                currentFontSize = fontSizeParam;
-                            }
-                        }
-                        updateFontSizeDisplay(currentFontSize);
-                        if (urlParams.has('extract')) {
-                            isExtractionMode = urlParams.get('extract') === 'true';
-                        }
-                        updateExtractionButton();
-                        updateExtractionUIVisibility();
+        function updateCommandSelection() {
+            const items = commandPaletteList.querySelectorAll('.command-item');
+            items.forEach((item, index) => {
+                 item.classList.toggle('selected', index === commandPaletteSelectedIndex);
+                 if (index === commandPaletteSelectedIndex) {
+                    item.scrollIntoView({ block: 'nearest' });
+                 }
+            });
+        }
 
-                        if (urlParams.has('theme') && urlParams.get('theme') === 'construct') {
-                            isConstructMode = true;
-                        }
-                        updateTheme();
+        function executeCommand(index) {
+            const filter = commandPaletteInput.value;
+            const filteredCommands = commands.filter(cmd => cmd.name.toLowerCase().includes(filter.toLowerCase()));
+             if (index >= 0 && index < filteredCommands.length) {
+                const originalIndex = parseInt(commandPaletteList.children[index].dataset.actionIndex, 10);
+                if (!isNaN(originalIndex) && commands[originalIndex]) {
+                     commands[originalIndex].action();
+                     toggleCommandPalette(false);
+                }
+            }
+        }
 
-                        if (urlParams.has('names')) {
-                            const namesParam = urlParams.get('names');
-                            if (namesParam) {
-                                initialNames = namesParam.split(',').map(pair => {
-                                    const parts = pair.split('|').map(part => decodeURIComponent(part.trim()));
-                                    const name = parts[0];
-                                    const value = parts[1] || '';
-                                    return name ? { name, value, selected: false } : null;
-                                }).filter(Boolean);
-                            }
-                        } else {
-                            initialNames = [
-                                { name: 'Neo', value: 'The One', selected: false },
-                                { name: 'Trinity', value: 'Hacker', selected: false },
-                                { name: 'Morpheus', value: 'Captain', selected: false },
-                                { name: 'Agent Smith', value: 'Virus', selected: false },
-                                { name: 'Oracle', value: 'Prophet', selected: false },
-                                { name: 'Cypher', value: 'Traitor', selected: false }
-                            ];
-                        }
-                        allNames = initialNames;
-                        resetDisplayStyle();
-                        renderAvailableList();
-                        renderProgressBar();
-                        checkEmptyStates();
-                        setupCanvas();
-                        startMatrixRain();
-                        isInMatrixMode = false;
-                        bodyElement.classList.remove('matrix-mode-active');
-                        updateBodyPadding();
-                        console.log("// System Initialized.");
-                    }
+        function toggleCommandPalette(forceOpen) {
+            const isVisible = commandPaletteOverlay.classList.contains('visible');
+            if (forceOpen === true || !isVisible) {
+                commandPaletteOverlay.classList.add('visible');
+                commandPaletteInput.value = '';
+                commandPaletteSelectedIndex = 0;
+                renderCommands();
+                setTimeout(() => commandPaletteInput.focus(), 50); // Delay focus slightly
+            } else {
+                commandPaletteOverlay.classList.remove('visible');
+                commandPaletteInput.blur();
+            }
+        }
 
-                    // --- Settings Controls ---
-                    function updateBrightness(percent) {
-                        currentBrightnessPercent = Math.max(0, Math.min(100, percent)); if (brightnessSlider) brightnessSlider.value = currentBrightnessPercent; if (brightnessValue) brightnessValue.textContent = `${currentBrightnessPercent}%`;
-                        const alpha = (100 - currentBrightnessPercent) / 100;
-                        const overlayColor = isConstructMode ? '255, 255, 255' : '0, 0, 0';
-                        if (brightnessOverlay) brightnessOverlay.style.backgroundColor = `rgba(${overlayColor}, ${alpha})`;
-                    }
-                    function updateRainSpeedDisplay(fps) {
-                        currentRainFPS = Math.max(1, Math.min(100, fps)); if (speedSlider) speedSlider.value = currentRainFPS; if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`;
-                    }
-                    function handleSpeedChange(fps) {
-                        updateRainSpeedDisplay(fps); if (drops && drops.length > 0) { drops.forEach(drop => { drop.delay = calculateColumnDelay(currentRainFPS); }); }
-                    }
-                    function updateFontSizeDisplay(size) {
-                        currentFontSize = Math.max(8, Math.min(32, size)); if (fontSizeSlider) fontSizeSlider.value = currentFontSize; if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`;
-                    }
-                    function handleFontSizeChange(size) {
-                        updateFontSizeDisplay(size); if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain();
-                    }
-                    function updateExtractionButton() {
-                        if (isExtractionMode) {
-                            extractionModeBtn.textContent = '[E] Extraction Engaged';
-                            extractionModeBtn.classList.add('active');
-                            extractionModeLed.classList.add('active');
-                        } else {
-                            extractionModeBtn.textContent = '[E] Engage Extraction';
-                            extractionModeBtn.classList.remove('active');
-                            extractionModeLed.classList.remove('active');
-                        }
-                    }
-                    function updateExtractionUIVisibility() {
-                        newValueWrapper.classList.toggle('hidden', !isExtractionMode);
-                        renderAvailableList();
-                    }
-
-                    // --- Theme Toggle ---
-                    function updateTheme() {
-                        const brightnessLabel = document.getElementById('brightnessLabel');
-                        if (isConstructMode) {
-                            bodyElement.classList.add('construct-mode');
-                            themeToggleBtn.textContent = '[C] Exit Construct';
-                            themeToggleBtn.classList.add('active');
-                            if(brightnessLabel) brightnessLabel.textContent = '// Glare:';
-                        } else {
-                            bodyElement.classList.remove('construct-mode');
-                            themeToggleBtn.textContent = '[C] Construct Mode';
-                            themeToggleBtn.classList.remove('active');
-                            if(brightnessLabel) brightnessLabel.textContent = '// Intensity:';
-                        }
-                        // Re-apply brightness with the correct color overlay
-                        updateBrightness(currentBrightnessPercent);
-                        // Redraw canvas with new colors
-                        if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
-                        startMatrixRain();
-                    }
-
-                    // --- Progress Bar Rendering ---
-                    function renderProgressBar() {
-                        progressBar.innerHTML = ''; const totalCount = allNames.length;
-                        if (totalCount === 0 || isInMatrixMode) { progressBarContainer.classList.add('hidden'); }
-                        else {
-                            progressBarContainer.classList.remove('hidden'); const selectedCount = allNames.filter(op => op.selected).length;
-                            for (let i = 0; i < totalCount; i++) {
-                                const segment = document.createElement('div'); segment.className = 'progress-segment'; if (i < selectedCount) { segment.classList.add('used'); } progressBar.appendChild(segment);
-                            }
-                        }
-                        updateBodyPadding();
-                    }
-
-                    // --- Body Padding Update ---
-                    function updateBodyPadding() {
-                        if (!progressBarContainer.classList.contains('hidden') && !isInMatrixMode) { bodyElement.style.paddingBottom = `calc(var(--progress-bar-height) + 1rem)`; }
-                        else { bodyElement.style.paddingBottom = '0'; }
-                    }
-
-                    // --- List Rendering & Drag/Drop Event Handling ---
-                    function renderAvailableList() {
-                        nameListElement.innerHTML = '';
-                        checkEmptyStates();
-                        allNames.forEach((operative) => {
-                            const li = document.createElement('li');
-                            li.className = 'name-item';
-                            li.draggable = !operative.selected;
-                            li.dataset.name = operative.name;
-                            if (operative.selected) {
-                                li.classList.add('name-item-selected');
-                            }
-
-                            const nameRow = document.createElement('div');
-                            nameRow.className = 'name-row';
-
-                            const nameSpan = document.createElement('span');
-                            nameSpan.textContent = operative.name;
-                            nameSpan.className = 'name-span flex-grow mr-2 overflow-hidden text-ellipsis whitespace-nowrap';
-                            if (operative.selected) {
-                                nameSpan.classList.add('line-through');
-                            }
-                            nameRow.appendChild(nameSpan);
-
-                            const removeBtn = document.createElement('button');
-                            removeBtn.textContent = 'X';
-                            removeBtn.className = 'remove-name-btn flex-shrink-0';
-                            removeBtn.onclick = (e) => { e.stopPropagation(); removeName(operative.name); };
-                            removeBtn.disabled = operative.selected;
-                            nameRow.appendChild(removeBtn);
-                            li.appendChild(nameRow);
-
-                            const valueRow = document.createElement('div');
-                            valueRow.className = 'value-row';
-                            valueRow.classList.toggle('hidden', !isExtractionMode);
-                            const valueInput = document.createElement('input');
-                            valueInput.type = 'text';
-                            valueInput.placeholder = '// Extraction Alias...';
-                            valueInput.value = operative.value || '';
-                            valueInput.disabled = operative.selected;
-                            valueInput.addEventListener('input', (e) => {
-                                const opIndex = allNames.findIndex(op => op.name === operative.name);
-                                if (opIndex > -1) {
-                                    allNames[opIndex].value = e.target.value;
-                                    updateURL(); // Save value change to URL
-                                }
-                            });
-                            valueRow.appendChild(valueInput);
-                            li.appendChild(valueRow);
-
-                            if (!operative.selected) {
-                                li.addEventListener('dragstart', handleDragStart);
-                                li.addEventListener('dragover', handleDragOver);
-                                li.addEventListener('dragenter', handleDragEnter);
-                                li.addEventListener('dragleave', handleDragLeave);
-                                li.addEventListener('drop', handleDrop);
-                                li.addEventListener('dragend', handleDragEnd);
-                            }
-                            nameListElement.appendChild(li);
-                        });
-                    }
-                    function handleDragStart(e) {
-                        draggedItemName = e.target?.dataset?.name; if (!draggedItemName) return; setTimeout(() => { if(e.target) e.target.classList.add('dragging'); }, 0);
-                        e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', draggedItemName);
-                    }
-                    function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
-                    function handleDragEnter(e) { const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); if (targetLi && targetLi.dataset.name !== draggedItemName) { targetLi.classList.add('drag-over'); } }
-                    function handleDragLeave(e) { const targetLi = e.target.closest('.name-item'); if (targetLi && !targetLi.contains(e.relatedTarget)) { targetLi.classList.remove('drag-over'); } }
-                    function handleDrop(e) {
-                        e.stopPropagation(); e.preventDefault(); const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); const droppedName = e.dataTransfer.getData('text/plain');
-                        document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); if (!targetLi || !droppedName || targetLi.dataset.name === droppedName) { return; }
-                        const draggedIndex = allNames.findIndex(op => op.name === droppedName); let targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
-                        if (draggedIndex > -1 && targetIndex > -1) {
-                            const [draggedOperative] = allNames.splice(draggedIndex, 1); targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
-                            if(targetIndex > -1) { allNames.splice(targetIndex, 0, draggedOperative); } else { allNames.push(draggedOperative); }
-                            renderAvailableList();
-                            updateURL(); // Save new order to URL
-                        }
-                    }
-                    function handleDragEnd(e) {
-                        document.querySelectorAll('.name-item.dragging').forEach(item => item.classList.remove('dragging')); document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); draggedItemName = null;
-                    }
-
-                    // --- Name Management Functions ---
-                    function addName() {
-                        const name = newNameInput.value.trim();
-                        const value = newValueInput.value.trim();
-                        if (name && !allNames.some(op => op.name.toLowerCase() === name.toLowerCase())) {
-                            allNames.push({ name: name, value: value, selected: false });
-                            newNameInput.value = '';
-                            newValueInput.value = '';
-                            renderAvailableList();
-                            renderProgressBar();
-                            checkEmptyStates();
-                            showTemporaryMessage(`// Operative "${name}" registered.`);
-                            updateURL(); // Save new name to URL
-                        } else if (!name) {
-                            showTemporaryMessage("// Input field empty.", "warn");
-                        } else {
-                            showTemporaryMessage(`// Operative "${name}" already exists.`, "warn");
-                        }
-                    }
-                    function removeName(nameToRemove) {
-                        const itemElement = nameListElement.querySelector(`li[data-name="${nameToRemove}"]`); if (itemElement && !itemElement.classList.contains('removing')) {
-                            itemElement.classList.add('removing'); setTimeout(() => {
-                                allNames = allNames.filter(op => op.name !== nameToRemove);
-                                renderAvailableList();
-                                renderProgressBar();
-                                checkEmptyStates();
-                                showTemporaryMessage(`// Operative "${nameToRemove}" deregistered.`);
-                                updateURL(); // Save removal to URL
-                            }, 300);
-                        }
-                    }
-
-                    // --- Picking Logic & Reveal Animation ---
-                    function pickRandomName() {
-                        if (selectedNameDisplay.classList.contains('quote')) { rebootSystem(); return; } if (allNames.length > 0 && allNames.every(op => op.selected)) { resetDisplayStyle(EMPTY_QUOTE, true); return; } if (isPicking) { return; }
-                        const availableForPick = allNames.filter(op => !op.selected); if (availableForPick.length === 0) { if (allNames.length === 0) { resetDisplayStyle('|'); } else { resetDisplayStyle(EMPTY_QUOTE, true); } return; }
-                        isPicking = true; clickTriggerArea.style.pointerEvents = 'none'; selectedNameDisplayWrapper.style.pointerEvents = 'none'; selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.remove('typing', 'quote');
-                        const finalRandomIndex = Math.floor(Math.random() * availableForPick.length); const selectedOperative = availableForPick[finalRandomIndex]; revealNameGradually(selectedOperative.name);
-                    }
-                    function revealNameGradually(name) {
-                        let i = 0; if (typeIntervalId) clearInterval(typeIntervalId); selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.add('typing');
-                        typeIntervalId = setInterval(() => { if (i < name.length) { selectedNameDisplay.textContent += name.charAt(i); i++; } else { clearInterval(typeIntervalId); typeIntervalId = null; finalizeSelection(name); } }, TYPING_INTERVAL_MS);
-                    }
-                    function finalizeSelection(selectedName) {
-                        selectedNameDisplay.classList.remove('typing');
-                        const operative = allNames.find(op => op.name === selectedName);
-                        if (operative) {
-                            operative.selected = true;
-                            if (isExtractionMode) {
-                                const valueToCopy = operative.value || operative.name;
-                                copyToClipboard(valueToCopy);
-                            }
-                        } else {
-                            console.warn(`// Selected name "${selectedName}" not found.`);
-                        }
-                        renderProgressBar();
-                        renderAvailableList();
-                        checkEmptyStates();
-                        isPicking = false;
-                        clickTriggerArea.style.pointerEvents = 'auto';
-                        selectedNameDisplayWrapper.style.pointerEvents = 'auto';
-                    }
-
-                    // --- Reboot System Function ---
-                    function rebootSystem() {
-                        if (isPicking) { return; }
-                        console.log("// System state reset.");
-                        allNames.forEach(op => op.selected = false);
-                        renderAvailableList();
-                        renderProgressBar();
-                        resetDisplayStyle();
-                        showTemporaryMessage("// Operative roster reset.");
-                    }
-
-                    // --- Utility Functions ---
-                    function checkEmptyStates() {
-                        const isEmpty = allNames.length === 0; noAvailableMessage.classList.toggle('hidden', !isEmpty);
-                    }
-                    function resetDisplayStyle(displayName = '|', isQuote = false) {
-                        if (typeIntervalId) clearInterval(typeIntervalId); typeIntervalId = null; selectedNameDisplay.textContent = displayName; selectedNameDisplay.classList.remove('quote', 'typing');
-                        if (isQuote) { selectedNameDisplay.classList.add('quote'); } else if (displayName === '|') { selectedNameDisplay.classList.add('typing'); }
-                        clickTriggerArea.style.pointerEvents = 'auto'; selectedNameDisplayWrapper.style.pointerEvents = 'auto';
-                    }
-                    function showTemporaryMessage(message, type = "info") {
-                        if (type === "warn") { console.warn(message); } else if (type === "error") { console.error(message); } else { console.log(message); }
-                    }
-                    function copyToClipboard(text) {
-                         try {
-                            // Use the modern clipboard API
-                            navigator.clipboard.writeText(text).then(() => {
-                                showTemporaryMessage(`// EXTRACTED: "${text}" copied.`);
-                            }).catch(err => {
-                                console.warn('// Clipboard API failed, falling back.', err);
-                                fallbackCopyToClipboard(text);
-                            });
-                        } catch (e) {
-                             fallbackCopyToClipboard(text);
-                        }
-                    }
-                    function fallbackCopyToClipboard(text) {
-                        const textArea = document.createElement('textarea');
-                        textArea.value = text;
-                        textArea.style.position = 'fixed';
-                        textArea.style.top = '0';
-                        textArea.style.left = '0';
-                        textArea.style.opacity = '0';
-                        document.body.appendChild(textArea);
-                        textArea.focus();
-                        textArea.select();
-                        try {
-                            const successful = document.execCommand('copy');
-                            if (successful) {
-                                showTemporaryMessage(`// EXTRACTED: "${text}" copied.`);
-                            } else {
-                                showTemporaryMessage('// Extraction failed.', 'error');
-                            }
-                        } catch (err) {
-                            showTemporaryMessage('// Extraction failed.', 'error');
-                            console.error('// Fallback copy failed', err);
-                        }
-                        document.body.removeChild(textArea);
-                    }
-
-                    // --- Menu Toggle Logic ---
-                    function toggleManagementPanel() {
-                        if (isInMatrixMode) { return; }
-                        const isVisible = managementPanel.classList.toggle('visible');
-                        menuToggleBtn.innerHTML = isVisible ? '✕' : '☰';
-                        menuToggleBtn.classList.toggle('active', isVisible);
-                    }
-
-                    // --- Fullscreen Toggle Logic ---
-                    function toggleFullScreen() {
-                        if (!document.fullscreenElement) {
-                            if (managementPanel.classList.contains('visible')) {
-                                toggleManagementPanel();
-                            }
-                            document.documentElement.requestFullscreen()
-                                .then(() => {
-                                    fullscreenBtn.textContent = '[FS] Exit Full';
-                                })
-                                .catch(err => {
-                                    console.error(`FS Error: ${err.message}`);
-                                    showTemporaryMessage("Fullscreen failed.", "warn");
-                                });
-                        } else {
-                            if (document.exitFullscreen) {
-                                document.exitFullscreen()
-                                    .then(() => {
-                                        fullscreenBtn.textContent = '[FS] Fullscreen';
-                                    })
-                                    .catch(err => {
-                                        console.error(`Exit FS Error: ${err.message}`);
-                                    });
-                            }
-                        }
-                    }
-
-                    // --- Matrix Mode Logic ---
-                    function enterMatrixMode() {
-                        if (isInMatrixMode) return; isInMatrixMode = true; console.log("// Entering Matrix Mode");
-                        if (managementPanel.classList.contains('visible')) { managementPanel.classList.remove('visible'); menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active'); }
-                        if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => { console.warn(`FS request failed: ${err.message}`); }); }
-                        bodyElement.classList.add('matrix-mode-active');
-                        enterMatrixBtn.textContent = '[M] Exit Matrix'; renderProgressBar();
-                    }
-                    function exitMatrixMode() {
-                        if (!isInMatrixMode) return; isInMatrixMode = false; console.log("// Exiting Matrix Mode");
-                        if (document.fullscreenElement && document.exitFullscreen) { document.exitFullscreen().catch(err => { console.warn(`Exit FS Error: ${err.message}`); }); }
-                        bodyElement.classList.remove('matrix-mode-active');
-                        enterMatrixBtn.textContent = '[M] Enter Matrix'; renderProgressBar();
-                        menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active');
-                    }
-
-                    function handleFullscreenChange() {
-                        const isFullscreen = !!document.fullscreenElement; if (!isFullscreen && isInMatrixMode) { console.log("// FS exited externally, exiting Matrix Mode."); exitMatrixMode(); }
-                        if (fullscreenBtn) { fullscreenBtn.textContent = isFullscreen ? '[FS] Exit Full' : '[FS] Fullscreen'; }
-                    }
-
-                    // --- Command Palette and Help Modal Logic ---
-
-                    const commands = [
-                        { name: "Toggle Construct Mode", action: () => themeToggleBtn.click(), shortcut: 'C' },
-                        { name: "Toggle Extraction Mode", action: () => extractionModeBtn.click(), shortcut: 'E' },
-                        { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
-                        { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
-                        { name: "Reboot System (Clear Picks)", action: rebootSystem, shortcut: 'R' },
-                        { name: "Open Help Manual", action: () => toggleHelpModal(true) },
-                        { name: "Toggle Main Menu", action: toggleManagementPanel },
-                    ];
-
-                    function renderCommands(filter = '') {
-                        commandPaletteList.innerHTML = '';
-                        const filteredCommands = commands.filter(cmd => cmd.name.toLowerCase().includes(filter.toLowerCase()));
-
-                        if (filteredCommands.length === 0) {
-                             commandPaletteList.innerHTML = `<li class="command-item text-gray-500">// No commands found</li>`;
-                             return;
-                        }
-
-                        filteredCommands.forEach((cmd, index) => {
-                            const li = document.createElement('li');
-                            li.className = 'command-item';
-                            li.textContent = cmd.name;
-                            li.dataset.actionIndex = commands.indexOf(cmd); // Use original index for action
-                            if (index === commandPaletteSelectedIndex) {
-                                li.classList.add('selected');
-                            }
-                            li.addEventListener('click', () => {
-                                executeCommand(commands.indexOf(cmd));
-                            });
-                            commandPaletteList.appendChild(li);
-                        });
-                         updateCommandSelection();
-                    }
-
-                    function updateCommandSelection() {
-                        const items = commandPaletteList.querySelectorAll('.command-item');
-                        items.forEach((item, index) => {
-                             item.classList.toggle('selected', index === commandPaletteSelectedIndex);
-                             if (index === commandPaletteSelectedIndex) {
-                                item.scrollIntoView({ block: 'nearest' });
-                             }
-                        });
-                    }
-
-                    function executeCommand(index) {
-                        const filter = commandPaletteInput.value;
-                        const filteredCommands = commands.filter(cmd => cmd.name.toLowerCase().includes(filter.toLowerCase()));
-                         if (index >= 0 && index < filteredCommands.length) {
-                            const originalIndex = parseInt(commandPaletteList.children[index].dataset.actionIndex, 10);
-                            if (!isNaN(originalIndex) && commands[originalIndex]) {
-                                 commands[originalIndex].action();
-                                 toggleCommandPalette(false);
-                            }
-                        }
-                    }
-
-                    function toggleCommandPalette(forceOpen) {
-                        const isVisible = commandPaletteOverlay.classList.contains('visible');
-                        if (forceOpen === true || !isVisible) {
-                            commandPaletteOverlay.classList.add('visible');
-                            commandPaletteInput.value = '';
-                            commandPaletteSelectedIndex = 0;
-                            renderCommands();
-                            setTimeout(() => commandPaletteInput.focus(), 50); // Delay focus slightly
-                        } else {
-                            commandPaletteOverlay.classList.remove('visible');
-                            commandPaletteInput.blur();
-                        }
-                    }
-
-                    function toggleHelpModal(forceOpen) {
-                        const isVisible = helpModalOverlay.classList.contains('visible');
-                        if (forceOpen === true || !isVisible) {
-                            helpModalOverlay.classList.add('visible');
-                        } else {
-                            helpModalOverlay.classList.remove('visible');
-                        }
-                    }
+        function toggleHelpModal(forceOpen) {
+            const isVisible = helpModalOverlay.classList.contains('visible');
+            if (forceOpen === true || !isVisible) {
+                helpModalOverlay.classList.add('visible');
+            } else {
+                helpModalOverlay.classList.remove('visible');
+            }
+        }
 
 
-                    // --- Click Trigger Area Logic ---
-                    function handleScreenClick(event) {
-                        if (selectedNameDisplayWrapper.contains(event.target) || menuToggleBtn.contains(event.target) || managementPanel.contains(event.target)) {
-                            return;
-                        }
+        // --- Click Trigger Area Logic ---
+        function handleScreenClick(event) {
+            if (selectedNameDisplayWrapper.contains(event.target) || menuToggleBtn.contains(event.target) || managementPanel.contains(event.target)) {
+                return;
+            }
 
-                        if (isInMatrixMode) {
-                            exitMatrixMode();
-                        } else {
-                            pickRandomName();
-                        }
-                    }
+            if (isInMatrixMode) {
+                exitMatrixMode();
+            } else {
+                pickRandomName();
+            }
+        }
 
-                    // --- Event Listeners ---
-                    menuToggleBtn.addEventListener('click', toggleManagementPanel);
-                    selectedNameDisplayWrapper.addEventListener('click', pickRandomName);
-                    clickTriggerArea.addEventListener('click', handleScreenClick);
-                    addNameBtn.addEventListener('click', addName);
-                    newNameInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { addName(); } });
-                    newValueInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { addName(); } });
-                    rebootBtn.addEventListener('click', rebootSystem);
-                    window.addEventListener('resize', () => { if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain(); });
+        // --- Event Listeners ---
+        menuToggleBtn.addEventListener('click', toggleManagementPanel);
+        selectedNameDisplayWrapper.addEventListener('click', pickRandomName);
+        clickTriggerArea.addEventListener('click', handleScreenClick);
+        addNameBtn.addEventListener('click', addName);
+        newNameInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { addName(); } });
+        newValueInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { addName(); } });
+        rebootBtn.addEventListener('click', rebootSystem);
+        window.addEventListener('resize', () => { if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain(); });
 
-                    // Settings Listeners
-                    brightnessSlider.addEventListener('input', (event) => {
-                        updateBrightness(parseInt(event.target.value));
-                        updateURL();
-                    });
-                    speedSlider.addEventListener('input', (event) => {
-                        handleSpeedChange(parseInt(event.target.value));
-                        updateURL();
-                    });
-                    fontSizeSlider.addEventListener('input', (event) => {
-                        handleFontSizeChange(parseInt(event.target.value));
-                        updateURL();
-                    });
-                    titleInput.addEventListener('input', (event) => {
-                        updateSchemaTitle(event.target.value);
-                        updateURL();
-                    });
+        // Settings Listeners
+        brightnessSlider.addEventListener('input', (event) => {
+            updateBrightness(parseInt(event.target.value));
+            updateURL();
+        });
+        speedSlider.addEventListener('input', (event) => {
+            handleSpeedChange(parseInt(event.target.value));
+            updateURL();
+        });
+        fontSizeSlider.addEventListener('input', (event) => {
+            handleFontSizeChange(parseInt(event.target.value));
+            updateURL();
+        });
+        titleInput.addEventListener('input', (event) => {
+            updateSchemaTitle(event.target.value);
+            updateURL();
+        });
 
-                    // Action Button Listeners
-                    themeToggleBtn.addEventListener('click', () => {
-                        isConstructMode = !isConstructMode;
-                        updateTheme();
-                        updateURL();
-                    });
-                    fullscreenBtn.addEventListener('click', toggleFullScreen);
-                    enterMatrixBtn.addEventListener('click', () => { if (isInMatrixMode) { exitMatrixMode(); } else { enterMatrixMode(); } });
-                    document.addEventListener('fullscreenchange', handleFullscreenChange);
+        // Action Button Listeners
+        themeToggleBtn.addEventListener('click', () => {
+            isConstructMode = !isConstructMode;
+            updateTheme();
+            updateURL();
+        });
+        fullscreenBtn.addEventListener('click', toggleFullScreen);
+        enterMatrixBtn.addEventListener('click', () => { if (isInMatrixMode) { exitMatrixMode(); } else { enterMatrixMode(); } });
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
 
-                    // Mode Button Listeners
-                    extractionModeBtn.addEventListener('click', () => {
-                        isExtractionMode = !isExtractionMode;
-                        updateExtractionButton();
-                        updateExtractionUIVisibility();
-                        showTemporaryMessage(`// Extraction Mode ${isExtractionMode ? 'Engaged' : 'Disengaged'}.`);
-                        updateURL();
-                    });
+        // Mode Button Listeners
+        extractionModeBtn.addEventListener('click', () => {
+            isExtractionMode = !isExtractionMode;
+            updateExtractionButton();
+            updateExtractionUIVisibility();
+            showTemporaryMessage(`// Extraction Mode ${isExtractionMode ? 'Engaged' : 'Disengaged'}.`);
+            updateURL();
+        });
 
-                    // Modal & Palette Listeners
-                    helpBtn.addEventListener('click', () => toggleHelpModal(true));
-                    helpModalOverlay.addEventListener('click', (e) => { if (e.target === helpModalOverlay) toggleHelpModal(false); });
-                    commandPaletteOverlay.addEventListener('click', (e) => { if (e.target === commandPaletteOverlay) toggleCommandPalette(false); });
-                    commandPaletteInput.addEventListener('input', () => {
-                         commandPaletteSelectedIndex = 0;
-                         renderCommands(commandPaletteInput.value);
-                    });
+        // Modal & Palette Listeners
+        helpBtn.addEventListener('click', () => toggleHelpModal(true));
+        helpModalOverlay.addEventListener('click', (e) => { if (e.target === helpModalOverlay) toggleHelpModal(false); });
+        commandPaletteOverlay.addEventListener('click', (e) => { if (e.target === commandPaletteOverlay) toggleCommandPalette(false); });
+        commandPaletteInput.addEventListener('input', () => {
+             commandPaletteSelectedIndex = 0;
+             renderCommands(commandPaletteInput.value);
+        });
 
-                    // Global Keyboard Shortcuts
-                    document.addEventListener('keydown', (e) => {
-                        const isModalOpen = commandPaletteOverlay.classList.contains('visible') || helpModalOverlay.classList.contains('visible');
-                        const isInputFocused = document.activeElement.tagName === 'INPUT';
+        // Global Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            const isModalOpen = commandPaletteOverlay.classList.contains('visible') || helpModalOverlay.classList.contains('visible');
+            const isInputFocused = document.activeElement.tagName === 'INPUT';
 
-                        // Command Palette Shortcuts
-                        if (commandPaletteOverlay.classList.contains('visible')) {
-                            if (e.key === 'ArrowDown') {
-                                e.preventDefault();
-                                const itemCount = commandPaletteList.children.length;
-                                if(itemCount > 0) commandPaletteSelectedIndex = (commandPaletteSelectedIndex + 1) % itemCount;
-                                updateCommandSelection();
-                            } else if (e.key === 'ArrowUp') {
-                                e.preventDefault();
-                                const itemCount = commandPaletteList.children.length;
-                                if(itemCount > 0) commandPaletteSelectedIndex = (commandPaletteSelectedIndex - 1 + itemCount) % itemCount;
-                                updateCommandSelection();
-                            } else if (e.key === 'Enter') {
-                                e.preventDefault();
-                                executeCommand(commandPaletteSelectedIndex);
-                            } else if (e.key === 'Escape') {
-                                toggleCommandPalette(false);
-                            }
-                            return; // Stop further processing
-                        }
+            // Command Palette Shortcuts
+            if (commandPaletteOverlay.classList.contains('visible')) {
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const itemCount = commandPaletteList.children.length;
+                    if(itemCount > 0) commandPaletteSelectedIndex = (commandPaletteSelectedIndex + 1) % itemCount;
+                    updateCommandSelection();
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const itemCount = commandPaletteList.children.length;
+                    if(itemCount > 0) commandPaletteSelectedIndex = (commandPaletteSelectedIndex - 1 + itemCount) % itemCount;
+                    updateCommandSelection();
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    executeCommand(commandPaletteSelectedIndex);
+                } else if (e.key === 'Escape') {
+                    toggleCommandPalette(false);
+                }
+                return; // Stop further processing
+            }
 
-                         // Help Modal Shortcut
-                        if (helpModalOverlay.classList.contains('visible')) {
-                             if (e.key === 'Escape') {
-                                toggleHelpModal(false);
-                             }
-                             return;
-                        }
+             // Help Modal Shortcut
+            if (helpModalOverlay.classList.contains('visible')) {
+                 if (e.key === 'Escape') {
+                    toggleHelpModal(false);
+                 }
+                 return;
+            }
 
-                        // Global Shortcuts
-                        if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '/') {
-                            e.preventDefault();
-                            toggleHelpModal();
-                        } else if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-                            e.preventDefault();
-                            toggleCommandPalette();
-                        } else if (e.key === 'Escape') {
-                             if (isModalOpen) return; // Already handled above
-                             if (isInMatrixMode) { exitMatrixMode(); return; }
-                             if (managementPanel.classList.contains('visible')) {
-                                 toggleManagementPanel();
-                             }
-                        } else if (!isInputFocused) { // Single-key shortcuts only when not typing
-                             switch(e.key.toLowerCase()) {
-                                  case 'c': themeToggleBtn.click(); break;
-                                  case 'e': extractionModeBtn.click(); break;
-                                  case 'f': toggleFullScreen(); break;
-                                  case 'm': enterMatrixBtn.click(); break;
-                                  case 'r': rebootBtn.click(); break;
-                             }
-                        }
-                    });
+            // Global Shortcuts
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === '/') {
+                e.preventDefault();
+                toggleHelpModal();
+            } else if ((e.metaKey || e.ctrlKey) && e.key === '/') {
+                e.preventDefault();
+                toggleCommandPalette();
+            } else if (e.key === 'Escape') {
+                 if (isModalOpen) return; // Already handled above
+                 if (isInMatrixMode) { exitMatrixMode(); return; }
+                 if (managementPanel.classList.contains('visible')) {
+                     toggleManagementPanel();
+                 }
+            } else if (!isInputFocused) { // Single-key shortcuts only when not typing
+                 switch(e.key.toLowerCase()) {
+                      case 'c': themeToggleBtn.click(); break;
+                      case 'e': extractionModeBtn.click(); break;
+                      case 'f': toggleFullScreen(); break;
+                      case 'm': enterMatrixBtn.click(); break;
+                      case 'r': rebootBtn.click(); break;
+                 }
+            }
+        });
 
 
-                    // --- Initial Load ---
-                    document.addEventListener('DOMContentLoaded', () => { initializeStateFromURL(); });
+        // --- Initial Load ---
+        document.addEventListener('DOMContentLoaded', () => { initializeStateFromURL(); });
 
-                </script>
-            </body>
-            </html>
+    </script>
+</body>
+</html>
 
-            
