@@ -1,6 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<!DOCTYPE html><html lang="en"><head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading System...</title>
@@ -9,6 +7,7 @@
         /* Monospace font */
         @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;700&display=swap');
         :root {
+            /* -- DARK MODE (Default) -- */
             --matrix-green: #39ff14;
             --matrix-green-rgb: 57, 255, 20;
             --matrix-green-dark: #0a4a0a;
@@ -17,22 +16,56 @@
             --matrix-font: 'Source Code Pro', monospace;
             --matrix-lead: #ffffff;
             --matrix-flash: #ffffff;
+
+            /* -- LIGHT MODE ('Construct Mode') -- */
+            --construct-bg: #F0F2F5;
+            --construct-bg-rgb: 240, 242, 245;
+            --construct-bg-darker: #e0e2e5;
+            --construct-text: #1A1A1A;
+            --construct-text-rgb: 26, 26, 26;
+            --construct-text-light: #666666;
+            --construct-accent: #00A8FF;
+            --construct-accent-rgb: 0, 168, 255;
+            --construct-accent-dark: #0077B3;
+            --construct-lead: #1a1a1a;
+            --construct-flash: #1a1a1a;
+
+            /* -- Dynamic Variables -- */
+            --primary-color: var(--matrix-green);
+            --primary-color-rgb: var(--matrix-green-rgb);
+            --primary-color-dark: var(--matrix-green-dark);
+            --bg-color: var(--matrix-bg);
+            --bg-color-darker: var(--matrix-bg-darker);
+            --font-color: var(--matrix-green);
+            --lead-color: var(--matrix-lead);
+            --flash-color: var(--matrix-flash);
+
+            /* -- General UI -- */
             --progress-bar-height: 10px;
             --segment-gap: 2px;
             --menu-btn-top: 1.5rem;
             --menu-btn-right: 1.5rem;
             --menu-btn-height: calc(1.8rem + 0.6rem + 4px); /* font + padding + border */
         }
+        body.construct-mode {
+            --primary-color: var(--construct-accent);
+            --primary-color-rgb: var(--construct-accent-rgb);
+            --primary-color-dark: var(--construct-accent-dark);
+            --bg-color: var(--construct-bg);
+            --bg-color-darker: var(--construct-bg-darker);
+            --font-color: var(--construct-text);
+            --lead-color: var(--construct-lead);
+            --flash-color: var(--construct-flash);
+        }
 
         html, body {
             height: 100%; /* Ensure html and body take full height */
             overflow: hidden; /* Prevent scrolling on body */
         }
-
         body {
             font-family: var(--matrix-font);
-            background-color: var(--matrix-bg);
-            color: var(--matrix-green);
+            background-color: var(--bg-color);
+            color: var(--font-color);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -40,7 +73,6 @@
             position: relative;
             /* padding-bottom applied dynamically via JS */
         }
-
         /* Canvas for background digital rain */
         #matrixCanvas {
             position: fixed;
@@ -63,7 +95,6 @@
             pointer-events: none;
             transition: background-color 0.1s ease-in-out;
         }
-
         /* Click Trigger Area */
         #clickTriggerArea {
             position: fixed;
@@ -93,8 +124,8 @@
         /* Schema Title Display Area */
         #schemaTitleDisplay {
             font-family: var(--matrix-font);
-            color: rgba(57, 255, 20);
-            text-shadow: 0 0 5px rgba(57, 255, 20, 0.5);
+            color: var(--font-color);
+            text-shadow: 0 0 5px rgba(var(--primary-color-rgb), 0.5);
             font-size: 4rem;
             font-weight: 700;
             margin-bottom: 1rem;
@@ -104,6 +135,7 @@
             line-height: 1.1;
             word-break: break-word;
         }
+        .construct-mode #schemaTitleDisplay { text-shadow: 1px 1px 0px var(--primary-color-dark); }
         /* Picker display area - Centered within container */
         #selectedNameDisplayWrapper {
             position: relative;
@@ -117,31 +149,32 @@
             pointer-events: auto; /* Enable pointer events for this specific wrapper */
         }
         #selectedNameDisplay {
-             font-family: var(--matrix-font);
-             color: var(--matrix-green);
-             text-shadow: 0 0 8px var(--matrix-green), 0 0 15px var(--matrix-green);
-             font-size: 3rem;
-             font-weight: 700;
-             line-height: 1.1;
-             word-break: break-word;
-             min-height: 1.2em;
-             transition: font-size 0.3s ease-in-out;
+              font-family: var(--matrix-font);
+              color: var(--primary-color);
+              text-shadow: 0 0 8px var(--primary-color), 0 0 15px var(--primary-color);
+              font-size: 3rem;
+              font-weight: 700;
+              line-height: 1.1;
+              word-break: break-word;
+              min-height: 1.2em;
+              transition: font-size 0.3s ease-in-out;
         }
+        .construct-mode #selectedNameDisplay { text-shadow: 1px 1px 0px var(--primary-color-dark); }
          #selectedNameDisplay.typing {
-             animation: blink-pipe .75s step-end infinite;
+              animation: blink-pipe .75s step-end infinite;
         }
          #selectedNameDisplay.quote {
-             font-size: 1.5rem;
-             font-weight: 400;
-             color: rgba(57, 255, 20, 0.7);
-             animation: none;
+              font-size: 1.5rem;
+              font-weight: 400;
+              color: rgba(var(--primary-color-rgb), 0.7);
+              animation: none;
         }
+        .construct-mode #selectedNameDisplay.quote { color: var(--construct-text-light); }
 
         @keyframes blink-pipe {
             from, to { opacity: 1 }
             50% { opacity: 0 }
         }
-
         /* Hamburger Menu Button */
         #menuToggleBtn {
             position: fixed;
@@ -152,24 +185,29 @@
             font-size: 1.8rem;
             font-weight: 600;
             background-color: transparent;
-            color: var(--matrix-green);
-            border: 2px solid var(--matrix-green);
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
             padding: 0.3rem 0.6rem;
             border-radius: 0.25rem;
             cursor: pointer;
             transition: all 0.2s ease-in-out, opacity 0.3s ease-out; /* Ensure opacity transition */
-            text-shadow: 0 0 3px var(--matrix-green);
+            text-shadow: 0 0 3px var(--primary-color);
             line-height: 1;
             opacity: 1;
         }
+        .construct-mode #menuToggleBtn { text-shadow: none; }
         #menuToggleBtn:hover {
-            background-color: var(--matrix-green-dark);
-            color: var(--matrix-bg);
-            box-shadow: 0 0 10px var(--matrix-green);
+            background-color: var(--primary-color-dark);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--primary-color);
             text-shadow: none;
         }
+        .construct-mode #menuToggleBtn:hover {
+            background-color: var(--primary-color);
+            color: var(--construct-bg);
+            box-shadow: none;
+        }
         #menuToggleBtn.active { }
-
 
         /* Management Panel */
         #managementPanel {
@@ -180,8 +218,8 @@
             max-width: 350px;
             height: 100vh; /* Full viewport height */
             background-color: rgba(0, 0, 0, 0.95);
-            border-left: 2px solid var(--matrix-green);
-            box-shadow: -5px 0 15px rgba(57, 255, 20, 0.2);
+            border-left: 2px solid var(--primary-color);
+            box-shadow: -5px 0 15px rgba(var(--primary-color-rgb), 0.2);
             transform: translateX(100%);
             transition: transform 0.35s ease-in-out, opacity 0.3s ease-out;
             z-index: 10; /* Below menu button */
@@ -191,19 +229,22 @@
             flex-direction: column;
             opacity: 1;
         }
+        .construct-mode #managementPanel {
+            background-color: rgba(var(--construct-bg-rgb), 0.95);
+            box-shadow: -5px 0 15px rgba(var(--construct-accent-rgb), 0.2);
+        }
         #managementPanel.visible {
             transform: translateX(0);
         }
-
         /* Styling for ALL Buttons inside the panel */
         #managementPanel button {
             font-family: var(--matrix-font);
             font-weight: 600;
             background-color: transparent;
-            border: 2px solid var(--matrix-green); /* Default green border */
-            color: var(--matrix-green); /* Default green text */
+            border: 2px solid var(--primary-color); /* Default green border */
+            color: var(--primary-color); /* Default green text */
             transition: all 0.2s ease-in-out;
-            text-shadow: 0 0 3px var(--matrix-green); /* Default green shadow */
+            text-shadow: 0 0 3px var(--primary-color); /* Default green shadow */
             padding: 0.5rem 0.5rem; /* Consistent padding */
             border-radius: 0.25rem;
             cursor: pointer;
@@ -215,31 +256,45 @@
             line-height: 1.2;
             margin-bottom: 0.75rem; /* Default margin */
         }
+        .construct-mode #managementPanel button { text-shadow: none; border-width: 1px; color: var(--construct-text); border-color: var(--primary-color-dark); }
         /* Hover/Active States for ALL Panel Buttons */
          #managementPanel button:hover:not(:disabled) {
-             background-color: var(--matrix-green-dark); /* Dark green background */
-             color: var(--matrix-bg); /* Black text */
-             box-shadow: 0 0 10px var(--matrix-green); /* Green glow */
-             text-shadow: none;
-             transform: translateY(-1px);
+              background-color: var(--primary-color-dark); /* Dark green background */
+              color: var(--bg-color); /* Black text */
+              box-shadow: 0 0 10px var(--primary-color); /* Green glow */
+              text-shadow: none;
+              transform: translateY(-1px);
+        }
+        .construct-mode #managementPanel button:hover:not(:disabled) {
+            background-color: var(--primary-color);
+            color: var(--construct-bg);
+            box-shadow: none;
+            border-color: var(--primary-color);
         }
         #managementPanel button:active:not(:disabled) {
-             transform: translateY(0px);
-             background-color: rgba(57, 255, 20, 0.3); /* Slightly lighter green background */
+              transform: translateY(0px);
+              background-color: rgba(var(--primary-color-rgb), 0.3); /* Slightly lighter green background */
         }
          #managementPanel button:disabled {
-             opacity: 0.4;
-             cursor: not-allowed;
-             border-color: var(--matrix-green-dark); /* Darker border for disabled */
-             color: var(--matrix-green-dark); /* Darker text for disabled */
-             text-shadow: none;
+              opacity: 0.4;
+              cursor: not-allowed;
+              border-color: var(--primary-color-dark); /* Darker border for disabled */
+              color: var(--primary-color-dark); /* Darker text for disabled */
+              text-shadow: none;
         }
+        .construct-mode #managementPanel button:disabled { color: var(--construct-text-light); border-color: var(--construct-text-light); }
         /* Active state for toggle-like buttons */
         #managementPanel button.active {
-            background-color: var(--matrix-green-dark);
-            color: var(--matrix-bg);
-            box-shadow: 0 0 10px var(--matrix-green);
+            background-color: var(--primary-color-dark);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--primary-color);
             text-shadow: none;
+        }
+        .construct-mode #managementPanel button.active {
+            background-color: var(--primary-color);
+            color: var(--construct-bg);
+            box-shadow: none;
+            border-color: var(--primary-color);
         }
 
         /* LED Indicator Styles */
@@ -255,21 +310,24 @@
         .led-indicator {
             width: 14px;
             height: 14px;
-            background-color: var(--matrix-green-dark);
+            background-color: var(--primary-color-dark);
             border-radius: 50%;
             margin-left: 0.75rem;
             box-shadow: inset 0 0 4px rgba(0,0,0,0.7);
             transition: all 0.2s ease-in-out;
-            border: 1px solid rgba(var(--matrix-green-rgb), 0.2);
+            border: 1px solid rgba(var(--primary-color-rgb), 0.2);
             flex-shrink: 0; /* Prevent LED from shrinking */
             margin-bottom: .75rem; /* line up with button */
         }
+        .construct-mode .led-indicator { background-color: var(--construct-bg-darker); border-color: var(--primary-color-dark); box-shadow: inset 0 0 4px rgba(0,0,0,0.2); }
         .led-indicator.active {
-            background-color: var(--matrix-green);
-            border-color: rgba(var(--matrix-green-rgb), 0.5);
-            box-shadow: 0 0 10px var(--matrix-green), 0 0 20px rgba(var(--matrix-green-rgb), 0.5), inset 0 0 2px rgba(255,255,255,0.5);
+            background-color: var(--primary-color);
+            border-color: rgba(var(--primary-color-rgb), 0.5);
+            box-shadow: 0 0 10px var(--primary-color), 0 0 20px rgba(var(--primary-color-rgb), 0.5), inset 0 0 2px rgba(255,255,255,0.5);
         }
-
+        .construct-mode .led-indicator.active {
+            box-shadow: 0 0 10px var(--primary-color), inset 0 0 2px rgba(255,255,255,0.5);
+        }
 
         /* Specific Layout for Action Buttons Row */
         #managementPanel .action-button-row {
@@ -282,77 +340,85 @@
             width: auto; /* Let flexbox handle width */
             margin-bottom: 0; /* Remove bottom margin for this row */
         }
-
         /* Specific Layout/Overrides for Add/Reboot Buttons */
         #managementPanel .panel-section button:not(.remove-name-btn):not(.action-button-row button):not(.control-group button) {
             width: 100%; /* Make Add/Reboot full width */
             padding: 0.5rem 1rem; /* Restore original padding if needed */
         }
+        #addNameBtn { border-width: 2px !important; } /* Make add button bolder */
+        .construct-mode #addNameBtn { background-color: var(--primary-color); color: var(--construct-bg); border-color: var(--primary-color); }
+        .construct-mode #addNameBtn:hover:not(:disabled) { background-color: var(--primary-color-dark); border-color: var(--primary-color-dark); }
          #managementPanel .panel-section:last-of-type button:last-of-type:not(.remove-name-btn) {
-             margin-bottom: 0; /* Remove margin from last button (Reboot) */
+              margin-bottom: 0; /* Remove margin from last button (Reboot) */
         }
-
          /* Remove Name Button ('X') - Keep specific small style */
          #managementPanel .remove-name-btn {
-             border: 1px solid var(--matrix-green-dark); /* Keep slightly dimmer border */
-             padding: 2px 4px;
-             line-height: 1;
-             pointer-events: auto !important;
-             opacity: 1 !important;
-             width: auto;
-             flex: none;
-             margin-left: 0.5rem;
-             margin-bottom: 0;
-             /* Use general hover/active state from above */
+              border: 1px solid var(--primary-color-dark); /* Keep slightly dimmer border */
+              padding: 2px 4px;
+              line-height: 1;
+              pointer-events: auto !important;
+              opacity: 1 !important;
+              width: auto;
+              flex: none;
+              margin-left: 0.5rem;
+              margin-bottom: 0;
+              /* Use general hover/active state from above */
         }
+        .construct-mode #managementPanel .remove-name-btn { border-color: var(--construct-text-light); color: var(--construct-text-light); }
+        .construct-mode #managementPanel .remove-name-btn:hover:not(:disabled) { border-color: var(--primary-color); color: var(--construct-bg); background-color: var(--primary-color); }
 
         /* Input field styling */
         #managementPanel input[type="text"] {
-            background-color: var(--matrix-bg-darker); border: 1px solid var(--matrix-green-dark); color: var(--matrix-green); font-family: var(--matrix-font);
-            caret-color: var(--matrix-green); width: 100%; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem;
+            background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark); color: var(--font-color); font-family: var(--matrix-font);
+            caret-color: var(--primary-color); width: 100%; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem;
         }
-        #managementPanel input[type="text"]::placeholder { color: rgba(57, 255, 20, 0.4); }
-        #managementPanel input[type="text"]:focus { outline: none; border-color: var(--matrix-green); box-shadow: 0 0 5px var(--matrix-green); }
+        #managementPanel input[type="text"]::placeholder { color: rgba(var(--primary-color-rgb), 0.4); }
+        #managementPanel input[type="text"]:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 5px var(--primary-color); }
+        .construct-mode #managementPanel input[type="text"] { background-color: var(--construct-bg-darker); border-color: #cccccc; color: var(--construct-text); }
+        .construct-mode #managementPanel input[type="text"]::placeholder { color: var(--construct-text-light); }
+        .construct-mode #managementPanel input[type="text"]:focus { box-shadow: 0 0 5px var(--primary-color); }
         /* Label styling */
-        #managementPanel label { display: block; font-size: 0.875rem; color: rgba(57, 255, 20, 0.7); margin-bottom: 0.25rem; }
+        #managementPanel label { display: block; font-size: 0.875rem; color: rgba(var(--primary-color-rgb), 0.7); margin-bottom: 0.25rem; }
+        .construct-mode #managementPanel label { color: var(--construct-text-light); }
         /* Slider styling */
-        #managementPanel input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--matrix-green); margin-top: 0.25rem; margin-bottom: 0.25rem; }
-        
-        /* Panel Sections for better structure and scrolling */
+        #managementPanel input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary-color); margin-top: 0.25rem; margin-bottom: 0.25rem; }
+                 /* Panel Sections for better structure and scrolling */
         .panel-section {
             margin-bottom: 1rem;
             padding-top: 0.5rem;
-            border-top: 1px solid var(--matrix-green-dark);
+            border-top: 1px solid var(--primary-color-dark);
             flex-shrink: 0; /* Prevent sections from shrinking when panel scrolls */
         }
+        .construct-mode .panel-section { border-top-color: var(--construct-bg-darker); }
         .panel-section.action-button-row {
             border-top: none; /* No top border for the action button row */
-            padding-top: 4rem; /* Keep the INCREASED padding */
+            padding-top: 1rem;
             margin-bottom: 1rem; /* Ensure margin below action buttons */
         }
          .panel-section:last-of-type {
-             margin-bottom: 0; /* No bottom margin for the last section */
+              margin-bottom: 0; /* No bottom margin for the last section */
         }
-
 
         /* List styling inside panel */
         #managementPanel .list-container {
-            border: 1px solid var(--matrix-green-dark); background-color: rgba(0, 0, 0, 0.3); padding: 0.75rem; border-radius: 0.375rem;
+            border: 1px solid var(--primary-color-dark); background-color: rgba(0, 0, 0, 0.3); padding: 0.75rem; border-radius: 0.375rem;
             /* REMOVED: flex-grow: 1; */ /* Let container size naturally */
             display: flex; flex-direction: column;
             min-height: 100px; /* Ensure it has some minimum height */
         }
+        .construct-mode #managementPanel .list-container { border-color: var(--construct-bg-darker); background-color: rgba(var(--construct-bg-rgb), 0.3); }
          #managementPanel #nameList {
-             /* REMOVED: overflow-y: auto; */ /* Panel handles scrolling */
-             /* REMOVED: flex-grow: 1; */
-             padding-right: 0; /* No need for scrollbar padding */
-             /* REMOVED: max-height: 100%; */
+              /* REMOVED: overflow-y: auto; */ /* Panel handles scrolling */
+              /* REMOVED: flex-grow: 1; */
+              padding-right: 0; /* No need for scrollbar padding */
+              /* REMOVED: max-height: 100%; */
         }
         #managementPanel .name-item {
-            background-color: transparent; border-bottom: 1px dashed var(--matrix-green-dark); padding: 0.5rem 0.25rem; color: var(--matrix-green);
+            background-color: transparent; border-bottom: 1px dashed var(--primary-color-dark); padding: 0.5rem 0.25rem; color: var(--font-color);
             transition: all 0.3s ease-out; opacity: 1; transform: translateX(0); display: flex; flex-direction: column; /* Changed to column */
             cursor: grab; margin-bottom: 0.25rem;
         }
+        .construct-mode #managementPanel .name-item { border-bottom-color: var(--construct-bg-darker); }
         #managementPanel .name-item .name-row {
             display: flex;
             justify-content: space-between;
@@ -369,35 +435,43 @@
         }
         #managementPanel .name-item:last-child { border-bottom: none; margin-bottom: 0; }
          #managementPanel .name-item.removing {
-             transition: opacity 0.3s ease-out, transform 0.3s ease-out, height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
-             opacity: 0; transform: translateX(-20px); cursor: default; height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: 0; border: none; overflow: hidden;
+              transition: opacity 0.3s ease-out, transform 0.3s ease-out, height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
+              opacity: 0; transform: translateX(-20px); cursor: default; height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: 0; border: none; overflow: hidden;
         }
-        #managementPanel .name-item-selected { opacity: 0.4; color: rgba(57, 255, 20, 0.4); pointer-events: none; cursor: default; }
+        #managementPanel .name-item-selected { opacity: 0.4; color: rgba(var(--primary-color-rgb), 0.4); pointer-events: none; cursor: default; }
+        .construct-mode #managementPanel .name-item-selected { color: var(--construct-text-light); }
         #managementPanel .name-item-selected .name-span { text-decoration: line-through; }
         /* Drag & Drop Styles */
-        #managementPanel .name-item.dragging { opacity: 0.5; background-color: var(--matrix-green-dark); cursor: grabbing; border-style: solid; }
-        #managementPanel .name-item.drag-over { border-top: 2px solid var(--matrix-green); background-color: rgba(57, 255, 20, 0.1); }
+        #managementPanel .name-item.dragging { opacity: 0.5; background-color: var(--primary-color-dark); cursor: grabbing; border-style: solid; }
+        .construct-mode #managementPanel .name-item.dragging { background-color: var(--construct-bg-darker); }
+        #managementPanel .name-item.drag-over { border-top: 2px solid var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.1); }
+        .construct-mode #managementPanel .name-item.drag-over { border-top-color: var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.2); }
 
         /* Text & Titles inside panel */
         #managementPanel h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem; margin-top: 0.5rem; }
          #managementPanel p#footerText {
-             font-size: 0.75rem; color: rgba(57, 255, 20, 0.6); text-align: center;
-             margin-top: 1rem; /* Add space above footer */
-             flex-shrink: 0; /* Prevent footer from shrinking */
+              font-size: 0.75rem; color: rgba(var(--primary-color-rgb), 0.6); text-align: center;
+              margin-top: 1rem; /* Add space above footer */
+              flex-shrink: 0; /* Prevent footer from shrinking */
         }
-         #managementPanel #noAvailableMessage { color: rgba(57, 255, 20, 0.5); font-style: italic; padding: 0.5rem 0.25rem; }
+        .construct-mode #managementPanel p#footerText { color: var(--construct-text-light); }
+         #managementPanel #noAvailableMessage { color: rgba(var(--primary-color-rgb), 0.5); font-style: italic; padding: 0.5rem 0.25rem; }
+        .construct-mode #managementPanel #noAvailableMessage { color: var(--construct-text-light); }
 
         /* Progress Bar Styles */
         #progressBarContainer {
             position: fixed; bottom: 0; left: 0; width: 100%; padding: 0.5rem 1rem; z-index: 20; box-sizing: border-box; transition: opacity 0.3s ease-in-out;
         }
         #progressBar {
-            display: flex; width: 100%; height: var(--progress-bar-height); background-color: var(--matrix-bg-darker); border: 1px solid var(--matrix-green-dark);
+            display: flex; width: 100%; height: var(--progress-bar-height); background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
             border-radius: 2px; overflow: hidden; gap: var(--segment-gap); padding: var(--segment-gap); box-sizing: border-box; transition: opacity 0.3s ease-in-out;
         }
+        .construct-mode #progressBar { border-color: var(--construct-bg-darker); }
         #progressBar.hidden { opacity: 0; pointer-events: none; }
-        .progress-segment { flex: 1; background-color: var(--matrix-green); border-radius: 1px; transition: background-color 0.3s ease, opacity 0.3s ease; box-shadow: 0 0 3px var(--matrix-green); min-width: 1px; }
-        .progress-segment.used { background-color: var(--matrix-green-dark); opacity: 0.5; box-shadow: none; }
+        .progress-segment { flex: 1; background-color: var(--primary-color); border-radius: 1px; transition: background-color 0.3s ease, opacity 0.3s ease; box-shadow: 0 0 3px var(--primary-color); min-width: 1px; }
+        .construct-mode .progress-segment { box-shadow: none; }
+        .progress-segment.used { background-color: var(--primary-color-dark); opacity: 0.5; box-shadow: none; }
+        .construct-mode .progress-segment.used { background-color: var(--construct-bg-darker); }
 
         /* ---- MATRIX MODE STYLES ---- */
         /* Hide menu button COMPLETELY in matrix mode */
@@ -407,7 +481,6 @@
             transition: opacity 0.3s ease-out; /* Allow fade out */
             z-index: -1; /* Ensure it's behind everything */
         }
-
         /* Hide other UI elements in matrix mode */
         body.matrix-mode-active #mainDisplayContainer,
         body.matrix-mode-active #managementPanel, /* Hide panel */
@@ -418,10 +491,9 @@
          body.matrix-mode-active #managementPanel { transform: translateX(100%); } /* Ensure panel transforms out */
          /* Make click trigger area inactive in matrix mode to prevent accidental name picks */
          body.matrix-mode-active #clickTriggerArea {
-             cursor: default; /* Change cursor */
-             /* Keep pointer-events: none from above */
+              cursor: default; /* Change cursor */
+              /* Keep pointer-events: none from above */
         }
-
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
@@ -430,7 +502,6 @@
             #selectedNameDisplay { font-size: 2.25rem; }
             #selectedNameDisplay.quote { font-size: 1.25rem; }
             #menuToggleBtn { font-size: 1.5rem; padding: 0.2rem 0.5rem; }
-
             #managementPanel { padding: 1rem; } /* Reduce padding on mobile */
             /* Stack action buttons row on mobile */
             #managementPanel .action-button-row {
@@ -459,12 +530,16 @@
     <button id="menuToggleBtn">☰</button>
 
     <div id="managementPanel">
-        <div class="action-button-row panel-section"> <button id="fullscreenBtn" class="font-medium">
+        <div class="action-button-row panel-section">
+            <button id="themeToggleBtn" class="font-medium">
+                [C] Construct Mode
+            </button>
+            <button id="fullscreenBtn" class="font-medium">
                 [FS] Fullscreen
-             </button>
-             <button id="enterMatrixBtn" class="font-medium">
+            </button>
+            <button id="enterMatrixBtn" class="font-medium">
                 [M] Enter Matrix
-             </button>
+            </button>
         </div>
 
         <div class="panel-section">
@@ -476,7 +551,7 @@
              <h3 class="// System Parameters:"></h3>
              <div class="mb-3">
                  <label for="brightnessSlider" class="flex justify-between items-center">
-                     <span>// Intensity:</span>
+                     <span id="brightnessLabel">// Intensity:</span>
                      <span id="brightnessValue" class="font-semibold text-sm">60%</span>
                  </label>
                  <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="60">
@@ -497,8 +572,8 @@
              </div>
              <!-- Extraction Mode Button with LED -->
              <div class="control-group">
-                <button id="extractionModeBtn">[E] Engage Extraction</button>
-                <div id="extractionModeLed" class="led-indicator"></div>
+                 <button id="extractionModeBtn">[E] Engage Extraction</button>
+                 <div id="extractionModeLed" class="led-indicator"></div>
              </div>
         </div>
 
@@ -508,12 +583,12 @@
              <input type="text" id="newNameInput" placeholder="Enter name..." class="outline-none">
              <!-- Value Input Wrapper -->
              <div id="newValueWrapper">
-                <label for="newValueInput" class="text-xs">// Extraction Alias (Optional):</label>
-                <input type="text" id="newValueInput" placeholder="Alias to copy..." class="outline-none">
+                 <label for="newValueInput" class="text-xs">// Extraction Alias (Optional):</label>
+                 <input type="text" id="newValueInput" placeholder="Alias to copy..." class="outline-none">
              </div>
              <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
-                 <span class="text-xl leading-none">[+]</span>
-                 Add
+                  <span class="text-xl leading-none">[+]</span>
+                  Add
              </button>
         </div>
 
@@ -524,9 +599,9 @@
         </div>
 
         <div class="panel-section">
-             <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
-                [R] Reboot System
-             </button>
+              <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
+                  [R] Reboot System
+              </button>
         </div>
 
          <p id="footerText">// System state is saved to the URL automatically.</p>
@@ -573,7 +648,7 @@
         // Action Buttons (Inside Panel)
         const fullscreenBtn = document.getElementById('fullscreenBtn');
         const enterMatrixBtn = document.getElementById('enterMatrixBtn');
-
+        const themeToggleBtn = document.getElementById('themeToggleBtn');
 
         // --- State ---
         let allNames = [];
@@ -586,6 +661,7 @@
         let rainAnimationId = null;
         let isInMatrixMode = false;
         let isExtractionMode = false;
+        let isConstructMode = false; // New theme state
         let trails = [];
         let drops = [];
 
@@ -601,18 +677,15 @@
         const TARGET_ANIMATION_FPS = 60;
         const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS;
         const MAX_FPS_PERCENT_OFFSET = 0.90; // UPDATED
-        const MATRIX_GREEN_COLOR_RGB = getComputedStyle(document.documentElement).getPropertyValue('--matrix-green-rgb').trim();
-        const MATRIX_LEAD_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-lead').trim();
-        const MATRIX_FLASH_COLOR = getComputedStyle(document.documentElement).getPropertyValue('--matrix-flash').trim();
 
         // --- Matrix Rain Setup ---
         let columns;
         function calculateColumnDelay(baseFps) {
-            const minMultiplier = 1.0 - MAX_FPS_PERCENT_OFFSET; 
-            const maxMultiplier = 1.0 + MAX_FPS_PERCENT_OFFSET;
+            const minMultiplier = 1.0 - MAX_FPS_PERCENT_OFFSET;
+              const maxMultiplier = 1.0 + MAX_FPS_PERCENT_OFFSET;
             const randomMultiplier = Math.random() * (maxMultiplier - minMultiplier) + minMultiplier;
-            const columnFps = baseFps * randomMultiplier; 
-            const finalColumnFps = Math.max(0.05, columnFps);
+            const columnFps = baseFps * randomMultiplier;
+              const finalColumnFps = Math.max(0.05, columnFps);
             return 1000 / finalColumnFps;
         }
         function setupCanvas() {
@@ -626,52 +699,60 @@
             }
         }
         function drawMatrixRain() {
-             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-             ctx.font = `${currentFontSize}px ${getComputedStyle(document.body).fontFamily}`;
-             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR; const now = Date.now();
-             for (let i = 0; i < drops.length; i++) {
-                 const drop = drops[i];
-                 if (now - drop.lastUpdateTime >= drop.delay) {
-                     const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
-                     trails[i].unshift({ char: newLeaderChar, flipped: false }); if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); } drop.y++;
-                     if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) { 
-                        drop.y = 0; 
-                        trails[i] = []; 
-                        drop.delay = calculateColumnDelay(currentRainFPS); // Randomize speed on reset
-                     } 
-                     drop.lastUpdateTime = now;
-                 }
-                 if (trails[i]) {
-                     for (let k = 0; k < trails[i].length; k++) {
-                         let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
-                         if (k > 0 && !trailItem.flipTimestamp && Math.random() < FLIP_CHANCE) {
-                             let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
-                             trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now;
-                         }
-                         let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
-                         if (isHighlighting) { ctx.fillStyle = MATRIX_FLASH_COLOR; } else {
-                             const opacity = Math.max(0, 1.0 - (k / MAX_TRAIL_LENGTH)); ctx.fillStyle = `rgba(${MATRIX_GREEN_COLOR_RGB}, ${opacity})`;
-                             if (trailItem.flipTimestamp && !isHighlighting) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
-                         }
-                         const trailXPos = i * effectiveColumnWidth; ctx.fillText(trailItem.char, trailXPos, trailYPos);
-                     }
-                     if (trails[i][0]) {
-                         const leaderXPos = i * effectiveColumnWidth; const leaderYPos = drop.y * currentFontSize;
-                         if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) { ctx.fillStyle = MATRIX_LEAD_COLOR; ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos); }
-                     }
-                 }
-             }
+              const computedStyle = getComputedStyle(document.body);
+              // Determine colors based on the current theme
+              const bgColor = isConstructMode ? `rgba(${computedStyle.getPropertyValue('--construct-bg-rgb').trim()}, 0.1)` : 'rgba(0, 0, 0, 0.1)';
+              const trailColorRgb = isConstructMode ? computedStyle.getPropertyValue('--construct-text-rgb').trim() : computedStyle.getPropertyValue('--matrix-green-rgb').trim();
+              const leadColor = computedStyle.getPropertyValue('--lead-color').trim();
+              const flashColor = computedStyle.getPropertyValue('--flash-color').trim();
+
+              ctx.fillStyle = bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.font = `${currentFontSize}px ${getComputedStyle(document.body).fontFamily}`;
+              const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR; const now = Date.now();
+              for (let i = 0; i < drops.length; i++) {
+                  const drop = drops[i];
+                  if (now - drop.lastUpdateTime >= drop.delay) {
+                      const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
+                      trails[i].unshift({ char: newLeaderChar, flipped: false }); if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); } drop.y++;
+                      if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) {
+                          drop.y = 0;
+                          trails[i] = [];
+                          drop.delay = calculateColumnDelay(currentRainFPS); // Randomize speed on reset
+                      }
+                       drop.lastUpdateTime = now;
+                  }
+                  if (trails[i]) {
+                      for (let k = 0; k < trails[i].length; k++) {
+                          let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
+                          if (k > 0 && !trailItem.flipTimestamp && Math.random() < FLIP_CHANCE) {
+                              let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
+                              trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now;
+                          }
+                          let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
+                          if (isHighlighting) { ctx.fillStyle = flashColor; } else {
+                              const opacity = Math.max(0, 1.0 - (k / MAX_TRAIL_LENGTH));
+                              ctx.fillStyle = `rgba(${trailColorRgb}, ${opacity})`;
+                              if (trailItem.flipTimestamp && !isHighlighting) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
+                          }
+                          const trailXPos = i * effectiveColumnWidth; ctx.fillText(trailItem.char, trailXPos, trailYPos);
+                      }
+                      if (trails[i][0]) {
+                          const leaderXPos = i * effectiveColumnWidth; const leaderYPos = drop.y * currentFontSize;
+                          if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) { ctx.fillStyle = leadColor; ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos); }
+                      }
+                  }
+              }
         }
         function startMatrixRain() {
-             if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); } let lastFrameTime = 0;
-             function animateRain(currentTime) {
-                 rainAnimationId = requestAnimationFrame(animateRain); const deltaTime = currentTime - lastFrameTime;
-                 if (deltaTime >= ANIMATION_FRAME_DELAY) {
-                     try { drawMatrixRain(); lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY); }
-                     catch(error) { console.error("Error during drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
-                 }
-             }
-             if (canvas.width > 0 && canvas.height > 0) { rainAnimationId = requestAnimationFrame(animateRain); } else { console.warn("// Canvas dimensions not ready."); }
+            if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); } let lastFrameTime = 0;
+            function animateRain(currentTime) {
+                rainAnimationId = requestAnimationFrame(animateRain); const deltaTime = currentTime - lastFrameTime;
+                if (deltaTime >= ANIMATION_FRAME_DELAY) {
+                    try { drawMatrixRain(); lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY); }
+                    catch(error) { console.error("Error during drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
+                }
+            }
+            if (canvas.width > 0 && canvas.height > 0) { rainAnimationId = requestAnimationFrame(animateRain); } else { console.warn("// Canvas dimensions not ready."); }
         }
 
         // --- Title Update Function ---
@@ -698,6 +779,7 @@
             if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
             if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
             if (isExtractionMode) { params.push('extract=true'); }
+            if (isConstructMode) { params.push('theme=construct'); }
 
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
             history.pushState({path: newUrl}, '', newUrl);
@@ -710,12 +792,12 @@
             let initialNames = [];
             let pageTitle = DEFAULT_TITLE;
             let schemaTitle = '';
-            
-            // Reset settings to default before loading from URL
+                         // Reset settings to default before loading from URL
             currentBrightnessPercent = 60;
             currentRainFPS = 10;
             currentFontSize = 24;
             isExtractionMode = false;
+            isConstructMode = false;
 
             if (urlParams.has('title')) {
                 const titleParam = urlParams.get('title').trim();
@@ -750,13 +832,16 @@
                 }
             }
             updateFontSizeDisplay(currentFontSize);
-            
-            if (urlParams.has('extract')) {
+                         if (urlParams.has('extract')) {
                 isExtractionMode = urlParams.get('extract') === 'true';
             }
             updateExtractionButton();
             updateExtractionUIVisibility();
 
+            if (urlParams.has('theme') && urlParams.get('theme') === 'construct') {
+                isConstructMode = true;
+            }
+            updateTheme();
 
             if (urlParams.has('names')) {
                 const namesParam = urlParams.get('names');
@@ -778,7 +863,6 @@
                     { name: 'Cypher', value: 'Traitor', selected: false }
                 ];
             }
-
             allNames = initialNames;
             resetDisplayStyle();
             renderAvailableList();
@@ -792,20 +876,21 @@
             console.log("// System Initialized.");
         }
 
-
         // --- Settings Controls ---
         function updateBrightness(percent) {
             currentBrightnessPercent = Math.max(0, Math.min(100, percent)); if (brightnessSlider) brightnessSlider.value = currentBrightnessPercent; if (brightnessValue) brightnessValue.textContent = `${currentBrightnessPercent}%`;
-            const alpha = (100 - currentBrightnessPercent) / 100; if (brightnessOverlay) brightnessOverlay.style.backgroundColor = `rgba(0, 0, 0, ${alpha})`;
+            const alpha = (100 - currentBrightnessPercent) / 100;
+            const overlayColor = isConstructMode ? '255, 255, 255' : '0, 0, 0';
+            if (brightnessOverlay) brightnessOverlay.style.backgroundColor = `rgba(${overlayColor}, ${alpha})`;
         }
         function updateRainSpeedDisplay(fps) {
-             currentRainFPS = Math.max(1, Math.min(100, fps)); if (speedSlider) speedSlider.value = currentRainFPS; if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`;
+              currentRainFPS = Math.max(1, Math.min(100, fps)); if (speedSlider) speedSlider.value = currentRainFPS; if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`;
         }
         function handleSpeedChange(fps) {
             updateRainSpeedDisplay(fps); if (drops && drops.length > 0) { drops.forEach(drop => { drop.delay = calculateColumnDelay(currentRainFPS); }); }
         }
         function updateFontSizeDisplay(size) {
-             currentFontSize = Math.max(8, Math.min(32, size)); if (fontSizeSlider) fontSizeSlider.value = currentFontSize; if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`;
+              currentFontSize = Math.max(8, Math.min(32, size)); if (fontSizeSlider) fontSizeSlider.value = currentFontSize; if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`;
         }
         function handleFontSizeChange(size) {
             updateFontSizeDisplay(size); if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain();
@@ -826,6 +911,27 @@
             renderAvailableList();
         }
 
+        // --- Theme Toggle ---
+        function updateTheme() {
+            const brightnessLabel = document.getElementById('brightnessLabel');
+            if (isConstructMode) {
+                bodyElement.classList.add('construct-mode');
+                themeToggleBtn.textContent = '[C] Exit Construct';
+                themeToggleBtn.classList.add('active');
+                if(brightnessLabel) brightnessLabel.textContent = '// Glare:';
+            } else {
+                bodyElement.classList.remove('construct-mode');
+                themeToggleBtn.textContent = '[C] Construct Mode';
+                themeToggleBtn.classList.remove('active');
+                if(brightnessLabel) brightnessLabel.textContent = '// Intensity:';
+            }
+            // Re-apply brightness with the correct color overlay
+            updateBrightness(currentBrightnessPercent);
+            // Redraw canvas with new colors
+            if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
+            startMatrixRain();
+        }
+
         // --- Progress Bar Rendering ---
         function renderProgressBar() {
             progressBar.innerHTML = ''; const totalCount = allNames.length;
@@ -836,7 +942,7 @@
                     const segment = document.createElement('div'); segment.className = 'progress-segment'; if (i < selectedCount) { segment.classList.add('used'); } progressBar.appendChild(segment);
                 }
             }
-             updateBodyPadding();
+              updateBodyPadding();
         }
 
         // --- Body Padding Update ---
@@ -895,7 +1001,6 @@
                 valueRow.appendChild(valueInput);
                 li.appendChild(valueRow);
 
-
                 if (!operative.selected) {
                     li.addEventListener('dragstart', handleDragStart);
                     li.addEventListener('dragover', handleDragOver);
@@ -915,18 +1020,18 @@
         function handleDragEnter(e) { const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); if (targetLi && targetLi.dataset.name !== draggedItemName) { targetLi.classList.add('drag-over'); } }
         function handleDragLeave(e) { const targetLi = e.target.closest('.name-item'); if (targetLi && !targetLi.contains(e.relatedTarget)) { targetLi.classList.remove('drag-over'); } }
         function handleDrop(e) {
-             e.stopPropagation(); e.preventDefault(); const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); const droppedName = e.dataTransfer.getData('text/plain');
-             document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); if (!targetLi || !droppedName || targetLi.dataset.name === droppedName) { return; }
-             const draggedIndex = allNames.findIndex(op => op.name === droppedName); let targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
-             if (draggedIndex > -1 && targetIndex > -1) {
-                 const [draggedOperative] = allNames.splice(draggedIndex, 1); targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
-                 if(targetIndex > -1) { allNames.splice(targetIndex, 0, draggedOperative); } else { allNames.push(draggedOperative); } 
-                 renderAvailableList();
-                 updateURL(); // Save new order to URL
-             }
+              e.stopPropagation(); e.preventDefault(); const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); const droppedName = e.dataTransfer.getData('text/plain');
+              document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); if (!targetLi || !droppedName || targetLi.dataset.name === droppedName) { return; }
+              const draggedIndex = allNames.findIndex(op => op.name === droppedName); let targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
+              if (draggedIndex > -1 && targetIndex > -1) {
+                  const [draggedOperative] = allNames.splice(draggedIndex, 1); targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
+                  if(targetIndex > -1) { allNames.splice(targetIndex, 0, draggedOperative); } else { allNames.push(draggedOperative); }
+                   renderAvailableList();
+                  updateURL(); // Save new order to URL
+              }
         }
         function handleDragEnd(e) {
-             document.querySelectorAll('.name-item.dragging').forEach(item => item.classList.remove('dragging')); document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); draggedItemName = null;
+              document.querySelectorAll('.name-item.dragging').forEach(item => item.classList.remove('dragging')); document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); draggedItemName = null;
         }
 
         // --- Name Management Functions ---
@@ -951,12 +1056,12 @@
         function removeName(nameToRemove) {
             const itemElement = nameListElement.querySelector(`li[data-name="${nameToRemove}"]`); if (itemElement && !itemElement.classList.contains('removing')) {
                 itemElement.classList.add('removing'); setTimeout(() => {
-                    allNames = allNames.filter(op => op.name !== nameToRemove); 
-                    renderAvailableList(); 
-                    renderProgressBar(); 
-                    checkEmptyStates(); 
-                    showTemporaryMessage(`// Operative "${nameToRemove}" deregistered.`);
-                    updateURL(); // Save removal to URL
+                    allNames = allNames.filter(op => op.name !== nameToRemove);
+                      renderAvailableList();
+                      renderProgressBar();
+                      checkEmptyStates();
+                      showTemporaryMessage(`// Operative "${nameToRemove}" deregistered.`);
+                     updateURL(); // Save removal to URL
                 }, 300);
             }
         }
@@ -972,8 +1077,7 @@
             let i = 0; if (typeIntervalId) clearInterval(typeIntervalId); selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.add('typing');
             typeIntervalId = setInterval(() => { if (i < name.length) { selectedNameDisplay.textContent += name.charAt(i); i++; } else { clearInterval(typeIntervalId); typeIntervalId = null; finalizeSelection(name); } }, TYPING_INTERVAL_MS);
         }
-        
-        function finalizeSelection(selectedName) {
+                function finalizeSelection(selectedName) {
             selectedNameDisplay.classList.remove('typing');
             const operative = allNames.find(op => op.name === selectedName);
             if (operative) {
@@ -1004,15 +1108,14 @@
             showTemporaryMessage("// Operative roster reset.");
         }
 
-
         // --- Utility Functions ---
         function checkEmptyStates() {
-             const isEmpty = allNames.length === 0; noAvailableMessage.classList.toggle('hidden', !isEmpty);
+              const isEmpty = allNames.length === 0; noAvailableMessage.classList.toggle('hidden', !isEmpty);
         }
         function resetDisplayStyle(displayName = '|', isQuote = false) {
-             if (typeIntervalId) clearInterval(typeIntervalId); typeIntervalId = null; selectedNameDisplay.textContent = displayName; selectedNameDisplay.classList.remove('quote', 'typing');
-             if (isQuote) { selectedNameDisplay.classList.add('quote'); } else if (displayName === '|') { selectedNameDisplay.classList.add('typing'); }
-             clickTriggerArea.style.pointerEvents = 'auto'; selectedNameDisplayWrapper.style.pointerEvents = 'auto';
+              if (typeIntervalId) clearInterval(typeIntervalId); typeIntervalId = null; selectedNameDisplay.textContent = displayName; selectedNameDisplay.classList.remove('quote', 'typing');
+              if (isQuote) { selectedNameDisplay.classList.add('quote'); } else if (displayName === '|') { selectedNameDisplay.classList.add('typing'); }
+              clickTriggerArea.style.pointerEvents = 'auto'; selectedNameDisplayWrapper.style.pointerEvents = 'auto';
         }
         function showTemporaryMessage(message, type = "info") {
             if (type === "warn") { console.warn(message); } else if (type === "error") { console.error(message); } else { console.log(message); }
@@ -1053,7 +1156,6 @@
             document.body.removeChild(textArea);
         }
 
-
         // --- Menu Toggle Logic ---
         function toggleManagementPanel() {
             if (isInMatrixMode) { return; }
@@ -1079,16 +1181,15 @@
             } else {
                 if (document.exitFullscreen) {
                     document.exitFullscreen()
-                     .then(() => {
-                         fullscreenBtn.textContent = '[FS] Fullscreen';
-                     })
-                     .catch(err => {
-                         console.error(`Exit FS Error: ${err.message}`);
-                     });
+                      .then(() => {
+                          fullscreenBtn.textContent = '[FS] Fullscreen';
+                      })
+                      .catch(err => {
+                          console.error(`Exit FS Error: ${err.message}`);
+                      });
                 }
             }
         }
-
 
         // --- Matrix Mode Logic ---
         function enterMatrixMode() {
@@ -1113,9 +1214,9 @@
 
         // --- Click Trigger Area Logic ---
         function handleScreenClick(event) {
-             if (selectedNameDisplayWrapper.contains(event.target) || menuToggleBtn.contains(event.target)) {
-                 return;
-             }
+              if (selectedNameDisplayWrapper.contains(event.target) || menuToggleBtn.contains(event.target)) {
+                  return;
+              }
 
             if (isInMatrixMode) {
                 exitMatrixMode();
@@ -1123,7 +1224,6 @@
                 pickRandomName();
             }
         }
-
 
         // --- Event Listeners ---
         menuToggleBtn.addEventListener('click', toggleManagementPanel);
@@ -1135,27 +1235,35 @@
         rebootBtn.addEventListener('click', rebootSystem);
         window.addEventListener('resize', () => { if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain(); });
         
-        brightnessSlider.addEventListener('input', (event) => { 
-            updateBrightness(parseInt(event.target.value)); 
-            updateURL();
+         // Settings Listeners
+        brightnessSlider.addEventListener('input', (event) => {
+             updateBrightness(parseInt(event.target.value));
+             updateURL();
         });
-        speedSlider.addEventListener('input', (event) => { 
-            handleSpeedChange(parseInt(event.target.value)); 
-            updateURL();
+        speedSlider.addEventListener('input', (event) => {
+             handleSpeedChange(parseInt(event.target.value));
+             updateURL();
         });
-        fontSizeSlider.addEventListener('input', (event) => { 
-            handleFontSizeChange(parseInt(event.target.value)); 
-            updateURL();
+        fontSizeSlider.addEventListener('input', (event) => {
+             handleFontSizeChange(parseInt(event.target.value));
+             updateURL();
         });
-        titleInput.addEventListener('input', (event) => { 
-            updateSchemaTitle(event.target.value); 
-            updateURL();
+        titleInput.addEventListener('input', (event) => {
+             updateSchemaTitle(event.target.value);
+             updateURL();
         });
         
+                 // Action Button Listeners
+        themeToggleBtn.addEventListener('click', () => {
+            isConstructMode = !isConstructMode;
+            updateTheme();
+            updateURL();
+        });
         fullscreenBtn.addEventListener('click', toggleFullScreen);
         enterMatrixBtn.addEventListener('click', () => { if (isInMatrixMode) { exitMatrixMode(); } else { enterMatrixMode(); } });
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         
+                 // Mode Button Listeners
         extractionModeBtn.addEventListener('click', () => {
             isExtractionMode = !isExtractionMode;
             updateExtractionButton();
@@ -1170,3 +1278,7 @@
     </script>
 </body>
 </html>
+
+
+
+
