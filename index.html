@@ -190,7 +190,7 @@
             padding: 0.3rem 0.6rem;
             border-radius: 0.25rem;
             cursor: pointer;
-            transition: all 0.2s ease-in-out, opacity 0.3s ease-out; /* Ensure opacity transition */
+            transition: all 0.2s ease-in-out, opacity 0.3s ease-out;
             text-shadow: 0 0 3px var(--primary-color);
             line-height: 1;
             opacity: 1;
@@ -241,11 +241,11 @@
             font-family: var(--matrix-font);
             font-weight: 600;
             background-color: transparent;
-            border: 2px solid var(--primary-color); /* Default green border */
-            color: var(--primary-color); /* Default green text */
+            border: 2px solid var(--primary-color);
+            color: var(--primary-color);
             transition: all 0.2s ease-in-out;
-            text-shadow: 0 0 3px var(--primary-color); /* Default green shadow */
-            padding: 0.5rem 0.5rem; /* Consistent padding */
+            text-shadow: 0 0 3px var(--primary-color);
+            padding: 0.5rem 0.5rem;
             border-radius: 0.25rem;
             cursor: pointer;
             text-align: center;
@@ -254,14 +254,14 @@
             justify-content: center;
             gap: 0.25rem;
             line-height: 1.2;
-            margin-bottom: 0.75rem; /* Default margin */
+            margin-bottom: 0.75rem;
         }
         .construct-mode #managementPanel button { text-shadow: none; border-width: 1px; color: var(--construct-text); border-color: var(--primary-color-dark); }
         /* Hover/Active States for ALL Panel Buttons */
         #managementPanel button:hover:not(:disabled) {
-            background-color: var(--primary-color-dark); /* Dark green background */
-            color: var(--bg-color); /* Black text */
-            box-shadow: 0 0 10px var(--primary-color); /* Green glow */
+            background-color: var(--primary-color-dark);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--primary-color);
             text-shadow: none;
             transform: translateY(-1px);
         }
@@ -273,13 +273,13 @@
         }
         #managementPanel button:active:not(:disabled) {
             transform: translateY(0px);
-            background-color: rgba(var(--primary-color-rgb), 0.3); /* Slightly lighter green background */
+            background-color: rgba(var(--primary-color-rgb), 0.3);
         }
         #managementPanel button:disabled {
             opacity: 0.4;
             cursor: not-allowed;
-            border-color: var(--primary-color-dark); /* Darker border for disabled */
-            color: var(--primary-color-dark); /* Darker text for disabled */
+            border-color: var(--primary-color-dark);
+            color: var(--primary-color-dark);
             text-shadow: none;
         }
         .construct-mode #managementPanel button:disabled { color: var(--construct-text-light); border-color: var(--construct-text-light); }
@@ -337,7 +337,7 @@
             padding-top: 4rem; /* INCREASED padding above this row */
         }
         #managementPanel .action-button-row button {
-            width: 100%; /* Let button fill grid cell */
+            width: 100%;
             margin-bottom: 0; /* Remove bottom margin for this row */
         }
         /* Specific Layout/Overrides for Add/Reboot Buttons */
@@ -353,7 +353,7 @@
         }
         /* Remove Name Button ('X') - Keep specific small style */
         #managementPanel .remove-name-btn {
-            border: 1px solid var(--primary-color-dark); /* Keep slightly dimmer border */
+            border: 1px solid var(--primary-color-dark);
             padding: 2px 4px;
             line-height: 1;
             pointer-events: auto !important;
@@ -402,16 +402,12 @@
         /* List styling inside panel */
         #managementPanel .list-container {
             border: 1px solid var(--primary-color-dark); background-color: rgba(0, 0, 0, 0.3); padding: 0.75rem; border-radius: 0.375rem;
-            /* REMOVED: flex-grow: 1; */ /* Let container size naturally */
             display: flex; flex-direction: column;
             min-height: 100px; /* Ensure it has some minimum height */
         }
         .construct-mode #managementPanel .list-container { border-color: var(--construct-bg-darker); background-color: rgba(var(--construct-bg-rgb), 0.3); }
         #managementPanel #nameList {
-            /* REMOVED: overflow-y: auto; */ /* Panel handles scrolling */
-            /* REMOVED: flex-grow: 1; */
-            padding-right: 0; /* No need for scrollbar padding */
-            /* REMOVED: max-height: 100%; */
+            padding-right: 0;
         }
         #managementPanel .name-item {
             background-color: transparent; border-bottom: 1px dashed var(--primary-color-dark); padding: 0.5rem 0.25rem; color: var(--font-color);
@@ -581,12 +577,12 @@
         body.matrix-mode-active #menuToggleBtn {
             opacity: 0 !important; /* Use important to override other states if needed */
             pointer-events: none !important;
-            transition: opacity 0.3s ease-out; /* Allow fade out */
+            transition: opacity 0.3s ease-out;
             z-index: -1; /* Ensure it's behind everything */
         }
         /* Hide other UI elements in matrix mode */
         body.matrix-mode-active #mainDisplayContainer,
-        body.matrix-mode-active #managementPanel, /* Hide panel */
+        body.matrix-mode-active #managementPanel,
         body.matrix-mode-active #progressBarContainer,
         body.matrix-mode-active #clickTriggerArea {
             opacity: 0; pointer-events: none; transition: opacity 0.3s ease-out;
@@ -594,7 +590,7 @@
         body.matrix-mode-active #managementPanel { transform: translateX(100%); } /* Ensure panel transforms out */
         /* Make click trigger area inactive in matrix mode to prevent accidental name picks */
         body.matrix-mode-active #clickTriggerArea {
-            cursor: default; /* Change cursor */
+            cursor: default;
             /* Keep pointer-events: none from above */
         }
 
@@ -608,7 +604,7 @@
             #managementPanel { padding: 1rem; } /* Reduce padding on mobile */
             /* Stack action buttons row on mobile */
             #managementPanel .action-button-row {
-                grid-template-columns: 1fr; /* Single column layout */
+                grid-template-columns: 1fr;
                 gap: 0.5rem;
                 padding-top: 3rem; /* Adjust mobile padding */
             }
@@ -934,7 +930,7 @@
         let rainAnimationId = null;
         let isInMatrixMode = false;
         let isExtractionMode = false;
-        let isConstructMode = false; // New theme state
+        let isConstructMode = false;
         let trails = [];
         let drops = [];
         let commandPaletteSelectedIndex = 0;
@@ -950,7 +946,7 @@
         const MAX_TRAIL_LENGTH = 25;
         const TARGET_ANIMATION_FPS = 60;
         const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS;
-        const MAX_FPS_PERCENT_OFFSET = 0.90; // UPDATED
+        const MAX_FPS_PERCENT_OFFSET = 0.90;
 
         // --- Matrix Rain Setup ---
         let columns;
@@ -1760,3 +1756,4 @@
     </script>
 </body>
 </html>
+
