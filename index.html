@@ -12,15 +12,15 @@
             --matrix-green-rgb: 57, 255, 20;
             --matrix-green-dark: #0a4a0a;
             --matrix-bg: #000000;
-            --matrix-bg-darker: #0a0a0a;
+            --matrix-bg-darker: #000000;
             --matrix-font: 'Source Code Pro', monospace;
             --matrix-lead: #ffffff;
             --matrix-flash: #ffffff;
 
             /* -- LIGHT MODE ('Construct Mode') -- */
-            --construct-bg: #F0F2F5;
-            --construct-bg-rgb: 240, 242, 245;
-            --construct-bg-darker: #e0e2e5;
+            --construct-bg: #FFFFFF;
+            --construct-bg-rgb: 255, 255, 255;
+            --construct-bg-darker: #FFFFFF;
             --construct-text: #666666;
             --construct-text-rgb: 102, 102, 102;
             --construct-text-light: #666666;
@@ -331,19 +331,14 @@
 
         /* Specific Layout for Action Buttons Row */
         #managementPanel .action-button-row {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
             gap: 0.5rem;
             padding-top: 4rem; /* INCREASED padding above this row */
-            flex-wrap: wrap; /* Allow wrapping */
         }
         #managementPanel .action-button-row button {
-            flex: 1 1 0; /* Allow buttons to grow/shrink evenly */
-            width: auto; /* Let flexbox handle width */
+            width: 100%; /* Let button fill grid cell */
             margin-bottom: 0; /* Remove bottom margin for this row */
-        }
-        #helpBtn {
-             width: 100%;
-             margin-top: 0.5rem;
         }
         /* Specific Layout/Overrides for Add/Reboot Buttons */
         #managementPanel .panel-section button:not(.remove-name-btn):not(.action-button-row button):not(.control-group button) {
@@ -613,11 +608,10 @@
             #managementPanel { padding: 1rem; } /* Reduce padding on mobile */
             /* Stack action buttons row on mobile */
             #managementPanel .action-button-row {
-                flex-direction: column;
+                grid-template-columns: 1fr; /* Single column layout */
                 gap: 0.5rem;
                 padding-top: 3rem; /* Adjust mobile padding */
             }
-            #managementPanel .action-button-row button { width: 100%; } /* Make stacked buttons full width */
 
             #progressBarContainer { padding: 0.25rem 0.5rem; }
         }
@@ -1402,13 +1396,13 @@
         }
         function copyToClipboard(text) {
              try {
-                // Use the modern clipboard API
-                navigator.clipboard.writeText(text).then(() => {
-                    showTemporaryMessage(`// EXTRACTED: "${text}" copied.`);
-                }).catch(err => {
-                    console.warn('// Clipboard API failed, falling back.', err);
-                    fallbackCopyToClipboard(text);
-                });
+                 // Use the modern clipboard API
+                 navigator.clipboard.writeText(text).then(() => {
+                     showTemporaryMessage(`// EXTRACTED: "${text}" copied.`);
+                 }).catch(err => {
+                     console.warn('// Clipboard API failed, falling back.', err);
+                     fallbackCopyToClipboard(text);
+                 });
             } catch (e) {
                  fallbackCopyToClipboard(text);
             }
@@ -1585,7 +1579,7 @@
             items.forEach((item, index) => {
                  item.classList.toggle('selected', index === commandPaletteSelectedIndex);
                  if (index === commandPaletteSelectedIndex) {
-                    item.scrollIntoView({ block: 'nearest' });
+                     item.scrollIntoView({ block: 'nearest' });
                  }
             });
         }
@@ -1594,11 +1588,11 @@
             const filter = commandPaletteInput.value;
             const filteredCommands = commands.filter(cmd => cmd.name.toLowerCase().includes(filter.toLowerCase()));
              if (index >= 0 && index < filteredCommands.length) {
-                const originalIndex = parseInt(commandPaletteList.children[index].dataset.actionIndex, 10);
-                if (!isNaN(originalIndex) && commands[originalIndex]) {
-                     commands[originalIndex].action();
-                     toggleCommandPalette(false);
-                }
+                 const originalIndex = parseInt(commandPaletteList.children[index].dataset.actionIndex, 10);
+                 if (!isNaN(originalIndex) && commands[originalIndex]) {
+                      commands[originalIndex].action();
+                      toggleCommandPalette(false);
+                 }
             }
         }
 
@@ -1726,7 +1720,7 @@
              // Help Modal Shortcut
             if (helpModalOverlay.classList.contains('visible')) {
                  if (e.key === 'Escape') {
-                    toggleHelpModal(false);
+                     toggleHelpModal(false);
                  }
                  return;
             }
@@ -1746,11 +1740,11 @@
                  }
             } else if (!isInputFocused) { // Single-key shortcuts only when not typing
                  switch(e.key.toLowerCase()) {
-                      case 'c': themeToggleBtn.click(); break;
-                      case 'e': extractionModeBtn.click(); break;
-                      case 'f': toggleFullScreen(); break;
-                      case 'm': enterMatrixBtn.click(); break;
-                      case 'r': rebootBtn.click(); break;
+                     case 'c': themeToggleBtn.click(); break;
+                     case 'e': extractionModeBtn.click(); break;
+                     case 'f': toggleFullScreen(); break;
+                     case 'm': enterMatrixBtn.click(); break;
+                     case 'r': rebootBtn.click(); break;
                  }
             }
         });
@@ -1766,4 +1760,3 @@
     </script>
 </body>
 </html>
-
