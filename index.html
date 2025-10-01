@@ -612,6 +612,19 @@
             #progressBarContainer { padding: 0.25rem 0.5rem; }
         }
 
+        /* A11Y: Visually hide content but keep it accessible to screen readers */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
         /* --- Themed Scrollbars (WebKit + Firefox) --- */
         /* Target scrollable containers explicitly (body is overflow hidden) */
         #managementPanel, .modal-scroll-content, #commandPaletteList {
@@ -691,20 +704,21 @@
     </style>
 </head>
 <body class="">
-    <canvas id="matrixCanvas"></canvas>
-    <div id="brightnessOverlay"></div>
+    <canvas id="matrixCanvas" aria-hidden="true"></canvas>
+    <div id="brightnessOverlay" aria-hidden="true"></div>
     <div id="clickTriggerArea"></div>
 
-    <div id="mainDisplayContainer">
-        <div id="schemaTitleDisplay"></div>
+    <main id="mainDisplayContainer">
+        <h1 id="schemaTitleDisplay"></h1>
         <div id="selectedNameDisplayWrapper">
-            <div id="selectedNameDisplay" class="typing">|</div>
+            <div id="selectedNameDisplay" class="typing" aria-live="polite">|</div>
         </div>
-    </div>
+    </main>
 
-    <button id="menuToggleBtn">☰</button>
+    <button id="menuToggleBtn" aria-label="Toggle Menu" aria-expanded="false" aria-controls="managementPanel">☰</button>
 
-    <div id="managementPanel">
+    <aside id="managementPanel" aria-labelledby="managementPanelHeader">
+        <h2 id="managementPanelHeader" class="sr-only">Management Panel</h2>
         <div class="action-button-row panel-section">
             <button id="themeToggleBtn" class="font-medium">
                 [C] Construct Mode
@@ -715,7 +729,7 @@
             <button id="enterMatrixBtn" class="font-medium">
                 [M] Enter Matrix
             </button>
-            <button id="helpBtn" class="font-medium">
+            <button id="helpBtn" class="font-medium" aria-controls="helpModalOverlay">
                 [?] Help
             </button>
         </div>
@@ -750,8 +764,8 @@
             </div>
             <!-- Extraction Mode Button with LED -->
             <div class="control-group">
-                <button id="extractionModeBtn">[E] Engage Extraction</button>
-                <div id="extractionModeLed" class="led-indicator"></div>
+                <button id="extractionModeBtn" aria-pressed="false">[E] Engage Extraction</button>
+                <div id="extractionModeLed" class="led-indicator" aria-hidden="true"></div>
             </div>
         </div>
 
@@ -765,13 +779,13 @@
                 <input type="text" id="newValueInput" placeholder="Alias to copy..." class="outline-none">
             </div>
             <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
-                <span class="text-xl leading-none">[+]</span>
+                <span class="text-xl leading-none" aria-hidden="true">[+]</span>
                 Add
             </button>
         </div>
 
-        <div class="list-container panel-section"> <h3 class="// Operative Roster (Drag to Reorder):"></h3>
-            <ul id="nameList">
+        <div class="list-container panel-section"> <h3 id="rosterHeader" class="// Operative Roster (Drag to Reorder):"></h3>
+            <ul id="nameList" aria-labelledby="rosterHeader">
                 <li id="noAvailableMessage" class="hidden">Roster empty...</li>
             </ul>
         </div>
@@ -782,30 +796,52 @@
             </button>
         </div>
 
-        <p id="footerText">// System state is saved to the URL automatically.</p>
-    </div>
+        <p id="footerText" aria-live="polite">// System state is saved to the URL automatically.</p>
+    </aside>
 
-    <div id="progressBarContainer">
+    <div id="progressBarContainer" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="0">
         <div id="progressBar"></div>
     </div>
     
     <!-- Command Palette Modal -->
     <div id="commandPaletteOverlay" class="modal-overlay">
-        <div id="commandPalette" class="modal-content">
+        <div id="commandPalette" class="modal-content" role="dialog" aria-modal="true" aria-labelledby="commandPaletteHeader">
             <h2 id="commandPaletteHeader">// Command Palette</h2>
             <div class="modal-scroll-content">
-                <input type="text" id="commandPaletteInput" placeholder="// Type a command...">
-                <ul id="commandPaletteList"></ul>
+                <label for="commandPaletteInput" class="sr-only">Type a command</label>
+                <input type="text" id="commandPaletteInput" placeholder="// Type a command..." autocomplete="off">
+                <ul id="commandPaletteList" role="listbox"></ul>
             </div>
         </div>
     </div>
 
     <!-- Help Modal -->
     <div id="helpModalOverlay" class="modal-overlay">
-        <div id="helpModal" class="modal-content">
+        <div id="helpModal" class="modal-content" role="dialog" aria-modal="true" aria-labelledby="helpModalHeader">
             <h2 id="helpModalHeader">// System Manual</h2>
             <div class="modal-scroll-content">
                 <ul class="shortcut-list">
+                    <li>
+                        <div>
+                            <span>Pick Next Operative</span>
+                            <p class="text-sm opacity-70 mt-1">Selects a random operative from the available roster.</p>
+                        </div>
+                        <span><kbd>Enter</kbd> or <kbd>Space</kbd></span>
+                    </li>
+                    <li>
+                        <div>
+                            <span>Toggle Main Menu</span>
+                            <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
+                        </div>
+                        <span><kbd>Esc</kbd></span>
+                    </li>
+                    <li>
+                        <div>
+                            <span>Reboot System</span>
+                            <p class="text-sm opacity-70 mt-1">Resets the selection state, making all operatives available to be picked again.</p>
+                        </div>
+                        <span><kbd>R</kbd></span>
+                    </li>
                     <li>
                         <div>
                             <span>Open Command Palette</span>
@@ -819,13 +855,6 @@
                              <p class="text-sm opacity-70 mt-1">Displays this list of commands and shortcuts.</p>
                         </div>
                         <span><kbd>⌘</kbd><kbd>Shift</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>/</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle Main Menu</span>
-                            <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
-                        </div>
-                        <span><kbd>Esc</kbd></span>
                     </li>
                     <li>
                         <div>
@@ -855,13 +884,6 @@
                         </div>
                         <span><kbd>M</kbd></span>
                     </li>
-                    <li>
-                        <div>
-                            <span>Reboot System</span>
-                            <p class="text-sm opacity-70 mt-1">Resets the selection state, making all operatives available to be picked again.</p>
-                        </div>
-                        <span><kbd>R</kbd></span>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -869,6 +891,7 @@
 
 
     <script>
+    (function() { // IIFE to encapsulate scope and avoid global pollution
         // --- DOM Elements ---
         const nameListElement = document.getElementById('nameList');
         const newNameInput = document.getElementById('newNameInput');
@@ -928,12 +951,14 @@
         let currentRainFPS = 10;
         let currentFontSize = 24;
         let rainAnimationId = null;
+        let isAnimationPaused = false;
         let isInMatrixMode = false;
         let isExtractionMode = false;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
         let commandPaletteSelectedIndex = 0;
+        let elementToFocusOnModalClose = null; 
 
         // --- Constants ---
         const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -1016,7 +1041,12 @@
         function startMatrixRain() {
             if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); } let lastFrameTime = 0;
             function animateRain(currentTime) {
-                rainAnimationId = requestAnimationFrame(animateRain); const deltaTime = currentTime - lastFrameTime;
+                if (isAnimationPaused) {
+                    rainAnimationId = requestAnimationFrame(animateRain);
+                    return;
+                }
+                rainAnimationId = requestAnimationFrame(animateRain); 
+                const deltaTime = currentTime - lastFrameTime;
                 if (deltaTime >= ANIMATION_FRAME_DELAY) {
                     try { drawMatrixRain(); lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY); }
                     catch(error) { console.error("Error during drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
@@ -1166,19 +1196,18 @@
             updateFontSizeDisplay(size); if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain();
         }
         function updateExtractionButton() {
-            if (isExtractionMode) {
-                extractionModeBtn.textContent = '[E] Extraction Engaged';
-                extractionModeBtn.classList.add('active');
-                extractionModeLed.classList.add('active');
-            } else {
-                extractionModeBtn.textContent = '[E] Engage Extraction';
-                extractionModeBtn.classList.remove('active');
-                extractionModeLed.classList.remove('active');
-            }
+            const isPressed = isExtractionMode;
+            extractionModeBtn.setAttribute('aria-pressed', isPressed);
+            extractionModeBtn.textContent = isPressed ? '[E] Extraction Engaged' : '[E] Engage Extraction';
+            extractionModeBtn.classList.toggle('active', isPressed);
+            extractionModeLed.classList.toggle('active', isPressed);
         }
         function updateExtractionUIVisibility() {
             newValueWrapper.classList.toggle('hidden', !isExtractionMode);
-            renderAvailableList();
+            // PERFORMANCE: Instead of re-rendering, just toggle visibility on existing items
+            document.querySelectorAll('#nameList .value-row').forEach(row => {
+                row.classList.toggle('hidden', !isExtractionMode);
+            });
         }
 
         // --- Theme Toggle ---
@@ -1204,10 +1233,16 @@
 
         // --- Progress Bar Rendering ---
         function renderProgressBar() {
-            progressBar.innerHTML = ''; const totalCount = allNames.length;
+            const totalCount = allNames.length;
+            const selectedCount = allNames.filter(op => op.selected).length;
+            
+            progressBarContainer.setAttribute('aria-valuemax', totalCount);
+            progressBarContainer.setAttribute('aria-valuenow', selectedCount);
+
+            progressBar.innerHTML = '';
             if (totalCount === 0 || isInMatrixMode) { progressBarContainer.classList.add('hidden'); }
             else {
-                progressBarContainer.classList.remove('hidden'); const selectedCount = allNames.filter(op => op.selected).length;
+                progressBarContainer.classList.remove('hidden');
                 for (let i = 0; i < totalCount; i++) {
                     const segment = document.createElement('div'); segment.className = 'progress-segment'; if (i < selectedCount) { segment.classList.add('used'); } progressBar.appendChild(segment);
                 }
@@ -1222,63 +1257,69 @@
         }
 
         // --- List Rendering & Drag/Drop Event Handling ---
+        
+        // PERFORMANCE: Create a single operative list item instead of re-rendering the whole list
+        function createOperativeListItem(operative) {
+             const li = document.createElement('li');
+            li.className = 'name-item';
+            li.draggable = !operative.selected;
+            li.dataset.name = operative.name;
+
+            const nameRow = document.createElement('div');
+            nameRow.className = 'name-row';
+
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = operative.name;
+            nameSpan.className = 'name-span flex-grow mr-2 overflow-hidden text-ellipsis whitespace-nowrap';
+            nameRow.appendChild(nameSpan);
+
+            const removeBtn = document.createElement('button');
+            removeBtn.textContent = 'X';
+            removeBtn.className = 'remove-name-btn flex-shrink-0';
+            removeBtn.setAttribute('aria-label', `Remove ${operative.name}`);
+            removeBtn.onclick = (e) => { e.stopPropagation(); removeName(operative.name); };
+            nameRow.appendChild(removeBtn);
+            li.appendChild(nameRow);
+
+            const valueRow = document.createElement('div');
+            valueRow.className = 'value-row';
+            valueRow.classList.toggle('hidden', !isExtractionMode);
+            const valueInput = document.createElement('input');
+            valueInput.type = 'text';
+            valueInput.placeholder = '// Extraction Alias...';
+            valueInput.value = operative.value || '';
+            valueInput.setAttribute('aria-label', `Extraction alias for ${operative.name}`);
+            valueInput.addEventListener('input', (e) => {
+                const opIndex = allNames.findIndex(op => op.name === operative.name);
+                if (opIndex > -1) {
+                    allNames[opIndex].value = e.target.value;
+                    updateURL();
+                }
+            });
+            valueRow.appendChild(valueInput);
+            li.appendChild(valueRow);
+
+            if (!operative.selected) {
+                li.addEventListener('dragstart', handleDragStart);
+                li.addEventListener('dragover', handleDragOver);
+                li.addEventListener('dragenter', handleDragEnter);
+                li.addEventListener('dragleave', handleDragLeave);
+                li.addEventListener('drop', handleDrop);
+                li.addEventListener('dragend', handleDragEnd);
+            } else {
+                li.classList.add('name-item-selected');
+                nameSpan.classList.add('line-through');
+                removeBtn.disabled = true;
+                valueInput.disabled = true;
+            }
+            return li;
+        }
+
         function renderAvailableList() {
             nameListElement.innerHTML = '';
             checkEmptyStates();
             allNames.forEach((operative) => {
-                const li = document.createElement('li');
-                li.className = 'name-item';
-                li.draggable = !operative.selected;
-                li.dataset.name = operative.name;
-                if (operative.selected) {
-                    li.classList.add('name-item-selected');
-                }
-
-                const nameRow = document.createElement('div');
-                nameRow.className = 'name-row';
-
-                const nameSpan = document.createElement('span');
-                nameSpan.textContent = operative.name;
-                nameSpan.className = 'name-span flex-grow mr-2 overflow-hidden text-ellipsis whitespace-nowrap';
-                if (operative.selected) {
-                    nameSpan.classList.add('line-through');
-                }
-                nameRow.appendChild(nameSpan);
-
-                const removeBtn = document.createElement('button');
-                removeBtn.textContent = 'X';
-                removeBtn.className = 'remove-name-btn flex-shrink-0';
-                removeBtn.onclick = (e) => { e.stopPropagation(); removeName(operative.name); };
-                removeBtn.disabled = operative.selected;
-                nameRow.appendChild(removeBtn);
-                li.appendChild(nameRow);
-
-                const valueRow = document.createElement('div');
-                valueRow.className = 'value-row';
-                valueRow.classList.toggle('hidden', !isExtractionMode);
-                const valueInput = document.createElement('input');
-                valueInput.type = 'text';
-                valueInput.placeholder = '// Extraction Alias...';
-                valueInput.value = operative.value || '';
-                valueInput.disabled = operative.selected;
-                valueInput.addEventListener('input', (e) => {
-                    const opIndex = allNames.findIndex(op => op.name === operative.name);
-                    if (opIndex > -1) {
-                        allNames[opIndex].value = e.target.value;
-                        updateURL(); // Save value change to URL
-                    }
-                });
-                valueRow.appendChild(valueInput);
-                li.appendChild(valueRow);
-
-                if (!operative.selected) {
-                    li.addEventListener('dragstart', handleDragStart);
-                    li.addEventListener('dragover', handleDragOver);
-                    li.addEventListener('dragenter', handleDragEnter);
-                    li.addEventListener('dragleave', handleDragLeave);
-                    li.addEventListener('drop', handleDrop);
-                    li.addEventListener('dragend', handleDragEnd);
-                }
+                const li = createOperativeListItem(operative);
                 nameListElement.appendChild(li);
             });
         }
@@ -1309,10 +1350,16 @@
             const name = newNameInput.value.trim();
             const value = newValueInput.value.trim();
             if (name && !allNames.some(op => op.name.toLowerCase() === name.toLowerCase())) {
-                allNames.push({ name: name, value: value, selected: false });
+                const newOperative = { name: name, value: value, selected: false };
+                allNames.push(newOperative);
+                
+                // PERFORMANCE: Append new item directly instead of re-rendering
+                const li = createOperativeListItem(newOperative);
+                nameListElement.appendChild(li);
+
                 newNameInput.value = '';
                 newValueInput.value = '';
-                renderAvailableList();
+                newNameInput.focus();
                 renderProgressBar();
                 checkEmptyStates();
                 showTemporaryMessage(`// Operative "${name}" registered.`);
@@ -1327,7 +1374,10 @@
             const itemElement = nameListElement.querySelector(`li[data-name="${nameToRemove}"]`); if (itemElement && !itemElement.classList.contains('removing')) {
                 itemElement.classList.add('removing'); setTimeout(() => {
                     allNames = allNames.filter(op => op.name !== nameToRemove);
-                    renderAvailableList();
+                    
+                    // PERFORMANCE: Remove item directly instead of re-rendering
+                    itemElement.remove();
+
                     renderProgressBar();
                     checkEmptyStates();
                     showTemporaryMessage(`// Operative "${nameToRemove}" deregistered.`);
@@ -1356,11 +1406,28 @@
                     const valueToCopy = operative.value || operative.name;
                     copyToClipboard(valueToCopy);
                 }
+
+                // PERFORMANCE: Update the specific list item instead of re-rendering
+                const itemElement = nameListElement.querySelector(`li[data-name="${selectedName}"]`);
+                if (itemElement) {
+                    itemElement.classList.add('name-item-selected');
+                    itemElement.draggable = false;
+                    itemElement.querySelector('.name-span')?.classList.add('line-through');
+                    itemElement.querySelector('.remove-name-btn')?.setAttribute('disabled', 'true');
+                    itemElement.querySelector('.value-row input')?.setAttribute('disabled', 'true');
+                    // Remove drag listeners
+                    itemElement.removeEventListener('dragstart', handleDragStart);
+                    itemElement.removeEventListener('dragover', handleDragOver);
+                    itemElement.removeEventListener('dragenter', handleDragEnter);
+                    itemElement.removeEventListener('dragleave', handleDragLeave);
+                    itemElement.removeEventListener('drop', handleDrop);
+                    itemElement.removeEventListener('dragend', handleDragEnd);
+                }
+
             } else {
                 console.warn(`// Selected name "${selectedName}" not found.`);
             }
             renderProgressBar();
-            renderAvailableList();
             checkEmptyStates();
             isPicking = false;
             clickTriggerArea.style.pointerEvents = 'auto';
@@ -1372,7 +1439,8 @@
             if (isPicking) { return; }
             console.log("// System state reset.");
             allNames.forEach(op => op.selected = false);
-            renderAvailableList();
+            // Re-rendering is acceptable here as it's a full reset and simpler
+            renderAvailableList(); 
             renderProgressBar();
             resetDisplayStyle();
             showTemporaryMessage("// Operative roster reset.");
@@ -1399,9 +1467,9 @@
                      console.warn('// Clipboard API failed, falling back.', err);
                      fallbackCopyToClipboard(text);
                  });
-            } catch (e) {
+             } catch (e) {
                  fallbackCopyToClipboard(text);
-            }
+             }
         }
         function fallbackCopyToClipboard(text) {
             const textArea = document.createElement('textarea');
@@ -1433,6 +1501,7 @@
             const isVisible = managementPanel.classList.toggle('visible');
             menuToggleBtn.innerHTML = isVisible ? '✕' : '☰';
             menuToggleBtn.classList.toggle('active', isVisible);
+            menuToggleBtn.setAttribute('aria-expanded', isVisible);
         }
 
         // --- Fullscreen Toggle Logic ---
@@ -1465,7 +1534,7 @@
         // --- Matrix Mode Logic ---
         function enterMatrixMode() {
             if (isInMatrixMode) return; isInMatrixMode = true; console.log("// Entering Matrix Mode");
-            if (managementPanel.classList.contains('visible')) { managementPanel.classList.remove('visible'); menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active'); }
+            if (managementPanel.classList.contains('visible')) { toggleManagementPanel(); }
             if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => { console.warn(`FS request failed: ${err.message}`); }); }
             bodyElement.classList.add('matrix-mode-active');
             enterMatrixBtn.textContent = '[M] Exit Matrix'; renderProgressBar();
@@ -1476,6 +1545,7 @@
             bodyElement.classList.remove('matrix-mode-active');
             enterMatrixBtn.textContent = '[M] Enter Matrix'; renderProgressBar();
             menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active');
+            menuToggleBtn.setAttribute('aria-expanded', 'false');
         }
 
         function handleFullscreenChange() {
@@ -1550,7 +1620,7 @@
             const filteredCommands = commands.filter(cmd => cmd.name.toLowerCase().includes(filter.toLowerCase()));
             
             if (filteredCommands.length === 0) {
-                 commandPaletteList.innerHTML = `<li class="command-item text-gray-500">// No commands found</li>`;
+                 commandPaletteList.innerHTML = `<li class="command-item text-gray-500" role="option" aria-selected="false">// No commands found</li>`;
                  return;
             }
 
@@ -1558,9 +1628,13 @@
                 const li = document.createElement('li');
                 li.className = 'command-item';
                 li.textContent = cmd.name;
+                li.setAttribute('role', 'option');
                 li.dataset.actionIndex = commands.indexOf(cmd); // Use original index for action
                 if (index === commandPaletteSelectedIndex) {
                     li.classList.add('selected');
+                    li.setAttribute('aria-selected', 'true');
+                } else {
+                    li.setAttribute('aria-selected', 'false');
                 }
                 li.addEventListener('click', () => {
                     executeCommand(commands.indexOf(cmd));
@@ -1573,8 +1647,10 @@
         function updateCommandSelection() {
             const items = commandPaletteList.querySelectorAll('.command-item');
             items.forEach((item, index) => {
-                 item.classList.toggle('selected', index === commandPaletteSelectedIndex);
-                 if (index === commandPaletteSelectedIndex) {
+                 const isSelected = index === commandPaletteSelectedIndex;
+                 item.classList.toggle('selected', isSelected);
+                 item.setAttribute('aria-selected', isSelected);
+                 if (isSelected) {
                      item.scrollIntoView({ block: 'nearest' });
                  }
             });
@@ -1583,40 +1659,73 @@
         function executeCommand(index) {
             const filter = commandPaletteInput.value;
             const filteredCommands = commands.filter(cmd => cmd.name.toLowerCase().includes(filter.toLowerCase()));
-             if (index >= 0 && index < filteredCommands.length) {
-                 const originalIndex = parseInt(commandPaletteList.children[index].dataset.actionIndex, 10);
-                 if (!isNaN(originalIndex) && commands[originalIndex]) {
-                      commands[originalIndex].action();
-                      toggleCommandPalette(false);
-                 }
+              if (index >= 0 && index < filteredCommands.length) {
+                const originalIndex = parseInt(commandPaletteList.children[index].dataset.actionIndex, 10);
+                if (!isNaN(originalIndex) && commands[originalIndex]) {
+                     commands[originalIndex].action();
+                     toggleCommandPalette(false);
+                }
+            }
+        }
+        
+        function handleModalFocus(e, modal) {
+            const focusableElements = Array.from(modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el => el.offsetParent !== null);
+            if (focusableElements.length === 0) return;
+            
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+
+            if (e.key === 'Tab') {
+                if (e.shiftKey) { 
+                    if (document.activeElement === firstElement) {
+                        e.preventDefault();
+                        lastElement.focus();
+                    }
+                } else { 
+                    if (document.activeElement === lastElement) {
+                        e.preventDefault();
+                        firstElement.focus();
+                    }
+                }
+            }
+        }
+
+
+        function toggleModal(modalOverlay, forceOpen, openerElement) {
+            const isVisible = modalOverlay.classList.contains('visible');
+            const shouldOpen = forceOpen === true || (forceOpen === undefined && !isVisible);
+
+            if (shouldOpen) {
+                elementToFocusOnModalClose = openerElement || document.activeElement;
+                modalOverlay.classList.add('visible');
+                const input = modalOverlay.querySelector('input[type="text"]');
+                if (input) {
+                    setTimeout(() => input.focus(), 50); // Delay focus slightly
+                }
+            } else {
+                modalOverlay.classList.remove('visible');
+                if (modalOverlay.querySelector('.modal-content').resetPosition) {
+                    modalOverlay.querySelector('.modal-content').resetPosition();
+                }
+                if (elementToFocusOnModalClose) {
+                    elementToFocusOnModalClose.focus();
+                    elementToFocusOnModalClose = null;
+                }
             }
         }
 
         function toggleCommandPalette(forceOpen) {
-            const isVisible = commandPaletteOverlay.classList.contains('visible');
-            if (forceOpen === true || !isVisible) {
-                commandPaletteOverlay.classList.add('visible');
+            if (forceOpen === true || !commandPaletteOverlay.classList.contains('visible')) {
                 commandPaletteInput.value = '';
                 commandPaletteSelectedIndex = 0;
                 renderCommands();
-                setTimeout(() => commandPaletteInput.focus(), 50); // Delay focus slightly
-            } else {
-                commandPaletteOverlay.classList.remove('visible');
-                commandPaletteInput.blur();
-                if (commandPalette.resetPosition) commandPalette.resetPosition();
             }
+            toggleModal(commandPaletteOverlay, forceOpen, helpBtn);
         }
-        
+
         function toggleHelpModal(forceOpen) {
-            const isVisible = helpModalOverlay.classList.contains('visible');
-            if (forceOpen === true || !isVisible) {
-                helpModalOverlay.classList.add('visible');
-            } else {
-                helpModalOverlay.classList.remove('visible');
-                if (helpModal.resetPosition) helpModal.resetPosition();
-            }
+            toggleModal(helpModalOverlay, forceOpen, helpBtn);
         }
-        
 
         // --- Click Trigger Area Logic ---
         function handleScreenClick(event) {
@@ -1687,6 +1796,15 @@
              renderCommands(commandPaletteInput.value);
         });
 
+        // PERFORMANCE: Pause animation when tab is not visible
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                isAnimationPaused = true;
+            } else {
+                isAnimationPaused = false;
+            }
+        });
+
         // Global Keyboard Shortcuts
         document.addEventListener('keydown', (e) => {
             const isModalOpen = commandPaletteOverlay.classList.contains('visible') || helpModalOverlay.classList.contains('visible');
@@ -1694,14 +1812,15 @@
             
             // Command Palette Shortcuts
             if (commandPaletteOverlay.classList.contains('visible')) {
+                handleModalFocus(e, commandPalette);
                 if (e.key === 'ArrowDown') {
                     e.preventDefault();
-                    const itemCount = commandPaletteList.children.length;
+                    const itemCount = commandPaletteList.querySelectorAll('.command-item').length;
                     if(itemCount > 0) commandPaletteSelectedIndex = (commandPaletteSelectedIndex + 1) % itemCount;
                     updateCommandSelection();
                 } else if (e.key === 'ArrowUp') {
                     e.preventDefault();
-                    const itemCount = commandPaletteList.children.length;
+                    const itemCount = commandPaletteList.querySelectorAll('.command-item').length;
                     if(itemCount > 0) commandPaletteSelectedIndex = (commandPaletteSelectedIndex - 1 + itemCount) % itemCount;
                     updateCommandSelection();
                 } else if (e.key === 'Enter') {
@@ -1715,6 +1834,7 @@
 
              // Help Modal Shortcut
             if (helpModalOverlay.classList.contains('visible')) {
+                handleModalFocus(e, helpModal);
                  if (e.key === 'Escape') {
                      toggleHelpModal(false);
                  }
@@ -1736,6 +1856,11 @@
                  }
             } else if (!isInputFocused) { // Single-key shortcuts only when not typing
                  switch(e.key.toLowerCase()) {
+                    case 'enter':
+                    case ' ':
+                        e.preventDefault(); // Prevent default browser action (e.g., scrolling on space)
+                        pickRandomName();
+                        break;
                      case 'c': themeToggleBtn.click(); break;
                      case 'e': extractionModeBtn.click(); break;
                      case 'f': toggleFullScreen(); break;
@@ -1752,7 +1877,7 @@
             makeDraggable(helpModal, helpModalHeader);
             makeDraggable(commandPalette, commandPaletteHeader);
         });
-
+    })();
     </script>
 </body>
 </html>
