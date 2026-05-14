@@ -208,6 +208,58 @@
             box-shadow: none;
         }
         #menuToggleBtn.active { }
+        #undoBtn {
+            position: fixed;
+            top: var(--menu-btn-top);
+            left: var(--menu-btn-right);
+            z-index: 15;
+            font-family: var(--matrix-font);
+            font-size: 0.95rem;
+            font-weight: 600;
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            padding: 0.45rem 0.65rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out, opacity 0.3s ease-out;
+            text-shadow: 0 0 3px var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            line-height: 1.2;
+            opacity: 1;
+            max-width: calc(100vw - 7rem);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .construct-mode #undoBtn { text-shadow: none; }
+        #undoBtn:hover:not(:disabled) {
+            background-color: var(--primary-color-dark);
+            color: var(--bg-color);
+            box-shadow: 0 0 10px var(--primary-color);
+            text-shadow: none;
+            transform: translateY(-1px);
+        }
+        .construct-mode #undoBtn:hover:not(:disabled) {
+            background-color: var(--primary-color);
+            color: var(--construct-bg);
+            box-shadow: none;
+        }
+        #undoBtn:active:not(:disabled) {
+            transform: translateY(0px);
+            background-color: rgba(var(--primary-color-rgb), 0.3);
+        }
+        #undoBtn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            border-color: var(--primary-color-dark);
+            color: var(--primary-color-dark);
+            text-shadow: none;
+        }
+        .construct-mode #undoBtn:disabled { color: var(--construct-text-light); border-color: var(--construct-text-light); }
 
         /* Management Panel */
         #managementPanel {
@@ -573,8 +625,9 @@
 
 
         /* ---- MATRIX MODE STYLES ---- */
-        /* Hide menu button COMPLETELY in matrix mode */
-        body.matrix-mode-active #menuToggleBtn {
+        /* Hide fixed controls COMPLETELY in matrix mode */
+        body.matrix-mode-active #menuToggleBtn,
+        body.matrix-mode-active #undoBtn {
             opacity: 0 !important; /* Use important to override other states if needed */
             pointer-events: none !important;
             transition: opacity 0.3s ease-out;
@@ -601,6 +654,7 @@
             #selectedNameDisplay { font-size: 2.25rem; }
             #selectedNameDisplay.quote { font-size: 1.25rem; }
             #menuToggleBtn { font-size: 1.5rem; padding: 0.2rem 0.5rem; }
+            #undoBtn { font-size: 0.8rem; max-width: calc(100vw - 5.5rem); padding: 0.35rem 0.5rem; }
             #managementPanel { padding: 1rem; } /* Reduce padding on mobile */
             /* Stack action buttons row on mobile */
             #managementPanel .action-button-row {
@@ -716,6 +770,9 @@
     </main>
 
     <button id="menuToggleBtn" aria-label="Toggle Menu" aria-expanded="false" aria-controls="managementPanel">☰</button>
+    <button id="undoBtn" class="font-medium flex items-center justify-center gap-1" disabled>
+        [U] ↶ Previous Operative
+    </button>
 
     <aside id="managementPanel" aria-labelledby="managementPanelHeader">
         <h2 id="managementPanelHeader" class="sr-only">Management Panel</h2>
@@ -824,7 +881,7 @@
                     <li>
                         <div>
                             <span>Pick Next Operative</span>
-                            <p class="text-sm opacity-70 mt-1">Selects a random operative from the available roster.</p>
+                            <p class="text-sm opacity-70 mt-1">Restores reverted operatives first, then selects a random operative from the available roster.</p>
                         </div>
                         <span><kbd>Enter</kbd> or <kbd>Space</kbd></span>
                     </li>
@@ -834,6 +891,13 @@
                             <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
                         </div>
                         <span><kbd>Esc</kbd></span>
+                    </li>
+                    <li>
+                        <div>
+                            <span>Previous Operative</span>
+                            <p class="text-sm opacity-70 mt-1">Undoes the last pick, restores the previous operative, and queues the reverted operative for the next pick.</p>
+                        </div>
+                        <span><kbd>U</kbd></span>
                     </li>
                     <li>
                         <div>
@@ -907,6 +971,7 @@
         const clickTriggerArea = document.getElementById('clickTriggerArea');
         const menuToggleBtn = document.getElementById('menuToggleBtn');
         const managementPanel = document.getElementById('managementPanel');
+        const undoBtn = document.getElementById('undoBtn');
         const rebootBtn = document.getElementById('rebootBtn');
         const titleInput = document.getElementById('titleInput');
         const progressBarContainer = document.getElementById('progressBarContainer');
@@ -944,6 +1009,8 @@
 
         // --- State ---
         let allNames = [];
+        let selectionHistory = [];
+        let pendingNextOperatives = [];
         let isPicking = false;
         let typeIntervalId = null;
         let draggedItemName = null;
@@ -1098,6 +1165,8 @@
             currentFontSize = 24;
             isExtractionMode = false;
             isConstructMode = false;
+            selectionHistory = [];
+            pendingNextOperatives = [];
 
             if (urlParams.has('title')) {
                 const titleParam = urlParams.get('title').trim();
@@ -1168,6 +1237,7 @@
             renderAvailableList();
             renderProgressBar();
             checkEmptyStates();
+            updateUndoButtonState();
             setupCanvas();
             startMatrixRain();
             isInMatrixMode = false;
@@ -1374,12 +1444,15 @@
             const itemElement = nameListElement.querySelector(`li[data-name="${nameToRemove}"]`); if (itemElement && !itemElement.classList.contains('removing')) {
                 itemElement.classList.add('removing'); setTimeout(() => {
                     allNames = allNames.filter(op => op.name !== nameToRemove);
+                    selectionHistory = selectionHistory.filter(name => name !== nameToRemove);
+                    pendingNextOperatives = pendingNextOperatives.filter(name => name !== nameToRemove);
                     
                     // PERFORMANCE: Remove item directly instead of re-rendering
                     itemElement.remove();
 
                     renderProgressBar();
                     checkEmptyStates();
+                    updateUndoButtonState();
                     showTemporaryMessage(`// Operative "${nameToRemove}" deregistered.`);
                     updateURL(); // Save removal to URL
                 }, 300);
@@ -1391,7 +1464,20 @@
             if (selectedNameDisplay.classList.contains('quote')) { rebootSystem(); return; } if (allNames.length > 0 && allNames.every(op => op.selected)) { resetDisplayStyle(EMPTY_QUOTE, true); return; } if (isPicking) { return; }
             const availableForPick = allNames.filter(op => !op.selected); if (availableForPick.length === 0) { if (allNames.length === 0) { resetDisplayStyle('|'); } else { resetDisplayStyle(EMPTY_QUOTE, true); } return; }
             isPicking = true; clickTriggerArea.style.pointerEvents = 'none'; selectedNameDisplayWrapper.style.pointerEvents = 'none'; selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.remove('typing', 'quote');
-            const finalRandomIndex = Math.floor(Math.random() * availableForPick.length); const selectedOperative = availableForPick[finalRandomIndex]; revealNameGradually(selectedOperative.name);
+            updateUndoButtonState();
+            const replayOperative = getNextRevertedOperative();
+            const selectedOperative = replayOperative || availableForPick[Math.floor(Math.random() * availableForPick.length)];
+            revealNameGradually(selectedOperative.name);
+        }
+        function getNextRevertedOperative() {
+            while (pendingNextOperatives.length > 0) {
+                const nextName = pendingNextOperatives.pop();
+                const operative = allNames.find(op => op.name === nextName && !op.selected);
+                if (operative) {
+                    return operative;
+                }
+            }
+            return null;
         }
         function revealNameGradually(name) {
             let i = 0; if (typeIntervalId) clearInterval(typeIntervalId); selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.add('typing');
@@ -1402,9 +1488,9 @@
             const operative = allNames.find(op => op.name === selectedName);
             if (operative) {
                 operative.selected = true;
+                selectionHistory.push(selectedName);
                 if (isExtractionMode) {
-                    const valueToCopy = operative.value || operative.name;
-                    copyToClipboard(valueToCopy);
+                    copyOperativeToClipboard(operative);
                 }
 
                 // PERFORMANCE: Update the specific list item instead of re-rendering
@@ -1432,6 +1518,36 @@
             isPicking = false;
             clickTriggerArea.style.pointerEvents = 'auto';
             selectedNameDisplayWrapper.style.pointerEvents = 'auto';
+            updateUndoButtonState();
+        }
+
+        // --- Previous Operative Function ---
+        function undoLastPick() {
+            if (isPicking || selectionHistory.length === 0) { return; }
+
+            const undoneName = selectionHistory.pop();
+            const operative = allNames.find(op => op.name === undoneName);
+            if (operative) {
+                operative.selected = false;
+                pendingNextOperatives.push(undoneName);
+            }
+
+            const previousName = selectionHistory[selectionHistory.length - 1];
+            if (previousName) {
+                const previousOperative = allNames.find(op => op.name === previousName);
+                resetDisplayStyle(previousName);
+                if (isExtractionMode && previousOperative) {
+                    copyOperativeToClipboard(previousOperative);
+                }
+            } else {
+                resetDisplayStyle();
+            }
+
+            renderAvailableList();
+            renderProgressBar();
+            checkEmptyStates();
+            updateUndoButtonState();
+            showTemporaryMessage(`// Previous operative restored. "${undoneName}" returned to roster.`);
         }
 
         // --- Reboot System Function ---
@@ -1439,16 +1555,24 @@
             if (isPicking) { return; }
             console.log("// System state reset.");
             allNames.forEach(op => op.selected = false);
+            selectionHistory = [];
+            pendingNextOperatives = [];
             // Re-rendering is acceptable here as it's a full reset and simpler
             renderAvailableList(); 
             renderProgressBar();
             resetDisplayStyle();
+            updateUndoButtonState();
             showTemporaryMessage("// Operative roster reset.");
         }
 
         // --- Utility Functions ---
         function checkEmptyStates() {
             const isEmpty = allNames.length === 0; noAvailableMessage.classList.toggle('hidden', !isEmpty);
+        }
+        function updateUndoButtonState() {
+            if (undoBtn) {
+                undoBtn.disabled = isPicking || selectionHistory.length === 0;
+            }
         }
         function resetDisplayStyle(displayName = '|', isQuote = false) {
             if (typeIntervalId) clearInterval(typeIntervalId); typeIntervalId = null; selectedNameDisplay.textContent = displayName; selectedNameDisplay.classList.remove('quote', 'typing');
@@ -1457,6 +1581,9 @@
         }
         function showTemporaryMessage(message, type = "info") {
             if (type === "warn") { console.warn(message); } else if (type === "error") { console.error(message); } else { console.log(message); }
+        }
+        function copyOperativeToClipboard(operative) {
+            copyToClipboard(operative.value || operative.name);
         }
         function copyToClipboard(text) {
              try {
@@ -1560,6 +1687,7 @@
             { name: "Toggle Extraction Mode", action: () => extractionModeBtn.click(), shortcut: 'E' },
             { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
             { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
+            { name: "Previous Operative", action: undoLastPick, shortcut: 'U' },
             { name: "Reboot System (Clear Picks)", action: rebootSystem, shortcut: 'R' },
             { name: "Open Help Manual", action: () => toggleHelpModal(true) },
             { name: "Toggle Main Menu", action: toggleManagementPanel },
@@ -1747,6 +1875,7 @@
         addNameBtn.addEventListener('click', addName);
         newNameInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { addName(); } });
         newValueInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { addName(); } });
+        undoBtn.addEventListener('click', undoLastPick);
         rebootBtn.addEventListener('click', rebootSystem);
         window.addEventListener('resize', () => { if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain(); });
         
@@ -1865,6 +1994,7 @@
                      case 'e': extractionModeBtn.click(); break;
                      case 'f': toggleFullScreen(); break;
                      case 'm': enterMatrixBtn.click(); break;
+                     case 'u': undoLastPick(); break;
                      case 'r': rebootBtn.click(); break;
                  }
             }
@@ -1881,4 +2011,3 @@
     </script>
 </body>
 </html>
-
