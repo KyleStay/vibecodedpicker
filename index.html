@@ -639,9 +639,12 @@
         #commandPaletteList { max-height: 40vh; overflow-y: auto; }
         .command-item {
             display: flex; justify-content: space-between; align-items: center;
+            gap: 1rem;
             padding: 0.75rem; border-radius: 2px;
             cursor: pointer; transition: background-color 0.15s ease;
         }
+        .command-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .command-shortcut { flex-shrink: 0; opacity: 0.85; }
         .command-item:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
         .construct-mode .command-item:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
         .command-item.selected, .command-item:hover {
@@ -649,6 +652,15 @@
         }
         .construct-mode .command-item.selected, .construct-mode .command-item:hover {
             background-color: var(--primary-color); color: var(--construct-bg);
+        }
+        .command-item.selected kbd, .command-item:hover kbd {
+            color: var(--bg-color);
+            border-color: var(--bg-color);
+            box-shadow: none;
+        }
+        .construct-mode .command-item.selected kbd, .construct-mode .command-item:hover kbd {
+            color: var(--construct-bg);
+            border-color: var(--construct-bg);
         }
 
         /* Help Modal & General Shortcut Display */
@@ -2103,9 +2115,21 @@ void main() {
             filteredCommands.forEach((cmd, index) => {
                 const li = document.createElement('li');
                 li.className = 'command-item';
-                li.textContent = cmd.name;
                 li.setAttribute('role', 'option');
                 li.dataset.actionIndex = commands.indexOf(cmd); // Use original index for action
+
+                const commandName = document.createElement('span');
+                commandName.className = 'command-name';
+                commandName.textContent = cmd.name;
+                li.appendChild(commandName);
+
+                if (cmd.shortcut) {
+                    const shortcut = document.createElement('kbd');
+                    shortcut.className = 'command-shortcut';
+                    shortcut.textContent = cmd.shortcut;
+                    li.appendChild(shortcut);
+                }
+
                 if (index === commandPaletteSelectedIndex) {
                     li.classList.add('selected');
                     li.setAttribute('aria-selected', 'true');
