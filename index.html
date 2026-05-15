@@ -128,7 +128,7 @@
             background:
                 radial-gradient(ellipse at center, transparent 48%, rgba(0, 0, 0, 0.18) 72%, rgba(0, 0, 0, 0.5) 100%),
                 linear-gradient(rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.035));
-            animation: crt-flicker 2.6s infinite steps(24);
+            opacity: 0.72;
         }
         body.crt-mode #mainDisplayContainer,
         body.crt-mode #managementPanel,
@@ -136,17 +136,6 @@
         body.crt-mode #menuToggleBtn,
         body.crt-mode .modal-content {
             filter: contrast(1.14) brightness(1.08) saturate(1.18);
-        }
-        @keyframes crt-flicker {
-            0%, 100% { opacity: 0.72; }
-            8% { opacity: 0.82; }
-            12% { opacity: 0.64; }
-            35% { opacity: 0.76; }
-            55% { opacity: 0.68; }
-            70% { opacity: 0.86; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-            body.crt-mode::after { animation: none; opacity: 0.72; }
         }
         /* Brightness Overlay */
         #brightnessOverlay {
@@ -743,6 +732,7 @@
             white-space: nowrap;
             border-width: 0;
         }
+        .hidden { display: none !important; }
 
         /* --- Themed Scrollbars (WebKit + Firefox) --- */
         /* Target scrollable containers explicitly (body is overflow hidden) */
@@ -894,6 +884,22 @@
                 <button id="crtModeBtn" aria-pressed="false">[T] Engage CRT</button>
                 <div id="crtModeLed" class="led-indicator" aria-hidden="true"></div>
             </div>
+            <div id="crtSubSettings" class="hidden">
+                <div class="mb-3">
+                    <label for="crtFishbowlSlider" class="flex justify-between items-center">
+                        <span>// Fishbowl:</span>
+                        <span id="crtFishbowlValue" class="font-semibold text-sm">88%</span>
+                    </label>
+                    <input type="range" id="crtFishbowlSlider" min="0" max="100" step="1" value="88">
+                </div>
+                <div class="mb-3">
+                    <label for="crtVignetteSlider" class="flex justify-between items-center">
+                        <span>// Vignette:</span>
+                        <span id="crtVignetteValue" class="font-semibold text-sm">100%</span>
+                    </label>
+                    <input type="range" id="crtVignetteSlider" min="0" max="100" step="1" value="100">
+                </div>
+            </div>
         </div>
 
         <div class="panel-section">
@@ -1007,7 +1013,7 @@
                     <li>
                         <div>
                             <span>Toggle CRT Mode</span>
-                            <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, and terminal flicker.</p>
+                            <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, and vignette.</p>
                         </div>
                         <span><kbd>T</kbd></span>
                     </li>
@@ -1055,12 +1061,14 @@ uniform sampler2D u_tex;
 uniform vec2 u_resolution;
 uniform float u_time;
 uniform float u_intensity;
+uniform float u_fishbowl;
+uniform float u_vignette;
 
 vec2 curveRemapUV(vec2 uv) {
   uv = uv * 2.0 - 1.0;
   vec2 curvature = vec2(4.5);
   vec2 offset = abs(uv.yx) / curvature;
-  uv = uv + uv * offset * offset * u_intensity;
+  uv = uv + uv * offset * offset * u_fishbowl;
   return uv * 0.5 + 0.5;
 }
 
@@ -1071,6 +1079,8 @@ float random(vec2 co) {
 void main() {
   vec2 uv = vTexCoord;
   vec2 remappedUV = curveRemapUV(uv);
+  float edgeZoom = mix(1.02, 1.12, u_fishbowl);
+  remappedUV = (remappedUV - 0.5) / edgeZoom + 0.5;
 
   if (remappedUV.x < 0.0 || remappedUV.y < 0.0 || remappedUV.x > 1.0 || remappedUV.y > 1.0) {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
@@ -1096,8 +1106,9 @@ void main() {
 
   float scanline = pow(y_lines, 0.65);
   float grille = mix(1.0, pow(x_lines, 0.85), 0.35 * u_intensity);
-  float vignette = smoothstep(0.82, 0.18, distance(remappedUV, vec2(0.5)));
-  float flicker = 0.96 + 0.04 * sin(u_time * 48.0);
+  float vignetteMask = smoothstep(0.82, 0.18, distance(remappedUV, vec2(0.5)));
+  float vignette = mix(1.0, vignetteMask, u_vignette);
+  float flicker = 1.0;
   float noise = (random(gl_FragCoord.xy) - 0.5) * 0.035 * u_intensity;
 
   vec3 terminalTint = vec3(0.25, 1.15, 1.35);
@@ -1150,6 +1161,11 @@ void main() {
         const extractionModeLed = document.getElementById('extractionModeLed');
         const crtModeBtn = document.getElementById('crtModeBtn');
         const crtModeLed = document.getElementById('crtModeLed');
+        const crtSubSettings = document.getElementById('crtSubSettings');
+        const crtFishbowlSlider = document.getElementById('crtFishbowlSlider');
+        const crtFishbowlValue = document.getElementById('crtFishbowlValue');
+        const crtVignetteSlider = document.getElementById('crtVignetteSlider');
+        const crtVignetteValue = document.getElementById('crtVignetteValue');
 
         // Action Buttons (Inside Panel)
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -1183,6 +1199,8 @@ void main() {
         let isInMatrixMode = false;
         let isExtractionMode = false;
         let isCrtMode = true;
+        let currentCrtFishbowlPercent = 88;
+        let currentCrtVignettePercent = 100;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
@@ -1296,7 +1314,9 @@ void main() {
                     texture: crtGl.getUniformLocation(crtProgram, 'u_tex'),
                     resolution: crtGl.getUniformLocation(crtProgram, 'u_resolution'),
                     time: crtGl.getUniformLocation(crtProgram, 'u_time'),
-                    intensity: crtGl.getUniformLocation(crtProgram, 'u_intensity')
+                    intensity: crtGl.getUniformLocation(crtProgram, 'u_intensity'),
+                    fishbowl: crtGl.getUniformLocation(crtProgram, 'u_fishbowl'),
+                    vignette: crtGl.getUniformLocation(crtProgram, 'u_vignette')
                 };
 
                 crtReady = true;
@@ -1335,6 +1355,8 @@ void main() {
             crtGl.uniform2f(crtUniforms.resolution, crtCanvas.width, crtCanvas.height);
             crtGl.uniform1f(crtUniforms.time, performance.now() / 1000);
             crtGl.uniform1f(crtUniforms.intensity, isCrtMode ? 0.88 : 0.0);
+            crtGl.uniform1f(crtUniforms.fishbowl, currentCrtFishbowlPercent / 100);
+            crtGl.uniform1f(crtUniforms.vignette, currentCrtVignettePercent / 100);
             crtGl.drawArrays(crtGl.TRIANGLES, 0, 6);
         }
         function drawMatrixRain() {
@@ -1425,6 +1447,8 @@ void main() {
             if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
             if (isExtractionMode) { params.push('extract=true'); }
             if (!isCrtMode) { params.push('crt=false'); }
+            if (currentCrtFishbowlPercent !== 88) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
+            if (currentCrtVignettePercent !== 100) { params.push('crtVignette=' + currentCrtVignettePercent); }
             if (isConstructMode) { params.push('theme=construct'); }
 
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
@@ -1444,6 +1468,8 @@ void main() {
             currentFontSize = 24;
             isExtractionMode = false;
             isCrtMode = true;
+            currentCrtFishbowlPercent = 88;
+            currentCrtVignettePercent = 100;
             isConstructMode = false;
             selectionHistory = [];
             pendingNextOperatives = [];
@@ -1490,6 +1516,20 @@ void main() {
             if (urlParams.has('crt')) {
                 isCrtMode = urlParams.get('crt') !== 'false';
             }
+            if (urlParams.has('crtFishbowl')) {
+                const fishbowlParam = parseInt(urlParams.get('crtFishbowl'), 10);
+                if (!isNaN(fishbowlParam) && fishbowlParam >= 0 && fishbowlParam <= 100) {
+                    currentCrtFishbowlPercent = fishbowlParam;
+                }
+            }
+            if (urlParams.has('crtVignette')) {
+                const vignetteParam = parseInt(urlParams.get('crtVignette'), 10);
+                if (!isNaN(vignetteParam) && vignetteParam >= 0 && vignetteParam <= 100) {
+                    currentCrtVignettePercent = vignetteParam;
+                }
+            }
+            updateCrtFishbowlDisplay(currentCrtFishbowlPercent);
+            updateCrtVignetteDisplay(currentCrtVignettePercent);
             updateCrtMode();
 
             if (urlParams.has('theme') && urlParams.get('theme') === 'construct') {
@@ -1564,6 +1604,19 @@ void main() {
             crtModeBtn.classList.toggle('active', isPressed);
             crtModeLed.classList.toggle('active', isPressed);
             bodyElement.classList.toggle('crt-mode', isPressed);
+            crtSubSettings.classList.toggle('hidden', !isPressed);
+            renderCrtFrame();
+        }
+        function updateCrtFishbowlDisplay(percent) {
+            currentCrtFishbowlPercent = Math.max(0, Math.min(100, percent));
+            if (crtFishbowlSlider) crtFishbowlSlider.value = currentCrtFishbowlPercent;
+            if (crtFishbowlValue) crtFishbowlValue.textContent = `${currentCrtFishbowlPercent}%`;
+            renderCrtFrame();
+        }
+        function updateCrtVignetteDisplay(percent) {
+            currentCrtVignettePercent = Math.max(0, Math.min(100, percent));
+            if (crtVignetteSlider) crtVignetteSlider.value = currentCrtVignettePercent;
+            if (crtVignetteValue) crtVignetteValue.textContent = `${currentCrtVignettePercent}%`;
             renderCrtFrame();
         }
         function updateExtractionUIVisibility() {
@@ -2185,6 +2238,14 @@ void main() {
         });
         fontSizeSlider.addEventListener('input', (event) => {
             handleFontSizeChange(parseInt(event.target.value));
+            updateURL();
+        });
+        crtFishbowlSlider.addEventListener('input', (event) => {
+            updateCrtFishbowlDisplay(parseInt(event.target.value));
+            updateURL();
+        });
+        crtVignetteSlider.addEventListener('input', (event) => {
+            updateCrtVignetteDisplay(parseInt(event.target.value));
             updateURL();
         });
         titleInput.addEventListener('input', (event) => {
