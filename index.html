@@ -83,6 +83,71 @@
             z-index: 0;
             display: block;
         }
+        body.crt-mode #matrixCanvas { display: none; }
+        #crtCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            display: none;
+        }
+        body.crt-mode #crtCanvas { display: block; }
+        body.crt-mode.crt-unavailable #matrixCanvas { display: block; }
+        body.crt-mode.crt-unavailable #crtCanvas { display: none; }
+        body.crt-mode::before,
+        body.crt-mode::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 29;
+            pointer-events: none;
+            opacity: 1;
+        }
+        body.crt-mode::before {
+            background:
+                repeating-linear-gradient(
+                    to bottom,
+                    rgba(255, 255, 255, 0.11) 0,
+                    rgba(255, 255, 255, 0.11) 1px,
+                    transparent 2px,
+                    transparent 5px
+                ),
+                repeating-linear-gradient(
+                    to right,
+                    rgba(var(--primary-color-rgb), 0.055) 0,
+                    rgba(var(--primary-color-rgb), 0.055) 1px,
+                    transparent 3px,
+                    transparent 6px
+                );
+            mix-blend-mode: screen;
+            opacity: 0.48;
+        }
+        body.crt-mode::after {
+            background:
+                radial-gradient(ellipse at center, transparent 48%, rgba(0, 0, 0, 0.18) 72%, rgba(0, 0, 0, 0.5) 100%),
+                linear-gradient(rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.035));
+            animation: crt-flicker 2.6s infinite steps(24);
+        }
+        body.crt-mode #mainDisplayContainer,
+        body.crt-mode #managementPanel,
+        body.crt-mode #undoBtn,
+        body.crt-mode #menuToggleBtn,
+        body.crt-mode .modal-content {
+            filter: contrast(1.14) brightness(1.08) saturate(1.18);
+        }
+        @keyframes crt-flicker {
+            0%, 100% { opacity: 0.72; }
+            8% { opacity: 0.82; }
+            12% { opacity: 0.64; }
+            35% { opacity: 0.76; }
+            55% { opacity: 0.68; }
+            70% { opacity: 0.86; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            body.crt-mode::after { animation: none; opacity: 0.72; }
+        }
         /* Brightness Overlay */
         #brightnessOverlay {
             position: fixed;
@@ -759,6 +824,7 @@
 </head>
 <body class="">
     <canvas id="matrixCanvas" aria-hidden="true"></canvas>
+    <canvas id="crtCanvas" aria-hidden="true"></canvas>
     <div id="brightnessOverlay" aria-hidden="true"></div>
     <div id="clickTriggerArea"></div>
 
@@ -823,6 +889,10 @@
             <div class="control-group">
                 <button id="extractionModeBtn" aria-pressed="false">[E] Engage Extraction</button>
                 <div id="extractionModeLed" class="led-indicator" aria-hidden="true"></div>
+            </div>
+            <div class="control-group">
+                <button id="crtModeBtn" aria-pressed="false">[T] Engage CRT</button>
+                <div id="crtModeLed" class="led-indicator" aria-hidden="true"></div>
             </div>
         </div>
 
@@ -934,6 +1004,13 @@
                         </div>
                         <span><kbd>E</kbd></span>
                     </li>
+                    <li>
+                        <div>
+                            <span>Toggle CRT Mode</span>
+                            <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, and terminal flicker.</p>
+                        </div>
+                        <span><kbd>T</kbd></span>
+                    </li>
                      <li>
                         <div>
                             <span>Toggle Fullscreen</span>
@@ -954,6 +1031,86 @@
     </div>
 
 
+    <script id="crt-vertex-shader" type="x-shader/x-vertex">
+attribute vec3 aPosition;
+attribute vec2 aTexCoord;
+
+varying vec2 vTexCoord;
+
+void main() {
+  vTexCoord = aTexCoord;
+  gl_Position = vec4(aPosition, 1.0);
+}
+    </script>
+    <script id="crt-fragment-shader" type="x-shader/x-fragment">
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+#define PI 3.1415926538
+
+varying vec2 vTexCoord;
+
+uniform sampler2D u_tex;
+uniform vec2 u_resolution;
+uniform float u_time;
+uniform float u_intensity;
+
+vec2 curveRemapUV(vec2 uv) {
+  uv = uv * 2.0 - 1.0;
+  vec2 curvature = vec2(4.5);
+  vec2 offset = abs(uv.yx) / curvature;
+  uv = uv + uv * offset * offset * u_intensity;
+  return uv * 0.5 + 0.5;
+}
+
+float random(vec2 co) {
+  return fract(sin(dot(co.xy, vec2(12.9898, 78.233)) + u_time) * 43758.5453);
+}
+
+void main() {
+  vec2 uv = vTexCoord;
+  vec2 remappedUV = curveRemapUV(uv);
+
+  if (remappedUV.x < 0.0 || remappedUV.y < 0.0 || remappedUV.x > 1.0 || remappedUV.y > 1.0) {
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    return;
+  }
+
+  float chroma = 0.0018 * u_intensity;
+  vec4 baseColor;
+  baseColor.r = texture2D(u_tex, remappedUV + vec2(chroma, 0.0)).r;
+  baseColor.g = texture2D(u_tex, remappedUV).g;
+  baseColor.b = texture2D(u_tex, remappedUV - vec2(chroma, 0.0)).b;
+  baseColor.a = 1.0;
+  vec3 rawColor = texture2D(u_tex, remappedUV).rgb;
+  float luminance = dot(rawColor, vec3(0.299, 0.587, 0.114));
+  float leadMask = smoothstep(0.58, 0.92, luminance);
+
+  float line_count = 420.0;
+  float y_lines = sin(remappedUV.y * line_count * PI * 2.0);
+  y_lines = (y_lines * 0.5 + 0.5) * 0.85 + 0.15;
+
+  float x_lines = sin(remappedUV.x * line_count * PI * 2.0);
+  x_lines = (x_lines * 0.5 + 0.5) * 0.85 + 0.15;
+
+  float scanline = pow(y_lines, 0.65);
+  float grille = mix(1.0, pow(x_lines, 0.85), 0.35 * u_intensity);
+  float vignette = smoothstep(0.82, 0.18, distance(remappedUV, vec2(0.5)));
+  float flicker = 0.96 + 0.04 * sin(u_time * 48.0);
+  float noise = (random(gl_FragCoord.xy) - 0.5) * 0.035 * u_intensity;
+
+  vec3 terminalTint = vec3(0.25, 1.15, 1.35);
+  vec3 trailColor = baseColor.rgb * terminalTint * (1.4 + 1.2 * u_intensity);
+  vec3 leadColor = vec3(1.0, 0.96, 0.86) * (1.6 + 1.4 * u_intensity);
+  vec3 color = mix(trailColor, leadColor, leadMask);
+  color *= scanline * grille * vignette * flicker;
+  color += noise;
+
+  gl_FragColor = vec4(color, 1.0);
+}
+    </script>
+
     <script>
     (function() { // IIFE to encapsulate scope and avoid global pollution
         // --- DOM Elements ---
@@ -968,6 +1125,8 @@
         const noAvailableMessage = document.getElementById('noAvailableMessage');
         const canvas = document.getElementById('matrixCanvas');
         const ctx = canvas.getContext('2d');
+        const crtCanvas = document.getElementById('crtCanvas');
+        const crtGl = crtCanvas.getContext('webgl', { preserveDrawingBuffer: false });
         const clickTriggerArea = document.getElementById('clickTriggerArea');
         const menuToggleBtn = document.getElementById('menuToggleBtn');
         const managementPanel = document.getElementById('managementPanel');
@@ -989,6 +1148,8 @@
         const fontSizeValue = document.getElementById('fontSizeValue');
         const extractionModeBtn = document.getElementById('extractionModeBtn');
         const extractionModeLed = document.getElementById('extractionModeLed');
+        const crtModeBtn = document.getElementById('crtModeBtn');
+        const crtModeLed = document.getElementById('crtModeLed');
 
         // Action Buttons (Inside Panel)
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -1021,11 +1182,19 @@
         let isAnimationPaused = false;
         let isInMatrixMode = false;
         let isExtractionMode = false;
+        let isCrtMode = true;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
         let commandPaletteSelectedIndex = 0;
         let elementToFocusOnModalClose = null; 
+        let crtProgram = null;
+        let crtTexture = null;
+        let crtPositionBuffer = null;
+        let crtTexCoordBuffer = null;
+        let crtUniforms = null;
+        let crtReady = false;
+        let crtWarningShown = false;
 
         // --- Constants ---
         const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -1052,6 +1221,7 @@
         }
         function setupCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            crtCanvas.width = window.innerWidth; crtCanvas.height = window.innerHeight;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
             drops = []; trails = [];
@@ -1059,6 +1229,113 @@
                 drops[i] = { y: Math.floor(Math.random() * canvas.height / currentFontSize), delay: calculateColumnDelay(currentRainFPS), lastUpdateTime: 0 };
                 trails[i] = [];
             }
+            setupCrtRenderer();
+        }
+        function getInlineShaderSource(id) {
+            const shaderElement = document.getElementById(id);
+            return shaderElement ? shaderElement.textContent.trim() : '';
+        }
+        function createCrtShader(type, source) {
+            const shader = crtGl.createShader(type);
+            crtGl.shaderSource(shader, source);
+            crtGl.compileShader(shader);
+            if (!crtGl.getShaderParameter(shader, crtGl.COMPILE_STATUS)) {
+                const message = crtGl.getShaderInfoLog(shader);
+                crtGl.deleteShader(shader);
+                throw new Error(message || 'CRT shader compilation failed.');
+            }
+            return shader;
+        }
+        function setupCrtRenderer() {
+            if (!crtGl) {
+                bodyElement.classList.add('crt-unavailable');
+                if (!crtWarningShown) {
+                    console.warn('// CRT renderer unavailable: WebGL not supported.');
+                    crtWarningShown = true;
+                }
+                return;
+            }
+
+            crtGl.viewport(0, 0, crtCanvas.width, crtCanvas.height);
+
+            if (crtReady) { return; }
+
+            try {
+                const vertexShader = createCrtShader(crtGl.VERTEX_SHADER, getInlineShaderSource('crt-vertex-shader'));
+                const fragmentShader = createCrtShader(crtGl.FRAGMENT_SHADER, getInlineShaderSource('crt-fragment-shader'));
+                crtProgram = crtGl.createProgram();
+                crtGl.attachShader(crtProgram, vertexShader);
+                crtGl.attachShader(crtProgram, fragmentShader);
+                crtGl.linkProgram(crtProgram);
+                if (!crtGl.getProgramParameter(crtProgram, crtGl.LINK_STATUS)) {
+                    throw new Error(crtGl.getProgramInfoLog(crtProgram) || 'CRT shader link failed.');
+                }
+
+                crtPositionBuffer = crtGl.createBuffer();
+                crtGl.bindBuffer(crtGl.ARRAY_BUFFER, crtPositionBuffer);
+                crtGl.bufferData(crtGl.ARRAY_BUFFER, new Float32Array([
+                    -1, -1, 1, -1, -1, 1,
+                    -1, 1, 1, -1, 1, 1
+                ]), crtGl.STATIC_DRAW);
+
+                crtTexCoordBuffer = crtGl.createBuffer();
+                crtGl.bindBuffer(crtGl.ARRAY_BUFFER, crtTexCoordBuffer);
+                crtGl.bufferData(crtGl.ARRAY_BUFFER, new Float32Array([
+                    0, 1, 1, 1, 0, 0,
+                    0, 0, 1, 1, 1, 0
+                ]), crtGl.STATIC_DRAW);
+
+                crtTexture = crtGl.createTexture();
+                crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_S, crtGl.CLAMP_TO_EDGE);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_T, crtGl.CLAMP_TO_EDGE);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MIN_FILTER, crtGl.LINEAR);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MAG_FILTER, crtGl.LINEAR);
+
+                crtUniforms = {
+                    texture: crtGl.getUniformLocation(crtProgram, 'u_tex'),
+                    resolution: crtGl.getUniformLocation(crtProgram, 'u_resolution'),
+                    time: crtGl.getUniformLocation(crtProgram, 'u_time'),
+                    intensity: crtGl.getUniformLocation(crtProgram, 'u_intensity')
+                };
+
+                crtReady = true;
+                bodyElement.classList.remove('crt-unavailable');
+            } catch (error) {
+                crtReady = false;
+                bodyElement.classList.add('crt-unavailable');
+                if (!crtWarningShown) {
+                    console.warn('// CRT renderer failed, falling back to standard rain canvas.', error);
+                    crtWarningShown = true;
+                }
+            }
+        }
+        function renderCrtFrame() {
+            if (!isCrtMode || !crtReady || !crtGl) { return; }
+
+            crtGl.viewport(0, 0, crtCanvas.width, crtCanvas.height);
+            crtGl.useProgram(crtProgram);
+
+            const positionLocation = crtGl.getAttribLocation(crtProgram, 'aPosition');
+            crtGl.bindBuffer(crtGl.ARRAY_BUFFER, crtPositionBuffer);
+            crtGl.enableVertexAttribArray(positionLocation);
+            crtGl.vertexAttribPointer(positionLocation, 2, crtGl.FLOAT, false, 0, 0);
+
+            const texCoordLocation = crtGl.getAttribLocation(crtProgram, 'aTexCoord');
+            crtGl.bindBuffer(crtGl.ARRAY_BUFFER, crtTexCoordBuffer);
+            crtGl.enableVertexAttribArray(texCoordLocation);
+            crtGl.vertexAttribPointer(texCoordLocation, 2, crtGl.FLOAT, false, 0, 0);
+
+            crtGl.activeTexture(crtGl.TEXTURE0);
+            crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
+            crtGl.pixelStorei(crtGl.UNPACK_FLIP_Y_WEBGL, false);
+            crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtGl.RGBA, crtGl.UNSIGNED_BYTE, canvas);
+
+            crtGl.uniform1i(crtUniforms.texture, 0);
+            crtGl.uniform2f(crtUniforms.resolution, crtCanvas.width, crtCanvas.height);
+            crtGl.uniform1f(crtUniforms.time, performance.now() / 1000);
+            crtGl.uniform1f(crtUniforms.intensity, isCrtMode ? 0.88 : 0.0);
+            crtGl.drawArrays(crtGl.TRIANGLES, 0, 6);
         }
         function drawMatrixRain() {
             const computedStyle = getComputedStyle(document.body);
@@ -1117,6 +1394,7 @@
                 if (deltaTime >= ANIMATION_FRAME_DELAY) {
                     try { drawMatrixRain(); lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY); }
                     catch(error) { console.error("Error during drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
+                    renderCrtFrame();
                 }
             }
             if (canvas.width > 0 && canvas.height > 0) { rainAnimationId = requestAnimationFrame(animateRain); } else { console.warn("// Canvas dimensions not ready."); }
@@ -1146,6 +1424,7 @@
             if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
             if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
             if (isExtractionMode) { params.push('extract=true'); }
+            if (!isCrtMode) { params.push('crt=false'); }
             if (isConstructMode) { params.push('theme=construct'); }
 
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
@@ -1164,6 +1443,7 @@
             currentRainFPS = 10;
             currentFontSize = 24;
             isExtractionMode = false;
+            isCrtMode = true;
             isConstructMode = false;
             selectionHistory = [];
             pendingNextOperatives = [];
@@ -1206,6 +1486,11 @@
             }
             updateExtractionButton();
             updateExtractionUIVisibility();
+
+            if (urlParams.has('crt')) {
+                isCrtMode = urlParams.get('crt') !== 'false';
+            }
+            updateCrtMode();
 
             if (urlParams.has('theme') && urlParams.get('theme') === 'construct') {
                 isConstructMode = true;
@@ -1271,6 +1556,15 @@
             extractionModeBtn.textContent = isPressed ? '[E] Extraction Engaged' : '[E] Engage Extraction';
             extractionModeBtn.classList.toggle('active', isPressed);
             extractionModeLed.classList.toggle('active', isPressed);
+        }
+        function updateCrtMode() {
+            const isPressed = isCrtMode;
+            crtModeBtn.setAttribute('aria-pressed', isPressed);
+            crtModeBtn.textContent = isPressed ? '[T] CRT Engaged' : '[T] Engage CRT';
+            crtModeBtn.classList.toggle('active', isPressed);
+            crtModeLed.classList.toggle('active', isPressed);
+            bodyElement.classList.toggle('crt-mode', isPressed);
+            renderCrtFrame();
         }
         function updateExtractionUIVisibility() {
             newValueWrapper.classList.toggle('hidden', !isExtractionMode);
@@ -1685,6 +1979,7 @@
         const commands = [
             { name: "Toggle Construct Mode", action: () => themeToggleBtn.click(), shortcut: 'C' },
             { name: "Toggle Extraction Mode", action: () => extractionModeBtn.click(), shortcut: 'E' },
+            { name: "Toggle CRT Mode", action: () => crtModeBtn.click(), shortcut: 'T' },
             { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
             { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
             { name: "Previous Operative", action: undoLastPick, shortcut: 'U' },
@@ -1915,6 +2210,12 @@
             showTemporaryMessage(`// Extraction Mode ${isExtractionMode ? 'Engaged' : 'Disengaged'}.`);
             updateURL();
         });
+        crtModeBtn.addEventListener('click', () => {
+            isCrtMode = !isCrtMode;
+            updateCrtMode();
+            showTemporaryMessage(`// CRT Mode ${isCrtMode ? 'Engaged' : 'Disengaged'}.`);
+            updateURL();
+        });
 
         // Modal & Palette Listeners
         helpBtn.addEventListener('click', () => toggleHelpModal(true));
@@ -1992,6 +2293,7 @@
                         break;
                      case 'c': themeToggleBtn.click(); break;
                      case 'e': extractionModeBtn.click(); break;
+                     case 't': crtModeBtn.click(); break;
                      case 'f': toggleFullScreen(); break;
                      case 'm': enterMatrixBtn.click(); break;
                      case 'u': undoLastPick(); break;
