@@ -83,6 +83,92 @@
             z-index: 0;
             display: block;
         }
+        body.crt-mode #matrixCanvas { display: none; }
+        #crtCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            display: none;
+        }
+        body.crt-mode #crtCanvas { display: block; }
+        body.crt-mode.crt-unavailable #matrixCanvas { display: block; }
+        body.crt-mode.crt-unavailable #crtCanvas { display: none; }
+        body.crt-mode::before,
+        body.crt-mode::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 29;
+            pointer-events: none;
+            opacity: 1;
+        }
+        body.crt-mode::before {
+            background:
+                repeating-linear-gradient(
+                    to bottom,
+                    rgba(255, 255, 255, 0.11) 0,
+                    rgba(255, 255, 255, 0.11) 1px,
+                    transparent 2px,
+                    transparent 5px
+                ),
+                repeating-linear-gradient(
+                    to right,
+                    rgba(var(--primary-color-rgb), 0.055) 0,
+                    rgba(var(--primary-color-rgb), 0.055) 1px,
+                    transparent 3px,
+                    transparent 6px
+                );
+            mix-blend-mode: screen;
+            opacity: 0.48;
+        }
+        body.construct-mode.crt-mode::before {
+            background:
+                repeating-linear-gradient(
+                    to bottom,
+                    rgba(0, 0, 0, 0.08) 0,
+                    rgba(0, 0, 0, 0.08) 1px,
+                    transparent 2px,
+                    transparent 5px
+                ),
+                repeating-linear-gradient(
+                    to right,
+                    rgba(var(--primary-color-rgb), 0.035) 0,
+                    rgba(var(--primary-color-rgb), 0.035) 1px,
+                    transparent 3px,
+                    transparent 6px
+                );
+            mix-blend-mode: multiply;
+            opacity: 0.24;
+        }
+        body.crt-mode::after {
+            background:
+                radial-gradient(ellipse at center, transparent 48%, rgba(0, 0, 0, 0.18) 72%, rgba(0, 0, 0, 0.5) 100%),
+                linear-gradient(rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.035));
+            opacity: 0.72;
+        }
+        body.construct-mode.crt-mode::after {
+            background:
+                radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.08) 78%, rgba(0, 0, 0, 0.18) 100%),
+                linear-gradient(rgba(0, 0, 0, 0.025), rgba(255, 255, 255, 0.02));
+            opacity: 0.42;
+        }
+        body.crt-mode #mainDisplayContainer,
+        body.crt-mode #managementPanel,
+        body.crt-mode #undoBtn,
+        body.crt-mode #menuToggleBtn,
+        body.crt-mode .modal-content {
+            filter: contrast(1.14) brightness(1.08) saturate(1.18);
+        }
+        body.construct-mode.crt-mode #mainDisplayContainer,
+        body.construct-mode.crt-mode #managementPanel,
+        body.construct-mode.crt-mode #undoBtn,
+        body.construct-mode.crt-mode #menuToggleBtn,
+        body.construct-mode.crt-mode .modal-content {
+            filter: contrast(1.04) brightness(1.01) saturate(1.02);
+        }
         /* Brightness Overlay */
         #brightnessOverlay {
             position: fixed;
@@ -585,9 +671,12 @@
         #commandPaletteList { max-height: 40vh; overflow-y: auto; }
         .command-item {
             display: flex; justify-content: space-between; align-items: center;
+            gap: 1rem;
             padding: 0.75rem; border-radius: 2px;
             cursor: pointer; transition: background-color 0.15s ease;
         }
+        .command-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .command-shortcut { flex-shrink: 0; opacity: 0.85; }
         .command-item:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
         .construct-mode .command-item:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
         .command-item.selected, .command-item:hover {
@@ -595,6 +684,15 @@
         }
         .construct-mode .command-item.selected, .construct-mode .command-item:hover {
             background-color: var(--primary-color); color: var(--construct-bg);
+        }
+        .command-item.selected kbd, .command-item:hover kbd {
+            color: var(--bg-color);
+            border-color: var(--bg-color);
+            box-shadow: none;
+        }
+        .construct-mode .command-item.selected kbd, .construct-mode .command-item:hover kbd {
+            color: var(--construct-bg);
+            border-color: var(--construct-bg);
         }
 
         /* Help Modal & General Shortcut Display */
@@ -678,6 +776,7 @@
             white-space: nowrap;
             border-width: 0;
         }
+        .hidden { display: none !important; }
 
         /* --- Themed Scrollbars (WebKit + Firefox) --- */
         /* Target scrollable containers explicitly (body is overflow hidden) */
@@ -759,6 +858,7 @@
 </head>
 <body class="">
     <canvas id="matrixCanvas" aria-hidden="true"></canvas>
+    <canvas id="crtCanvas" aria-hidden="true"></canvas>
     <div id="brightnessOverlay" aria-hidden="true"></div>
     <div id="clickTriggerArea"></div>
 
@@ -823,6 +923,26 @@
             <div class="control-group">
                 <button id="extractionModeBtn" aria-pressed="false">[E] Engage Extraction</button>
                 <div id="extractionModeLed" class="led-indicator" aria-hidden="true"></div>
+            </div>
+            <div class="control-group">
+                <button id="crtModeBtn" aria-pressed="false">[T] Engage CRT</button>
+                <div id="crtModeLed" class="led-indicator" aria-hidden="true"></div>
+            </div>
+            <div id="crtSubSettings" class="hidden">
+                <div class="mb-3">
+                    <label for="crtFishbowlSlider" class="flex justify-between items-center">
+                        <span>// Fishbowl:</span>
+                        <span id="crtFishbowlValue" class="font-semibold text-sm">88%</span>
+                    </label>
+                    <input type="range" id="crtFishbowlSlider" min="0" max="100" step="1" value="88">
+                </div>
+                <div class="mb-3">
+                    <label for="crtVignetteSlider" class="flex justify-between items-center">
+                        <span>// Vignette:</span>
+                        <span id="crtVignetteValue" class="font-semibold text-sm">100%</span>
+                    </label>
+                    <input type="range" id="crtVignetteSlider" min="0" max="100" step="1" value="100">
+                </div>
             </div>
         </div>
 
@@ -934,6 +1054,13 @@
                         </div>
                         <span><kbd>E</kbd></span>
                     </li>
+                    <li>
+                        <div>
+                            <span>Toggle CRT Mode</span>
+                            <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, and vignette.</p>
+                        </div>
+                        <span><kbd>T</kbd></span>
+                    </li>
                      <li>
                         <div>
                             <span>Toggle Fullscreen</span>
@@ -954,6 +1081,101 @@
     </div>
 
 
+    <script id="crt-vertex-shader" type="x-shader/x-vertex">
+attribute vec3 aPosition;
+attribute vec2 aTexCoord;
+
+varying vec2 vTexCoord;
+
+void main() {
+  vTexCoord = aTexCoord;
+  gl_Position = vec4(aPosition, 1.0);
+}
+    </script>
+    <script id="crt-fragment-shader" type="x-shader/x-fragment">
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+#define PI 3.1415926538
+
+varying vec2 vTexCoord;
+
+uniform sampler2D u_tex;
+uniform vec2 u_resolution;
+uniform float u_time;
+uniform float u_intensity;
+uniform float u_fishbowl;
+uniform float u_vignette;
+uniform float u_constructMode;
+
+vec2 curveRemapUV(vec2 uv) {
+  uv = uv * 2.0 - 1.0;
+  vec2 curvature = vec2(4.5);
+  vec2 offset = abs(uv.yx) / curvature;
+  uv = uv + uv * offset * offset * u_fishbowl;
+  return uv * 0.5 + 0.5;
+}
+
+float random(vec2 co) {
+  return fract(sin(dot(co.xy, vec2(12.9898, 78.233)) + u_time) * 43758.5453);
+}
+
+void main() {
+  vec2 uv = vTexCoord;
+  vec2 remappedUV = curveRemapUV(uv);
+  float edgeZoom = mix(1.02, 1.12, u_fishbowl);
+  remappedUV = (remappedUV - 0.5) / edgeZoom + 0.5;
+
+  if (remappedUV.x < 0.0 || remappedUV.y < 0.0 || remappedUV.x > 1.0 || remappedUV.y > 1.0) {
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    return;
+  }
+
+  float crtIntensity = mix(u_intensity, u_intensity * 0.42, u_constructMode);
+  float chroma = 0.0018 * crtIntensity;
+  vec4 baseColor;
+  baseColor.r = texture2D(u_tex, remappedUV + vec2(chroma, 0.0)).r;
+  baseColor.g = texture2D(u_tex, remappedUV).g;
+  baseColor.b = texture2D(u_tex, remappedUV - vec2(chroma, 0.0)).b;
+  baseColor.a = 1.0;
+  vec3 rawColor = texture2D(u_tex, remappedUV).rgb;
+  float luminance = dot(rawColor, vec3(0.299, 0.587, 0.114));
+  float matrixLeadMask = smoothstep(0.58, 0.92, luminance);
+  float constructLeadMask = 1.0 - smoothstep(0.02, 0.35, luminance);
+  float leadMask = mix(matrixLeadMask, constructLeadMask, u_constructMode);
+
+  float line_count = 420.0;
+  float y_lines = sin(remappedUV.y * line_count * PI * 2.0);
+  y_lines = (y_lines * 0.5 + 0.5) * 0.85 + 0.15;
+
+  float x_lines = sin(remappedUV.x * line_count * PI * 2.0);
+  x_lines = (x_lines * 0.5 + 0.5) * 0.85 + 0.15;
+
+  float scanline = pow(y_lines, 0.65);
+  scanline = mix(scanline, mix(1.0, scanline, 0.5), u_constructMode);
+  float grille = mix(1.0, pow(x_lines, 0.85), 0.35 * crtIntensity);
+  float vignetteMask = smoothstep(0.82, 0.18, distance(remappedUV, vec2(0.5)));
+  float vignetteStrength = mix(u_vignette, u_vignette * 0.45, u_constructMode);
+  float vignette = mix(1.0, vignetteMask, vignetteStrength);
+  float flicker = 1.0;
+  float noise = (random(gl_FragCoord.xy) - 0.5) * 0.035 * crtIntensity;
+
+  vec3 terminalTint = vec3(0.25, 1.15, 1.35);
+  vec3 matrixTrailColor = baseColor.rgb * terminalTint * (1.4 + 1.2 * u_intensity);
+  vec3 constructTrailColor = mix(baseColor.rgb, vec3(luminance), 0.12) * (0.98 + 0.08 * crtIntensity);
+  vec3 trailColor = mix(matrixTrailColor, constructTrailColor, u_constructMode);
+  vec3 matrixLeadColor = vec3(1.0, 0.96, 0.86) * (1.6 + 1.4 * u_intensity);
+  vec3 constructLeadColor = vec3(0.015, 0.015, 0.015);
+  vec3 leadColor = mix(matrixLeadColor, constructLeadColor, u_constructMode);
+  vec3 color = mix(trailColor, leadColor, leadMask);
+  color *= scanline * grille * vignette * flicker;
+  color += noise;
+
+  gl_FragColor = vec4(color, 1.0);
+}
+    </script>
+
     <script>
     (function() { // IIFE to encapsulate scope and avoid global pollution
         // --- DOM Elements ---
@@ -968,6 +1190,8 @@
         const noAvailableMessage = document.getElementById('noAvailableMessage');
         const canvas = document.getElementById('matrixCanvas');
         const ctx = canvas.getContext('2d');
+        const crtCanvas = document.getElementById('crtCanvas');
+        const crtGl = crtCanvas.getContext('webgl', { preserveDrawingBuffer: false });
         const clickTriggerArea = document.getElementById('clickTriggerArea');
         const menuToggleBtn = document.getElementById('menuToggleBtn');
         const managementPanel = document.getElementById('managementPanel');
@@ -989,6 +1213,13 @@
         const fontSizeValue = document.getElementById('fontSizeValue');
         const extractionModeBtn = document.getElementById('extractionModeBtn');
         const extractionModeLed = document.getElementById('extractionModeLed');
+        const crtModeBtn = document.getElementById('crtModeBtn');
+        const crtModeLed = document.getElementById('crtModeLed');
+        const crtSubSettings = document.getElementById('crtSubSettings');
+        const crtFishbowlSlider = document.getElementById('crtFishbowlSlider');
+        const crtFishbowlValue = document.getElementById('crtFishbowlValue');
+        const crtVignetteSlider = document.getElementById('crtVignetteSlider');
+        const crtVignetteValue = document.getElementById('crtVignetteValue');
 
         // Action Buttons (Inside Panel)
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -1021,11 +1252,21 @@
         let isAnimationPaused = false;
         let isInMatrixMode = false;
         let isExtractionMode = false;
+        let isCrtMode = true;
+        let currentCrtFishbowlPercent = 88;
+        let currentCrtVignettePercent = 100;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
         let commandPaletteSelectedIndex = 0;
         let elementToFocusOnModalClose = null; 
+        let crtProgram = null;
+        let crtTexture = null;
+        let crtPositionBuffer = null;
+        let crtTexCoordBuffer = null;
+        let crtUniforms = null;
+        let crtReady = false;
+        let crtWarningShown = false;
 
         // --- Constants ---
         const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -1052,6 +1293,7 @@
         }
         function setupCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            crtCanvas.width = window.innerWidth; crtCanvas.height = window.innerHeight;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
             drops = []; trails = [];
@@ -1059,6 +1301,119 @@
                 drops[i] = { y: Math.floor(Math.random() * canvas.height / currentFontSize), delay: calculateColumnDelay(currentRainFPS), lastUpdateTime: 0 };
                 trails[i] = [];
             }
+            setupCrtRenderer();
+        }
+        function getInlineShaderSource(id) {
+            const shaderElement = document.getElementById(id);
+            return shaderElement ? shaderElement.textContent.trim() : '';
+        }
+        function createCrtShader(type, source) {
+            const shader = crtGl.createShader(type);
+            crtGl.shaderSource(shader, source);
+            crtGl.compileShader(shader);
+            if (!crtGl.getShaderParameter(shader, crtGl.COMPILE_STATUS)) {
+                const message = crtGl.getShaderInfoLog(shader);
+                crtGl.deleteShader(shader);
+                throw new Error(message || 'CRT shader compilation failed.');
+            }
+            return shader;
+        }
+        function setupCrtRenderer() {
+            if (!crtGl) {
+                bodyElement.classList.add('crt-unavailable');
+                if (!crtWarningShown) {
+                    console.warn('// CRT renderer unavailable: WebGL not supported.');
+                    crtWarningShown = true;
+                }
+                return;
+            }
+
+            crtGl.viewport(0, 0, crtCanvas.width, crtCanvas.height);
+
+            if (crtReady) { return; }
+
+            try {
+                const vertexShader = createCrtShader(crtGl.VERTEX_SHADER, getInlineShaderSource('crt-vertex-shader'));
+                const fragmentShader = createCrtShader(crtGl.FRAGMENT_SHADER, getInlineShaderSource('crt-fragment-shader'));
+                crtProgram = crtGl.createProgram();
+                crtGl.attachShader(crtProgram, vertexShader);
+                crtGl.attachShader(crtProgram, fragmentShader);
+                crtGl.linkProgram(crtProgram);
+                if (!crtGl.getProgramParameter(crtProgram, crtGl.LINK_STATUS)) {
+                    throw new Error(crtGl.getProgramInfoLog(crtProgram) || 'CRT shader link failed.');
+                }
+
+                crtPositionBuffer = crtGl.createBuffer();
+                crtGl.bindBuffer(crtGl.ARRAY_BUFFER, crtPositionBuffer);
+                crtGl.bufferData(crtGl.ARRAY_BUFFER, new Float32Array([
+                    -1, -1, 1, -1, -1, 1,
+                    -1, 1, 1, -1, 1, 1
+                ]), crtGl.STATIC_DRAW);
+
+                crtTexCoordBuffer = crtGl.createBuffer();
+                crtGl.bindBuffer(crtGl.ARRAY_BUFFER, crtTexCoordBuffer);
+                crtGl.bufferData(crtGl.ARRAY_BUFFER, new Float32Array([
+                    0, 1, 1, 1, 0, 0,
+                    0, 0, 1, 1, 1, 0
+                ]), crtGl.STATIC_DRAW);
+
+                crtTexture = crtGl.createTexture();
+                crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_S, crtGl.CLAMP_TO_EDGE);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_T, crtGl.CLAMP_TO_EDGE);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MIN_FILTER, crtGl.LINEAR);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MAG_FILTER, crtGl.LINEAR);
+
+                crtUniforms = {
+                    texture: crtGl.getUniformLocation(crtProgram, 'u_tex'),
+                    resolution: crtGl.getUniformLocation(crtProgram, 'u_resolution'),
+                    time: crtGl.getUniformLocation(crtProgram, 'u_time'),
+                    intensity: crtGl.getUniformLocation(crtProgram, 'u_intensity'),
+                    fishbowl: crtGl.getUniformLocation(crtProgram, 'u_fishbowl'),
+                    vignette: crtGl.getUniformLocation(crtProgram, 'u_vignette'),
+                    constructMode: crtGl.getUniformLocation(crtProgram, 'u_constructMode')
+                };
+
+                crtReady = true;
+                bodyElement.classList.remove('crt-unavailable');
+            } catch (error) {
+                crtReady = false;
+                bodyElement.classList.add('crt-unavailable');
+                if (!crtWarningShown) {
+                    console.warn('// CRT renderer failed, falling back to standard rain canvas.', error);
+                    crtWarningShown = true;
+                }
+            }
+        }
+        function renderCrtFrame() {
+            if (!isCrtMode || !crtReady || !crtGl) { return; }
+
+            crtGl.viewport(0, 0, crtCanvas.width, crtCanvas.height);
+            crtGl.useProgram(crtProgram);
+
+            const positionLocation = crtGl.getAttribLocation(crtProgram, 'aPosition');
+            crtGl.bindBuffer(crtGl.ARRAY_BUFFER, crtPositionBuffer);
+            crtGl.enableVertexAttribArray(positionLocation);
+            crtGl.vertexAttribPointer(positionLocation, 2, crtGl.FLOAT, false, 0, 0);
+
+            const texCoordLocation = crtGl.getAttribLocation(crtProgram, 'aTexCoord');
+            crtGl.bindBuffer(crtGl.ARRAY_BUFFER, crtTexCoordBuffer);
+            crtGl.enableVertexAttribArray(texCoordLocation);
+            crtGl.vertexAttribPointer(texCoordLocation, 2, crtGl.FLOAT, false, 0, 0);
+
+            crtGl.activeTexture(crtGl.TEXTURE0);
+            crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
+            crtGl.pixelStorei(crtGl.UNPACK_FLIP_Y_WEBGL, false);
+            crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtGl.RGBA, crtGl.UNSIGNED_BYTE, canvas);
+
+            crtGl.uniform1i(crtUniforms.texture, 0);
+            crtGl.uniform2f(crtUniforms.resolution, crtCanvas.width, crtCanvas.height);
+            crtGl.uniform1f(crtUniforms.time, performance.now() / 1000);
+            crtGl.uniform1f(crtUniforms.intensity, isCrtMode ? 0.88 : 0.0);
+            crtGl.uniform1f(crtUniforms.fishbowl, currentCrtFishbowlPercent / 100);
+            crtGl.uniform1f(crtUniforms.vignette, currentCrtVignettePercent / 100);
+            crtGl.uniform1f(crtUniforms.constructMode, isConstructMode ? 1.0 : 0.0);
+            crtGl.drawArrays(crtGl.TRIANGLES, 0, 6);
         }
         function drawMatrixRain() {
             const computedStyle = getComputedStyle(document.body);
@@ -1117,6 +1472,7 @@
                 if (deltaTime >= ANIMATION_FRAME_DELAY) {
                     try { drawMatrixRain(); lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY); }
                     catch(error) { console.error("Error during drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
+                    renderCrtFrame();
                 }
             }
             if (canvas.width > 0 && canvas.height > 0) { rainAnimationId = requestAnimationFrame(animateRain); } else { console.warn("// Canvas dimensions not ready."); }
@@ -1146,6 +1502,9 @@
             if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
             if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
             if (isExtractionMode) { params.push('extract=true'); }
+            if (!isCrtMode) { params.push('crt=false'); }
+            if (currentCrtFishbowlPercent !== 88) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
+            if (currentCrtVignettePercent !== 100) { params.push('crtVignette=' + currentCrtVignettePercent); }
             if (isConstructMode) { params.push('theme=construct'); }
 
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
@@ -1164,6 +1523,9 @@
             currentRainFPS = 10;
             currentFontSize = 24;
             isExtractionMode = false;
+            isCrtMode = true;
+            currentCrtFishbowlPercent = 88;
+            currentCrtVignettePercent = 100;
             isConstructMode = false;
             selectionHistory = [];
             pendingNextOperatives = [];
@@ -1206,6 +1568,25 @@
             }
             updateExtractionButton();
             updateExtractionUIVisibility();
+
+            if (urlParams.has('crt')) {
+                isCrtMode = urlParams.get('crt') !== 'false';
+            }
+            if (urlParams.has('crtFishbowl')) {
+                const fishbowlParam = parseInt(urlParams.get('crtFishbowl'), 10);
+                if (!isNaN(fishbowlParam) && fishbowlParam >= 0 && fishbowlParam <= 100) {
+                    currentCrtFishbowlPercent = fishbowlParam;
+                }
+            }
+            if (urlParams.has('crtVignette')) {
+                const vignetteParam = parseInt(urlParams.get('crtVignette'), 10);
+                if (!isNaN(vignetteParam) && vignetteParam >= 0 && vignetteParam <= 100) {
+                    currentCrtVignettePercent = vignetteParam;
+                }
+            }
+            updateCrtFishbowlDisplay(currentCrtFishbowlPercent);
+            updateCrtVignetteDisplay(currentCrtVignettePercent);
+            updateCrtMode();
 
             if (urlParams.has('theme') && urlParams.get('theme') === 'construct') {
                 isConstructMode = true;
@@ -1272,6 +1653,28 @@
             extractionModeBtn.classList.toggle('active', isPressed);
             extractionModeLed.classList.toggle('active', isPressed);
         }
+        function updateCrtMode() {
+            const isPressed = isCrtMode;
+            crtModeBtn.setAttribute('aria-pressed', isPressed);
+            crtModeBtn.textContent = isPressed ? '[T] CRT Engaged' : '[T] Engage CRT';
+            crtModeBtn.classList.toggle('active', isPressed);
+            crtModeLed.classList.toggle('active', isPressed);
+            bodyElement.classList.toggle('crt-mode', isPressed);
+            crtSubSettings.classList.toggle('hidden', !isPressed);
+            renderCrtFrame();
+        }
+        function updateCrtFishbowlDisplay(percent) {
+            currentCrtFishbowlPercent = Math.max(0, Math.min(100, percent));
+            if (crtFishbowlSlider) crtFishbowlSlider.value = currentCrtFishbowlPercent;
+            if (crtFishbowlValue) crtFishbowlValue.textContent = `${currentCrtFishbowlPercent}%`;
+            renderCrtFrame();
+        }
+        function updateCrtVignetteDisplay(percent) {
+            currentCrtVignettePercent = Math.max(0, Math.min(100, percent));
+            if (crtVignetteSlider) crtVignetteSlider.value = currentCrtVignettePercent;
+            if (crtVignetteValue) crtVignetteValue.textContent = `${currentCrtVignettePercent}%`;
+            renderCrtFrame();
+        }
         function updateExtractionUIVisibility() {
             newValueWrapper.classList.toggle('hidden', !isExtractionMode);
             // PERFORMANCE: Instead of re-rendering, just toggle visibility on existing items
@@ -1299,6 +1702,7 @@
             // Redraw canvas with new colors
             if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
             startMatrixRain();
+            renderCrtFrame();
         }
 
         // --- Progress Bar Rendering ---
@@ -1685,6 +2089,7 @@
         const commands = [
             { name: "Toggle Construct Mode", action: () => themeToggleBtn.click(), shortcut: 'C' },
             { name: "Toggle Extraction Mode", action: () => extractionModeBtn.click(), shortcut: 'E' },
+            { name: "Toggle CRT Mode", action: () => crtModeBtn.click(), shortcut: 'T' },
             { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
             { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
             { name: "Previous Operative", action: undoLastPick, shortcut: 'U' },
@@ -1755,9 +2160,21 @@
             filteredCommands.forEach((cmd, index) => {
                 const li = document.createElement('li');
                 li.className = 'command-item';
-                li.textContent = cmd.name;
                 li.setAttribute('role', 'option');
                 li.dataset.actionIndex = commands.indexOf(cmd); // Use original index for action
+
+                const commandName = document.createElement('span');
+                commandName.className = 'command-name';
+                commandName.textContent = cmd.name;
+                li.appendChild(commandName);
+
+                if (cmd.shortcut) {
+                    const shortcut = document.createElement('kbd');
+                    shortcut.className = 'command-shortcut';
+                    shortcut.textContent = cmd.shortcut;
+                    li.appendChild(shortcut);
+                }
+
                 if (index === commandPaletteSelectedIndex) {
                     li.classList.add('selected');
                     li.setAttribute('aria-selected', 'true');
@@ -1892,6 +2309,14 @@
             handleFontSizeChange(parseInt(event.target.value));
             updateURL();
         });
+        crtFishbowlSlider.addEventListener('input', (event) => {
+            updateCrtFishbowlDisplay(parseInt(event.target.value));
+            updateURL();
+        });
+        crtVignetteSlider.addEventListener('input', (event) => {
+            updateCrtVignetteDisplay(parseInt(event.target.value));
+            updateURL();
+        });
         titleInput.addEventListener('input', (event) => {
             updateSchemaTitle(event.target.value);
             updateURL();
@@ -1913,6 +2338,12 @@
             updateExtractionButton();
             updateExtractionUIVisibility();
             showTemporaryMessage(`// Extraction Mode ${isExtractionMode ? 'Engaged' : 'Disengaged'}.`);
+            updateURL();
+        });
+        crtModeBtn.addEventListener('click', () => {
+            isCrtMode = !isCrtMode;
+            updateCrtMode();
+            showTemporaryMessage(`// CRT Mode ${isCrtMode ? 'Engaged' : 'Disengaged'}.`);
             updateURL();
         });
 
@@ -1992,6 +2423,7 @@
                         break;
                      case 'c': themeToggleBtn.click(); break;
                      case 'e': extractionModeBtn.click(); break;
+                     case 't': crtModeBtn.click(); break;
                      case 'f': toggleFullScreen(); break;
                      case 'm': enterMatrixBtn.click(); break;
                      case 'u': undoLastPick(); break;
