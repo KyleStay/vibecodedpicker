@@ -1309,6 +1309,12 @@ void main() {
             activeRange: null,
             activeModal: null,
             activeRosterItem: null,
+            scrollTarget: null,
+            scrollStartX: 0,
+            scrollStartY: 0,
+            scrollLastX: 0,
+            scrollLastY: 0,
+            didScroll: false,
             lastCursor: ''
         };
 
@@ -1330,6 +1336,7 @@ void main() {
         const CRT_EDGE_ZOOM_BASE = 1.02;
         const CRT_EDGE_ZOOM_PER_FISHBOWL = 0.13;
         const CRT_SAFE_AREA_MARGIN_PX = 8;
+        const CRT_TOUCH_SCROLL_THRESHOLD_PX = 6;
 
         // --- Matrix Rain Setup ---
         let columns;
@@ -2578,6 +2585,43 @@ void main() {
             if (!(target instanceof Element)) { return target; }
             return target.closest('button, input, textarea, label, .command-item, #selectedNameDisplayWrapper, #clickTriggerArea') || target;
         }
+        function isScrollableElement(element) {
+            if (!(element instanceof Element)) { return false; }
+            const style = window.getComputedStyle(element);
+            const canScrollY = /(auto|scroll)/.test(style.overflowY) && element.scrollHeight > element.clientHeight;
+            const canScrollX = /(auto|scroll)/.test(style.overflowX) && element.scrollWidth > element.clientWidth;
+            return canScrollY || canScrollX;
+        }
+        function canScrollElement(element, deltaX = 0, deltaY = 0) {
+            if (!isScrollableElement(element)) { return false; }
+            const canScrollDown = deltaY > 0 && element.scrollTop < element.scrollHeight - element.clientHeight;
+            const canScrollUp = deltaY < 0 && element.scrollTop > 0;
+            const canScrollRight = deltaX > 0 && element.scrollLeft < element.scrollWidth - element.clientWidth;
+            const canScrollLeft = deltaX < 0 && element.scrollLeft > 0;
+            return canScrollDown || canScrollUp || canScrollRight || canScrollLeft || (deltaX === 0 && deltaY === 0);
+        }
+        function getScrollableTargetFromElement(target, deltaX = 0, deltaY = 0) {
+            let element = target instanceof Element ? target : target?.parentElement;
+            while (element && element !== bodyElement) {
+                if (isScrollableElement(element) && canScrollElement(element, deltaX, deltaY)) {
+                    return element;
+                }
+                element = element.parentElement;
+            }
+            return null;
+        }
+        function scrollElementBy(element, deltaX, deltaY) {
+            if (!element) { return false; }
+            const previousLeft = element.scrollLeft;
+            const previousTop = element.scrollTop;
+            element.scrollLeft += deltaX;
+            element.scrollTop += deltaY;
+            const didScroll = element.scrollLeft !== previousLeft || element.scrollTop !== previousTop;
+            if (didScroll) {
+                markCrtSnapshotDirty();
+            }
+            return didScroll;
+        }
         function startCrtModalDrag(target, point) {
             const header = target instanceof Element ? target.closest('#helpModalHeader, #commandPaletteHeader') : null;
             if (!header) { return false; }
@@ -2649,19 +2693,44 @@ void main() {
             dispatchCrtMouseEvent('click', clickable, point, sourceEvent);
             markCrtSnapshotDirty();
         }
+        function handleCrtWheel(event) {
+            if (!isCrtRoutingActive()) { return; }
+            const point = screenPointToSourcePoint(event.clientX, event.clientY);
+            const target = getElementAtSourcePoint(point);
+            const scrollTarget = getScrollableTargetFromElement(target, event.deltaX, event.deltaY);
+            if (!scrollTarget) { return; }
+
+            event.preventDefault();
+            event.stopPropagation();
+            scrollElementBy(scrollTarget, event.deltaX, event.deltaY);
+        }
         function handleCrtPointerDown(event) {
             if (!isCrtRoutingActive()) { return; }
             event.preventDefault();
             const point = screenPointToSourcePoint(event.clientX, event.clientY);
-            const target = getCrtClickableTarget(getElementAtSourcePoint(point));
+            const sourceTarget = getElementAtSourcePoint(point);
+            const target = getCrtClickableTarget(sourceTarget);
             crtEventState.pointerId = event.pointerId;
             crtEventState.target = target;
+            crtEventState.scrollTarget = null;
+            crtEventState.scrollStartX = point.x;
+            crtEventState.scrollStartY = point.y;
+            crtEventState.scrollLastX = point.x;
+            crtEventState.scrollLastY = point.y;
+            crtEventState.didScroll = false;
             crtCanvas.setPointerCapture?.(event.pointerId);
 
             if (target instanceof HTMLInputElement && target.type === 'range') {
                 crtEventState.activeRange = target;
                 setRangeValueFromPoint(target, point);
                 return;
+            }
+            if (event.pointerType === 'touch') {
+                const scrollTarget = getScrollableTargetFromElement(sourceTarget);
+                if (scrollTarget) {
+                    crtEventState.scrollTarget = scrollTarget;
+                    return;
+                }
             }
             if (startCrtModalDrag(target, point) || startCrtRosterDrag(target)) {
                 return;
@@ -2672,6 +2741,22 @@ void main() {
         function handleCrtPointerMove(event) {
             if (!isCrtRoutingActive()) { return; }
             const point = screenPointToSourcePoint(event.clientX, event.clientY);
+            if (crtEventState.scrollTarget) {
+                event.preventDefault();
+                const totalDeltaX = point.x - crtEventState.scrollStartX;
+                const totalDeltaY = point.y - crtEventState.scrollStartY;
+                if (crtEventState.didScroll || Math.abs(totalDeltaX) > CRT_TOUCH_SCROLL_THRESHOLD_PX || Math.abs(totalDeltaY) > CRT_TOUCH_SCROLL_THRESHOLD_PX) {
+                    const didScroll = scrollElementBy(
+                        crtEventState.scrollTarget,
+                        crtEventState.scrollLastX - point.x,
+                        crtEventState.scrollLastY - point.y
+                    );
+                    crtEventState.didScroll = crtEventState.didScroll || didScroll;
+                    crtEventState.scrollLastX = point.x;
+                    crtEventState.scrollLastY = point.y;
+                }
+                return;
+            }
             if (crtEventState.activeRange) {
                 event.preventDefault();
                 setRangeValueFromPoint(crtEventState.activeRange, point);
@@ -2698,7 +2783,12 @@ void main() {
             if (!isCrtRoutingActive()) { return; }
             event.preventDefault();
             const point = screenPointToSourcePoint(event.clientX, event.clientY);
-            if (crtEventState.activeRange) {
+            if (crtEventState.scrollTarget) {
+                if (!crtEventState.didScroll) {
+                    clickCrtTarget(crtEventState.target || getElementAtSourcePoint(point), point, event);
+                }
+                crtEventState.scrollTarget = null;
+            } else if (crtEventState.activeRange) {
                 setRangeValueFromPoint(crtEventState.activeRange, point, true);
                 crtEventState.activeRange = null;
             } else if (crtEventState.activeModal) {
@@ -2711,6 +2801,7 @@ void main() {
             }
             crtEventState.pointerId = null;
             crtEventState.target = null;
+            crtEventState.didScroll = false;
             crtCanvas.releasePointerCapture?.(event.pointerId);
         }
         function handleCrtPointerCancel(event) {
@@ -2720,7 +2811,7 @@ void main() {
             if (crtEventState.activeRosterItem) {
                 document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
             }
-            crtEventState = { pointerId: null, target: null, activeRange: null, activeModal: null, activeRosterItem: null, lastCursor: crtEventState.lastCursor };
+            crtEventState = { pointerId: null, target: null, activeRange: null, activeModal: null, activeRosterItem: null, scrollTarget: null, scrollStartX: 0, scrollStartY: 0, scrollLastX: 0, scrollLastY: 0, didScroll: false, lastCursor: crtEventState.lastCursor };
             draggedItemName = null;
             markCrtSnapshotDirty();
         }
@@ -2746,6 +2837,7 @@ void main() {
         crtCanvas.addEventListener('pointermove', handleCrtPointerMove);
         crtCanvas.addEventListener('pointerup', handleCrtPointerUp);
         crtCanvas.addEventListener('pointercancel', handleCrtPointerCancel);
+        crtCanvas.addEventListener('wheel', handleCrtWheel, { passive: false });
         crtCanvas.addEventListener('click', (event) => { if (isCrtRoutingActive()) { event.preventDefault(); event.stopPropagation(); } });
         addNameBtn.addEventListener('click', addName);
         newNameInput.addEventListener('keypress', (event) => { markCrtSnapshotDirty(); if (event.key === 'Enter') { addName(); } });
