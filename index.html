@@ -46,6 +46,8 @@
             --menu-btn-top: 1.5rem;
             --menu-btn-right: 1.5rem;
             --menu-btn-height: calc(1.8rem + 0.6rem + 4px); /* font + padding + border */
+            --crt-safe-x: 0px;
+            --crt-safe-y: 0px;
         }
         body.construct-mode {
             --primary-color: var(--construct-accent);
@@ -90,8 +92,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 0;
+            z-index: 100;
             display: none;
+            pointer-events: auto;
         }
         body.crt-mode #crtCanvas { display: block; }
         body.crt-mode.crt-unavailable #matrixCanvas { display: block; }
@@ -294,6 +297,10 @@
             box-shadow: none;
         }
         #menuToggleBtn.active { }
+        body.crt-mode:not(.crt-unavailable) #menuToggleBtn {
+            top: calc(var(--menu-btn-top) + var(--crt-safe-y));
+            right: calc(var(--menu-btn-right) + var(--crt-safe-x));
+        }
         #undoBtn {
             position: fixed;
             top: var(--menu-btn-top);
@@ -346,6 +353,11 @@
             text-shadow: none;
         }
         .construct-mode #undoBtn:disabled { color: var(--construct-text-light); border-color: var(--construct-text-light); }
+        body.crt-mode:not(.crt-unavailable) #undoBtn {
+            top: calc(var(--menu-btn-top) + var(--crt-safe-y));
+            left: calc(var(--menu-btn-right) + var(--crt-safe-x));
+            max-width: calc(100vw - var(--crt-safe-x) - var(--crt-safe-x) - 7rem);
+        }
 
         /* Management Panel */
         #managementPanel {
@@ -374,6 +386,15 @@
         #managementPanel.visible {
             transform: translateX(0);
         }
+        body.crt-mode:not(.crt-unavailable) #managementPanel {
+            top: var(--crt-safe-y);
+            right: var(--crt-safe-x);
+            height: calc(100vh - var(--crt-safe-y) - var(--crt-safe-y));
+            transform: translateX(calc(100% + var(--crt-safe-x)));
+        }
+        body.crt-mode:not(.crt-unavailable) #managementPanel.visible {
+            transform: translateX(0);
+        }
         /* Styling for ALL Buttons inside the panel */
         #managementPanel button {
             font-family: var(--matrix-font);
@@ -397,8 +418,8 @@
         .construct-mode #managementPanel button { text-shadow: none; border-width: 1px; color: var(--construct-text); border-color: var(--primary-color-dark); }
         /* Hover/Active States for ALL Panel Buttons */
         #managementPanel button:hover:not(:disabled) {
-            background-color: var(--primary-color-dark);
-            color: var(--bg-color);
+            background-color: var(--primary-color);
+            color: #000000;
             box-shadow: 0 0 10px var(--primary-color);
             text-shadow: none;
             transform: translateY(-1px);
@@ -411,7 +432,9 @@
         }
         #managementPanel button:active:not(:disabled) {
             transform: translateY(0px);
-            background-color: rgba(var(--primary-color-rgb), 0.3);
+            background-color: var(--primary-color);
+            color: #000000;
+            text-shadow: none;
         }
         #managementPanel button:disabled {
             opacity: 0.4;
@@ -423,8 +446,8 @@
         .construct-mode #managementPanel button:disabled { color: var(--construct-text-light); border-color: var(--construct-text-light); }
         /* Active state for toggle-like buttons */
         #managementPanel button.active {
-            background-color: var(--primary-color-dark);
-            color: var(--bg-color);
+            background-color: var(--primary-color);
+            color: #000000;
             box-shadow: 0 0 10px var(--primary-color);
             text-shadow: none;
         }
@@ -596,6 +619,11 @@
         #progressBarContainer {
             position: fixed; bottom: 0; left: 0; width: 100%; padding: 0.5rem 1rem; z-index: 20; box-sizing: border-box; transition: opacity 0.3s ease-in-out;
         }
+        body.crt-mode:not(.crt-unavailable) #progressBarContainer {
+            left: var(--crt-safe-x);
+            bottom: var(--crt-safe-y);
+            width: calc(100% - var(--crt-safe-x) - var(--crt-safe-x));
+        }
         #progressBar {
             display: flex; width: 100%; height: var(--progress-bar-height); background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
             border-radius: 2px; overflow: hidden; gap: var(--segment-gap); padding: var(--segment-gap); box-sizing: border-box; transition: opacity 0.3s ease-in-out;
@@ -614,6 +642,9 @@
             z-index: 50; display: flex; justify-content: center; align-items: center;
             padding: 2rem;
             opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out;
+        }
+        body.crt-mode:not(.crt-unavailable) .modal-overlay {
+            padding: calc(2rem + var(--crt-safe-y)) calc(2rem + var(--crt-safe-x));
         }
         .modal-overlay.visible { opacity: 1; pointer-events: auto; }
         .modal-content {
@@ -680,17 +711,19 @@
         .command-item:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
         .construct-mode .command-item:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
         .command-item.selected, .command-item:hover {
-            background-color: var(--primary-color-dark); color: var(--bg-color);
+            background-color: var(--primary-color); color: #000000;
         }
         .construct-mode .command-item.selected, .construct-mode .command-item:hover {
             background-color: var(--primary-color); color: var(--construct-bg);
         }
         .command-item.selected kbd, .command-item:hover kbd {
-            color: var(--bg-color);
-            border-color: var(--bg-color);
+            background-color: transparent;
+            color: #000000;
+            border-color: #000000;
             box-shadow: none;
         }
         .construct-mode .command-item.selected kbd, .construct-mode .command-item:hover kbd {
+            background-color: transparent;
             color: var(--construct-bg);
             border-color: var(--construct-bg);
         }
@@ -931,17 +964,17 @@
             <div id="crtSubSettings" class="hidden">
                 <div class="mb-3">
                     <label for="crtFishbowlSlider" class="flex justify-between items-center">
-                        <span>// Fishbowl:</span>
-                        <span id="crtFishbowlValue" class="font-semibold text-sm">88%</span>
+                        <span>// Fisheye:</span>
+                        <span id="crtFishbowlValue" class="font-semibold text-sm">25%</span>
                     </label>
-                    <input type="range" id="crtFishbowlSlider" min="0" max="100" step="1" value="88">
+                    <input type="range" id="crtFishbowlSlider" min="0" max="100" step="1" value="25">
                 </div>
                 <div class="mb-3">
                     <label for="crtVignetteSlider" class="flex justify-between items-center">
                         <span>// Vignette:</span>
-                        <span id="crtVignetteValue" class="font-semibold text-sm">100%</span>
+                        <span id="crtVignetteValue" class="font-semibold text-sm">40%</span>
                     </label>
-                    <input type="range" id="crtVignetteSlider" min="0" max="100" step="1" value="100">
+                    <input type="range" id="crtVignetteSlider" min="0" max="100" step="1" value="40">
                 </div>
             </div>
         </div>
@@ -1111,7 +1144,7 @@ uniform float u_constructMode;
 
 vec2 curveRemapUV(vec2 uv) {
   uv = uv * 2.0 - 1.0;
-  vec2 curvature = vec2(4.5);
+  vec2 curvature = vec2(3.15);
   vec2 offset = abs(uv.yx) / curvature;
   uv = uv + uv * offset * offset * u_fishbowl;
   return uv * 0.5 + 0.5;
@@ -1124,7 +1157,7 @@ float random(vec2 co) {
 void main() {
   vec2 uv = vTexCoord;
   vec2 remappedUV = curveRemapUV(uv);
-  float edgeZoom = mix(1.02, 1.12, u_fishbowl);
+  float edgeZoom = 1.02 + (0.13 * u_fishbowl);
   remappedUV = (remappedUV - 0.5) / edgeZoom + 0.5;
 
   if (remappedUV.x < 0.0 || remappedUV.y < 0.0 || remappedUV.x > 1.0 || remappedUV.y > 1.0) {
@@ -1155,10 +1188,9 @@ void main() {
   float scanline = pow(y_lines, 0.65);
   scanline = mix(scanline, mix(1.0, scanline, 0.5), u_constructMode);
   float grille = mix(1.0, pow(x_lines, 0.85), 0.35 * crtIntensity);
-  float vignetteMask = smoothstep(0.82, 0.18, distance(remappedUV, vec2(0.5)));
+  float vignetteMask = smoothstep(0.86, 0.10, distance(remappedUV, vec2(0.5)));
   float vignetteStrength = mix(u_vignette, u_vignette * 0.45, u_constructMode);
-  float vignette = mix(1.0, vignetteMask, vignetteStrength);
-  float flicker = 1.0;
+  float vignette = max(0.0, 1.0 - ((1.0 - vignetteMask) * vignetteStrength));
   float noise = (random(gl_FragCoord.xy) - 0.5) * 0.035 * crtIntensity;
 
   vec3 terminalTint = vec3(0.25, 1.15, 1.35);
@@ -1169,7 +1201,7 @@ void main() {
   vec3 constructLeadColor = vec3(0.015, 0.015, 0.015);
   vec3 leadColor = mix(matrixLeadColor, constructLeadColor, u_constructMode);
   vec3 color = mix(trailColor, leadColor, leadMask);
-  color *= scanline * grille * vignette * flicker;
+  color *= scanline * grille * vignette;
   color += noise;
 
   gl_FragColor = vec4(color, 1.0);
@@ -1192,6 +1224,8 @@ void main() {
         const ctx = canvas.getContext('2d');
         const crtCanvas = document.getElementById('crtCanvas');
         const crtGl = crtCanvas.getContext('webgl', { preserveDrawingBuffer: false });
+        const crtSourceCanvas = document.createElement('canvas');
+        const crtSourceCtx = crtSourceCanvas.getContext('2d');
         const clickTriggerArea = document.getElementById('clickTriggerArea');
         const menuToggleBtn = document.getElementById('menuToggleBtn');
         const managementPanel = document.getElementById('managementPanel');
@@ -1253,8 +1287,8 @@ void main() {
         let isInMatrixMode = false;
         let isExtractionMode = false;
         let isCrtMode = true;
-        let currentCrtFishbowlPercent = 88;
-        let currentCrtVignettePercent = 100;
+        let currentCrtFishbowlPercent = 25;
+        let currentCrtVignettePercent = 40;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
@@ -1267,6 +1301,16 @@ void main() {
         let crtUniforms = null;
         let crtReady = false;
         let crtWarningShown = false;
+        let crtSnapshotDirty = true;
+        let crtCompositeAvailable = true;
+        let crtEventState = {
+            pointerId: null,
+            target: null,
+            activeRange: null,
+            activeModal: null,
+            activeRosterItem: null,
+            lastCursor: ''
+        };
 
         // --- Constants ---
         const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -1280,6 +1324,12 @@ void main() {
         const TARGET_ANIMATION_FPS = 60;
         const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS;
         const MAX_FPS_PERCENT_OFFSET = 0.90;
+        const CRT_FISHBOWL_MULTIPLIER = 1.85;
+        const CRT_VIGNETTE_MULTIPLIER = 1.7;
+        const CRT_CURVATURE = 3.15;
+        const CRT_EDGE_ZOOM_BASE = 1.02;
+        const CRT_EDGE_ZOOM_PER_FISHBOWL = 0.13;
+        const CRT_SAFE_AREA_MARGIN_PX = 8;
 
         // --- Matrix Rain Setup ---
         let columns;
@@ -1294,6 +1344,7 @@ void main() {
         function setupCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             crtCanvas.width = window.innerWidth; crtCanvas.height = window.innerHeight;
+            crtSourceCanvas.width = window.innerWidth; crtSourceCanvas.height = window.innerHeight;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
             drops = []; trails = [];
@@ -1302,6 +1353,7 @@ void main() {
                 trails[i] = [];
             }
             setupCrtRenderer();
+            updateCrtSafeArea();
         }
         function getInlineShaderSource(id) {
             const shaderElement = document.getElementById(id);
@@ -1376,17 +1428,163 @@ void main() {
 
                 crtReady = true;
                 bodyElement.classList.remove('crt-unavailable');
+                updateCrtSafeArea();
             } catch (error) {
                 crtReady = false;
                 bodyElement.classList.add('crt-unavailable');
+                updateCrtSafeArea();
                 if (!crtWarningShown) {
                     console.warn('// CRT renderer failed, falling back to standard rain canvas.', error);
                     crtWarningShown = true;
                 }
             }
         }
+        function getCrtFishbowlAmount() {
+            return (currentCrtFishbowlPercent / 100) * CRT_FISHBOWL_MULTIPLIER;
+        }
+        function getCrtVignetteAmount() {
+            return (currentCrtVignettePercent / 100) * CRT_VIGNETTE_MULTIPLIER;
+        }
+        function updateCrtSafeArea() {
+            if (!isCrtMode || !crtReady || !crtCompositeAvailable) {
+                bodyElement.style.setProperty('--crt-safe-x', '0px');
+                bodyElement.style.setProperty('--crt-safe-y', '0px');
+                return;
+            }
+
+            const edgeZoom = CRT_EDGE_ZOOM_BASE + (CRT_EDGE_ZOOM_PER_FISHBOWL * getCrtFishbowlAmount());
+            const hiddenEdgeRatio = Math.max(0, 0.5 - (0.5 / edgeZoom));
+            const safeX = Math.ceil((hiddenEdgeRatio * window.innerWidth) + CRT_SAFE_AREA_MARGIN_PX);
+            const safeY = Math.ceil((hiddenEdgeRatio * window.innerHeight) + CRT_SAFE_AREA_MARGIN_PX);
+            bodyElement.style.setProperty('--crt-safe-x', `${safeX}px`);
+            bodyElement.style.setProperty('--crt-safe-y', `${safeY}px`);
+        }
+        function markCrtSnapshotDirty() {
+            crtSnapshotDirty = true;
+        }
+        function isDrawableColor(color) {
+            return color && color !== 'transparent' && !/rgba?\([^)]*,\s*0(?:\.0+)?\)/.test(color);
+        }
+        function isElementVisibleForCrt(element) {
+            if (!(element instanceof Element) || element === canvas || element === crtCanvas || element.tagName === 'SCRIPT' || element.tagName === 'STYLE') {
+                return false;
+            }
+            const style = getComputedStyle(element);
+            const rect = element.getBoundingClientRect();
+            return style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity || '1') > 0.01 && rect.width > 0 && rect.height > 0;
+        }
+        function drawElementBoxForCrt(element, style, rect) {
+            if (isDrawableColor(style.backgroundColor)) {
+                crtSourceCtx.fillStyle = style.backgroundColor;
+                crtSourceCtx.fillRect(rect.left, rect.top, rect.width, rect.height);
+            }
+
+            const borderTopWidth = parseFloat(style.borderTopWidth) || 0;
+            const borderRightWidth = parseFloat(style.borderRightWidth) || 0;
+            const borderBottomWidth = parseFloat(style.borderBottomWidth) || 0;
+            const borderLeftWidth = parseFloat(style.borderLeftWidth) || 0;
+            if (borderTopWidth > 0 && isDrawableColor(style.borderTopColor)) {
+                crtSourceCtx.fillStyle = style.borderTopColor;
+                crtSourceCtx.fillRect(rect.left, rect.top, rect.width, borderTopWidth);
+            }
+            if (borderRightWidth > 0 && isDrawableColor(style.borderRightColor)) {
+                crtSourceCtx.fillStyle = style.borderRightColor;
+                crtSourceCtx.fillRect(rect.right - borderRightWidth, rect.top, borderRightWidth, rect.height);
+            }
+            if (borderBottomWidth > 0 && isDrawableColor(style.borderBottomColor)) {
+                crtSourceCtx.fillStyle = style.borderBottomColor;
+                crtSourceCtx.fillRect(rect.left, rect.bottom - borderBottomWidth, rect.width, borderBottomWidth);
+            }
+            if (borderLeftWidth > 0 && isDrawableColor(style.borderLeftColor)) {
+                crtSourceCtx.fillStyle = style.borderLeftColor;
+                crtSourceCtx.fillRect(rect.left, rect.top, borderLeftWidth, rect.height);
+            }
+        }
+        function applyTextStyleForCrt(style) {
+            crtSourceCtx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+            crtSourceCtx.fillStyle = style.color;
+            crtSourceCtx.textBaseline = 'top';
+            crtSourceCtx.textAlign = 'left';
+        }
+        function drawTextNodeForCrt(textNode) {
+            const text = textNode.textContent;
+            if (!text || !text.trim()) { return; }
+            const parent = textNode.parentElement;
+            if (!parent || !isElementVisibleForCrt(parent)) { return; }
+            const style = getComputedStyle(parent);
+            if (!isDrawableColor(style.color)) { return; }
+
+            const range = document.createRange();
+            range.selectNodeContents(textNode);
+            const rects = Array.from(range.getClientRects()).filter(rect => rect.width > 0 && rect.height > 0);
+            range.detach();
+            if (rects.length === 0) { return; }
+
+            const normalizedText = text.replace(/\s+/g, ' ').trim();
+            applyTextStyleForCrt(style);
+            rects.slice(0, 1).forEach(rect => {
+                crtSourceCtx.fillText(normalizedText, rect.left, rect.top, Math.max(rect.width + 12, 10));
+            });
+        }
+        function drawInputForCrt(input, style, rect) {
+            if (input.type === 'range') {
+                const min = parseFloat(input.min || '0');
+                const max = parseFloat(input.max || '100');
+                const value = parseFloat(input.value || '0');
+                const ratio = max > min ? Math.max(0, Math.min(1, (value - min) / (max - min))) : 0;
+                const trackHeight = 4;
+                const trackY = rect.top + rect.height / 2 - trackHeight / 2;
+                crtSourceCtx.fillStyle = style.borderTopColor || 'rgba(255,255,255,0.35)';
+                crtSourceCtx.fillRect(rect.left, trackY, rect.width, trackHeight);
+                crtSourceCtx.fillStyle = getComputedStyle(bodyElement).getPropertyValue('--primary-color').trim() || style.color;
+                crtSourceCtx.fillRect(rect.left, trackY, rect.width * ratio, trackHeight);
+                crtSourceCtx.beginPath();
+                crtSourceCtx.arc(rect.left + rect.width * ratio, rect.top + rect.height / 2, 7, 0, Math.PI * 2);
+                crtSourceCtx.fill();
+                return;
+            }
+
+            drawElementBoxForCrt(input, style, rect);
+            const value = input.value || input.placeholder || '';
+            if (value) {
+                applyTextStyleForCrt(style);
+                crtSourceCtx.fillStyle = input.value ? style.color : 'rgba(128,128,128,0.75)';
+                crtSourceCtx.fillText(value, rect.left + 8, rect.top + Math.max(4, (rect.height - parseFloat(style.fontSize)) / 2), rect.width - 16);
+            }
+        }
+        function paintElementForCrt(element) {
+            if (!isElementVisibleForCrt(element)) { return; }
+            const style = getComputedStyle(element);
+            const rect = element.getBoundingClientRect();
+
+            if (element instanceof HTMLInputElement) {
+                drawInputForCrt(element, style, rect);
+                return;
+            }
+
+            drawElementBoxForCrt(element, style, rect);
+            Array.from(element.childNodes).forEach(child => {
+                if (child.nodeType === Node.TEXT_NODE) {
+                    drawTextNodeForCrt(child);
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    paintElementForCrt(child);
+                }
+            });
+        }
+        function paintVisibleDomForCrt() {
+            Array.from(bodyElement.children).forEach(child => {
+                paintElementForCrt(child);
+            });
+        }
+        function composeCrtSourceFrame() {
+            if (!crtSourceCtx) { return canvas; }
+            crtSourceCtx.clearRect(0, 0, crtSourceCanvas.width, crtSourceCanvas.height);
+            crtSourceCtx.drawImage(canvas, 0, 0, crtSourceCanvas.width, crtSourceCanvas.height);
+            paintVisibleDomForCrt();
+            return crtSourceCanvas;
+        }
         function renderCrtFrame() {
-            if (!isCrtMode || !crtReady || !crtGl) { return; }
+            if (!isCrtMode || !crtReady || !crtGl || !crtCompositeAvailable) { return; }
 
             crtGl.viewport(0, 0, crtCanvas.width, crtCanvas.height);
             crtGl.useProgram(crtProgram);
@@ -1404,14 +1602,22 @@ void main() {
             crtGl.activeTexture(crtGl.TEXTURE0);
             crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
             crtGl.pixelStorei(crtGl.UNPACK_FLIP_Y_WEBGL, false);
-            crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtGl.RGBA, crtGl.UNSIGNED_BYTE, canvas);
+            try {
+                crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtGl.RGBA, crtGl.UNSIGNED_BYTE, composeCrtSourceFrame());
+            } catch (error) {
+                crtCompositeAvailable = false;
+                bodyElement.classList.add('crt-unavailable');
+                updateCrtSafeArea();
+                console.warn('// CRT compositor unavailable: texture upload failed. Falling back to standard rendering.', error);
+                return;
+            }
 
             crtGl.uniform1i(crtUniforms.texture, 0);
             crtGl.uniform2f(crtUniforms.resolution, crtCanvas.width, crtCanvas.height);
             crtGl.uniform1f(crtUniforms.time, performance.now() / 1000);
             crtGl.uniform1f(crtUniforms.intensity, isCrtMode ? 0.88 : 0.0);
-            crtGl.uniform1f(crtUniforms.fishbowl, currentCrtFishbowlPercent / 100);
-            crtGl.uniform1f(crtUniforms.vignette, currentCrtVignettePercent / 100);
+            crtGl.uniform1f(crtUniforms.fishbowl, getCrtFishbowlAmount());
+            crtGl.uniform1f(crtUniforms.vignette, getCrtVignetteAmount());
             crtGl.uniform1f(crtUniforms.constructMode, isConstructMode ? 1.0 : 0.0);
             crtGl.drawArrays(crtGl.TRIANGLES, 0, 6);
         }
@@ -1503,8 +1709,8 @@ void main() {
             if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
             if (isExtractionMode) { params.push('extract=true'); }
             if (!isCrtMode) { params.push('crt=false'); }
-            if (currentCrtFishbowlPercent !== 88) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
-            if (currentCrtVignettePercent !== 100) { params.push('crtVignette=' + currentCrtVignettePercent); }
+            if (currentCrtFishbowlPercent !== 25) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
+            if (currentCrtVignettePercent !== 40) { params.push('crtVignette=' + currentCrtVignettePercent); }
             if (isConstructMode) { params.push('theme=construct'); }
 
             const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
@@ -1524,8 +1730,8 @@ void main() {
             currentFontSize = 24;
             isExtractionMode = false;
             isCrtMode = true;
-            currentCrtFishbowlPercent = 88;
-            currentCrtVignettePercent = 100;
+            currentCrtFishbowlPercent = 25;
+            currentCrtVignettePercent = 40;
             isConstructMode = false;
             selectionHistory = [];
             pendingNextOperatives = [];
@@ -1633,15 +1839,16 @@ void main() {
             const alpha = (100 - currentBrightnessPercent) / 100;
             const overlayColor = isConstructMode ? '255, 255, 255' : '0, 0, 0';
             if (brightnessOverlay) brightnessOverlay.style.backgroundColor = `rgba(${overlayColor}, ${alpha})`;
+            markCrtSnapshotDirty();
         }
         function updateRainSpeedDisplay(fps) {
-            currentRainFPS = Math.max(1, Math.min(100, fps)); if (speedSlider) speedSlider.value = currentRainFPS; if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`;
+            currentRainFPS = Math.max(1, Math.min(100, fps)); if (speedSlider) speedSlider.value = currentRainFPS; if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`; markCrtSnapshotDirty();
         }
         function handleSpeedChange(fps) {
             updateRainSpeedDisplay(fps); if (drops && drops.length > 0) { drops.forEach(drop => { drop.delay = calculateColumnDelay(currentRainFPS); }); }
         }
         function updateFontSizeDisplay(size) {
-            currentFontSize = Math.max(8, Math.min(32, size)); if (fontSizeSlider) fontSizeSlider.value = currentFontSize; if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`;
+            currentFontSize = Math.max(8, Math.min(32, size)); if (fontSizeSlider) fontSizeSlider.value = currentFontSize; if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`; markCrtSnapshotDirty();
         }
         function handleFontSizeChange(size) {
             updateFontSizeDisplay(size); if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain();
@@ -1652,6 +1859,7 @@ void main() {
             extractionModeBtn.textContent = isPressed ? '[E] Extraction Engaged' : '[E] Engage Extraction';
             extractionModeBtn.classList.toggle('active', isPressed);
             extractionModeLed.classList.toggle('active', isPressed);
+            markCrtSnapshotDirty();
         }
         function updateCrtMode() {
             const isPressed = isCrtMode;
@@ -1660,19 +1868,25 @@ void main() {
             crtModeBtn.classList.toggle('active', isPressed);
             crtModeLed.classList.toggle('active', isPressed);
             bodyElement.classList.toggle('crt-mode', isPressed);
+            bodyElement.classList.toggle('crt-unavailable', isPressed && (!crtReady || !crtCompositeAvailable));
             crtSubSettings.classList.toggle('hidden', !isPressed);
+            updateCrtSafeArea();
+            markCrtSnapshotDirty();
             renderCrtFrame();
         }
         function updateCrtFishbowlDisplay(percent) {
             currentCrtFishbowlPercent = Math.max(0, Math.min(100, percent));
             if (crtFishbowlSlider) crtFishbowlSlider.value = currentCrtFishbowlPercent;
             if (crtFishbowlValue) crtFishbowlValue.textContent = `${currentCrtFishbowlPercent}%`;
+            updateCrtSafeArea();
+            markCrtSnapshotDirty();
             renderCrtFrame();
         }
         function updateCrtVignetteDisplay(percent) {
             currentCrtVignettePercent = Math.max(0, Math.min(100, percent));
             if (crtVignetteSlider) crtVignetteSlider.value = currentCrtVignettePercent;
             if (crtVignetteValue) crtVignetteValue.textContent = `${currentCrtVignettePercent}%`;
+            markCrtSnapshotDirty();
             renderCrtFrame();
         }
         function updateExtractionUIVisibility() {
@@ -2100,7 +2314,7 @@ void main() {
         
         function makeDraggable(modal, header) {
             let isDragging = false;
-            let currentX, currentY, initialX, initialY;
+            let currentX = 0, currentY = 0, initialX = 0, initialY = 0;
             let xOffset = 0;
             let yOffset = 0;
 
@@ -2110,30 +2324,46 @@ void main() {
 
             function dragStart(e) {
                 if (e.target === header) {
-                    initialX = e.clientX - xOffset;
-                    initialY = e.clientY - yOffset;
-                    isDragging = true;
-                    modal.classList.add('dragging');
+                    startDragAt(e.clientX, e.clientY);
                 }
             }
 
             function dragEnd(e) {
-                if (isDragging) {
-                    initialX = currentX;
-                    initialY = currentY;
-                    isDragging = false;
-                    modal.classList.remove('dragging');
-                }
+                endDrag();
             }
 
             function drag(e) {
                 if (isDragging) {
                     e.preventDefault();
-                    currentX = e.clientX - initialX;
-                    currentY = e.clientY - initialY;
-                    xOffset = currentX;
-                    yOffset = currentY;
-                    setTranslate(currentX, currentY, modal);
+                    dragTo(e.clientX, e.clientY);
+                }
+            }
+
+            function startDragAt(clientX, clientY) {
+                initialX = clientX - xOffset;
+                initialY = clientY - yOffset;
+                isDragging = true;
+                modal.classList.add('dragging');
+                markCrtSnapshotDirty();
+            }
+
+            function dragTo(clientX, clientY) {
+                if (!isDragging) { return; }
+                currentX = clientX - initialX;
+                currentY = clientY - initialY;
+                xOffset = currentX;
+                yOffset = currentY;
+                setTranslate(currentX, currentY, modal);
+                markCrtSnapshotDirty();
+            }
+
+            function endDrag() {
+                if (isDragging) {
+                    initialX = currentX;
+                    initialY = currentY;
+                    isDragging = false;
+                    modal.classList.remove('dragging');
+                    markCrtSnapshotDirty();
                 }
             }
 
@@ -2141,10 +2371,14 @@ void main() {
                 el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
             }
 
+            modal.startCrtDrag = startDragAt;
+            modal.dragCrtTo = dragTo;
+            modal.endCrtDrag = endDrag;
             modal.resetPosition = () => {
                 xOffset = 0;
                 yOffset = 0;
                 modal.style.transform = `translate3d(0, 0, 0)`;
+                markCrtSnapshotDirty();
             };
         }
         
@@ -2272,6 +2506,225 @@ void main() {
             toggleModal(helpModalOverlay, forceOpen, helpBtn);
         }
 
+        // --- CRT Pointer Remapping ---
+        function isCrtRoutingActive() {
+            return isCrtMode && crtReady && crtCompositeAvailable && !bodyElement.classList.contains('crt-unavailable');
+        }
+        function screenPointToSourcePoint(clientX, clientY) {
+            const width = Math.max(1, window.innerWidth);
+            const height = Math.max(1, window.innerHeight);
+            const fishbowl = getCrtFishbowlAmount();
+            let uvX = clientX / width;
+            let uvY = clientY / height;
+            let x = uvX * 2 - 1;
+            let y = uvY * 2 - 1;
+            const offsetX = Math.abs(y) / CRT_CURVATURE;
+            const offsetY = Math.abs(x) / CRT_CURVATURE;
+            x = x + x * offsetX * offsetX * fishbowl;
+            y = y + y * offsetY * offsetY * fishbowl;
+            uvX = x * 0.5 + 0.5;
+            uvY = y * 0.5 + 0.5;
+            const edgeZoom = CRT_EDGE_ZOOM_BASE + (CRT_EDGE_ZOOM_PER_FISHBOWL * fishbowl);
+            uvX = (uvX - 0.5) / edgeZoom + 0.5;
+            uvY = (uvY - 0.5) / edgeZoom + 0.5;
+            return {
+                x: Math.max(0, Math.min(width - 1, uvX * width)),
+                y: Math.max(0, Math.min(height - 1, uvY * height))
+            };
+        }
+        function getElementAtSourcePoint(point) {
+            const previousPointerEvents = crtCanvas.style.pointerEvents;
+            crtCanvas.style.pointerEvents = 'none';
+            const target = document.elementFromPoint(point.x, point.y);
+            crtCanvas.style.pointerEvents = previousPointerEvents;
+            return target;
+        }
+        function dispatchCrtMouseEvent(type, target, point, sourceEvent) {
+            if (!target) { return; }
+            target.dispatchEvent(new MouseEvent(type, {
+                bubbles: true,
+                cancelable: true,
+                view: window,
+                clientX: point.x,
+                clientY: point.y,
+                screenX: sourceEvent.screenX,
+                screenY: sourceEvent.screenY,
+                button: sourceEvent.button || 0,
+                buttons: sourceEvent.buttons || 0,
+                ctrlKey: sourceEvent.ctrlKey,
+                shiftKey: sourceEvent.shiftKey,
+                altKey: sourceEvent.altKey,
+                metaKey: sourceEvent.metaKey
+            }));
+        }
+        function setRangeValueFromPoint(range, point, commit = false) {
+            const rect = range.getBoundingClientRect();
+            const min = parseFloat(range.min || '0');
+            const max = parseFloat(range.max || '100');
+            const step = parseFloat(range.step || '1');
+            const ratio = rect.width > 0 ? Math.max(0, Math.min(1, (point.x - rect.left) / rect.width)) : 0;
+            const stepped = Math.round((min + ratio * (max - min)) / step) * step;
+            const nextValue = String(Math.max(min, Math.min(max, stepped)));
+            if (range.value !== nextValue) {
+                range.value = nextValue;
+                range.dispatchEvent(new Event('input', { bubbles: true }));
+                markCrtSnapshotDirty();
+            }
+            if (commit) {
+                range.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        }
+        function getCrtClickableTarget(target) {
+            if (!(target instanceof Element)) { return target; }
+            return target.closest('button, input, textarea, label, .command-item, #selectedNameDisplayWrapper, #clickTriggerArea') || target;
+        }
+        function startCrtModalDrag(target, point) {
+            const header = target instanceof Element ? target.closest('#helpModalHeader, #commandPaletteHeader') : null;
+            if (!header) { return false; }
+            const modal = header.closest('.modal-content');
+            if (modal?.startCrtDrag) {
+                modal.startCrtDrag(point.x, point.y);
+                crtEventState.activeModal = modal;
+                return true;
+            }
+            return false;
+        }
+        function startCrtRosterDrag(target) {
+            const item = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
+            if (!item || target.closest('button, input, textarea')) { return false; }
+            crtEventState.activeRosterItem = item;
+            draggedItemName = item.dataset.name;
+            item.classList.add('dragging');
+            markCrtSnapshotDirty();
+            return true;
+        }
+        function updateCrtRosterDrag(point) {
+            if (!crtEventState.activeRosterItem) { return; }
+            document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
+            const target = getElementAtSourcePoint(point);
+            const targetItem = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
+            if (targetItem && targetItem !== crtEventState.activeRosterItem) {
+                targetItem.classList.add('drag-over');
+            }
+            markCrtSnapshotDirty();
+        }
+        function finishCrtRosterDrag(point) {
+            const activeItem = crtEventState.activeRosterItem;
+            if (!activeItem) { return; }
+            const target = getElementAtSourcePoint(point);
+            const targetItem = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
+            document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
+            if (targetItem && targetItem !== activeItem && draggedItemName) {
+                const draggedIndex = allNames.findIndex(op => op.name === draggedItemName);
+                let targetIndex = allNames.findIndex(op => op.name === targetItem.dataset.name);
+                if (draggedIndex > -1 && targetIndex > -1) {
+                    const [draggedOperative] = allNames.splice(draggedIndex, 1);
+                    targetIndex = allNames.findIndex(op => op.name === targetItem.dataset.name);
+                    if (targetIndex > -1) {
+                        allNames.splice(targetIndex, 0, draggedOperative);
+                    } else {
+                        allNames.push(draggedOperative);
+                    }
+                    renderAvailableList();
+                    updateURL();
+                }
+            }
+            crtEventState.activeRosterItem = null;
+            draggedItemName = null;
+            markCrtSnapshotDirty();
+        }
+        function focusCrtTarget(target) {
+            if (target instanceof HTMLLabelElement && target.control) {
+                target.control.focus();
+                return;
+            }
+            if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLButtonElement) {
+                target.focus();
+            }
+        }
+        function clickCrtTarget(target, point, sourceEvent) {
+            const clickable = getCrtClickableTarget(target);
+            focusCrtTarget(clickable);
+            dispatchCrtMouseEvent('mouseup', clickable, point, sourceEvent);
+            dispatchCrtMouseEvent('click', clickable, point, sourceEvent);
+            markCrtSnapshotDirty();
+        }
+        function handleCrtPointerDown(event) {
+            if (!isCrtRoutingActive()) { return; }
+            event.preventDefault();
+            const point = screenPointToSourcePoint(event.clientX, event.clientY);
+            const target = getCrtClickableTarget(getElementAtSourcePoint(point));
+            crtEventState.pointerId = event.pointerId;
+            crtEventState.target = target;
+            crtCanvas.setPointerCapture?.(event.pointerId);
+
+            if (target instanceof HTMLInputElement && target.type === 'range') {
+                crtEventState.activeRange = target;
+                setRangeValueFromPoint(target, point);
+                return;
+            }
+            if (startCrtModalDrag(target, point) || startCrtRosterDrag(target)) {
+                return;
+            }
+            focusCrtTarget(target);
+            dispatchCrtMouseEvent('mousedown', target, point, event);
+        }
+        function handleCrtPointerMove(event) {
+            if (!isCrtRoutingActive()) { return; }
+            const point = screenPointToSourcePoint(event.clientX, event.clientY);
+            if (crtEventState.activeRange) {
+                event.preventDefault();
+                setRangeValueFromPoint(crtEventState.activeRange, point);
+                return;
+            }
+            if (crtEventState.activeModal) {
+                event.preventDefault();
+                crtEventState.activeModal.dragCrtTo(point.x, point.y);
+                return;
+            }
+            if (crtEventState.activeRosterItem) {
+                event.preventDefault();
+                updateCrtRosterDrag(point);
+                return;
+            }
+            const target = getCrtClickableTarget(getElementAtSourcePoint(point));
+            const cursor = target instanceof Element ? (window.getComputedStyle(target).cursor || 'default') : 'default';
+            if (crtEventState.lastCursor !== cursor) {
+                crtCanvas.style.cursor = cursor;
+                crtEventState.lastCursor = cursor;
+            }
+        }
+        function handleCrtPointerUp(event) {
+            if (!isCrtRoutingActive()) { return; }
+            event.preventDefault();
+            const point = screenPointToSourcePoint(event.clientX, event.clientY);
+            if (crtEventState.activeRange) {
+                setRangeValueFromPoint(crtEventState.activeRange, point, true);
+                crtEventState.activeRange = null;
+            } else if (crtEventState.activeModal) {
+                crtEventState.activeModal.endCrtDrag();
+                crtEventState.activeModal = null;
+            } else if (crtEventState.activeRosterItem) {
+                finishCrtRosterDrag(point);
+            } else {
+                clickCrtTarget(crtEventState.target || getElementAtSourcePoint(point), point, event);
+            }
+            crtEventState.pointerId = null;
+            crtEventState.target = null;
+            crtCanvas.releasePointerCapture?.(event.pointerId);
+        }
+        function handleCrtPointerCancel(event) {
+            if (crtEventState.activeModal) {
+                crtEventState.activeModal.endCrtDrag();
+            }
+            if (crtEventState.activeRosterItem) {
+                document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
+            }
+            crtEventState = { pointerId: null, target: null, activeRange: null, activeModal: null, activeRosterItem: null, lastCursor: crtEventState.lastCursor };
+            draggedItemName = null;
+            markCrtSnapshotDirty();
+        }
+
         // --- Click Trigger Area Logic ---
         function handleScreenClick(event) {
             if (selectedNameDisplayWrapper.contains(event.target) || menuToggleBtn.contains(event.target) || managementPanel.contains(event.target)) {
@@ -2289,12 +2742,19 @@ void main() {
         menuToggleBtn.addEventListener('click', toggleManagementPanel);
         selectedNameDisplayWrapper.addEventListener('click', pickRandomName);
         clickTriggerArea.addEventListener('click', handleScreenClick);
+        crtCanvas.addEventListener('pointerdown', handleCrtPointerDown);
+        crtCanvas.addEventListener('pointermove', handleCrtPointerMove);
+        crtCanvas.addEventListener('pointerup', handleCrtPointerUp);
+        crtCanvas.addEventListener('pointercancel', handleCrtPointerCancel);
+        crtCanvas.addEventListener('click', (event) => { if (isCrtRoutingActive()) { event.preventDefault(); event.stopPropagation(); } });
         addNameBtn.addEventListener('click', addName);
-        newNameInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { addName(); } });
-        newValueInput.addEventListener('keypress', (event) => { if (event.key === 'Enter') { addName(); } });
+        newNameInput.addEventListener('keypress', (event) => { markCrtSnapshotDirty(); if (event.key === 'Enter') { addName(); } });
+        newValueInput.addEventListener('keypress', (event) => { markCrtSnapshotDirty(); if (event.key === 'Enter') { addName(); } });
+        newNameInput.addEventListener('input', markCrtSnapshotDirty);
+        newValueInput.addEventListener('input', markCrtSnapshotDirty);
         undoBtn.addEventListener('click', undoLastPick);
         rebootBtn.addEventListener('click', rebootSystem);
-        window.addEventListener('resize', () => { if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain(); });
+        window.addEventListener('resize', () => { if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); markCrtSnapshotDirty(); setupCanvas(); startMatrixRain(); });
         
         // Settings Listeners
         brightnessSlider.addEventListener('input', (event) => {
@@ -2319,6 +2779,7 @@ void main() {
         });
         titleInput.addEventListener('input', (event) => {
             updateSchemaTitle(event.target.value);
+            markCrtSnapshotDirty();
             updateURL();
         });
         
@@ -2354,6 +2815,7 @@ void main() {
         commandPaletteInput.addEventListener('input', () => {
              commandPaletteSelectedIndex = 0;
              renderCommands(commandPaletteInput.value);
+             markCrtSnapshotDirty();
         });
 
         // PERFORMANCE: Pause animation when tab is not visible
@@ -2435,6 +2897,12 @@ void main() {
 
         // --- Initial Load ---
         document.addEventListener('DOMContentLoaded', () => { 
+            const crtSnapshotObserver = new MutationObserver((mutations) => {
+                if (mutations.some(mutation => mutation.target !== crtCanvas)) {
+                    markCrtSnapshotDirty();
+                }
+            });
+            crtSnapshotObserver.observe(bodyElement, { attributes: true, childList: true, subtree: true, characterData: true });
             initializeStateFromURL(); 
             makeDraggable(helpModal, helpModalHeader);
             makeDraggable(commandPalette, commandPaletteHeader);
