@@ -1470,7 +1470,13 @@ void main() {
             crtSnapshotDirty = true;
         }
         function isDrawableColor(color) {
-            return color && color !== 'transparent' && !/rgba?\([^)]*,\s*0(?:\.0+)?\)/.test(color);
+            if (!color) { return false; }
+            const normalizedColor = color.trim().toLowerCase();
+            if (normalizedColor === 'transparent') { return false; }
+            const rgbaMatch = normalizedColor.match(/^rgba\(([^)]+)\)$/);
+            if (!rgbaMatch) { return true; }
+            const alpha = parseFloat(rgbaMatch[1].split(',').pop());
+            return Number.isNaN(alpha) || alpha > 0;
         }
         function isElementVisibleForCrt(element) {
             if (!(element instanceof Element) || element === canvas || element === crtCanvas || element.tagName === 'SCRIPT' || element.tagName === 'STYLE') {
@@ -1507,11 +1513,31 @@ void main() {
                 crtSourceCtx.fillRect(rect.left, rect.top, borderLeftWidth, rect.height);
             }
         }
-        function applyTextStyleForCrt(style) {
-            crtSourceCtx.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-            crtSourceCtx.fillStyle = style.color;
+        function applyTextStyleForCrt(style, color = style.color, fontWeight = style.fontWeight) {
+            crtSourceCtx.font = `${style.fontStyle} ${fontWeight} ${style.fontSize} ${style.fontFamily}`;
+            crtSourceCtx.fillStyle = color;
             crtSourceCtx.textBaseline = 'top';
             crtSourceCtx.textAlign = 'left';
+        }
+        function shouldEmphasizeCrtInvertedText(element) {
+            if (isConstructMode || !(element instanceof Element)) { return false; }
+            return !!element.closest('.command-item.selected, .command-item:hover, #managementPanel button.active, #managementPanel button:hover, #managementPanel button:active');
+        }
+        function drawCrtText(text, rect, maxWidth, style, emphasizeInvertedText = false) {
+            if (!emphasizeInvertedText) {
+                crtSourceCtx.fillText(text, rect.left, rect.top, maxWidth);
+                return;
+            }
+
+            crtSourceCtx.save();
+            applyTextStyleForCrt(style, '#000000', '800');
+            crtSourceCtx.strokeStyle = '#000000';
+            crtSourceCtx.lineJoin = 'round';
+            crtSourceCtx.lineWidth = Math.max(2, parseFloat(style.fontSize) * 0.12);
+            crtSourceCtx.strokeText(text, rect.left, rect.top, maxWidth);
+            crtSourceCtx.fillText(text, rect.left, rect.top, maxWidth);
+            crtSourceCtx.fillText(text, rect.left + 0.75, rect.top, maxWidth);
+            crtSourceCtx.restore();
         }
         function drawTextNodeForCrt(textNode) {
             const text = textNode.textContent;
@@ -1529,8 +1555,9 @@ void main() {
 
             const normalizedText = text.replace(/\s+/g, ' ').trim();
             applyTextStyleForCrt(style);
+            const emphasizeInvertedText = shouldEmphasizeCrtInvertedText(parent);
             rects.slice(0, 1).forEach(rect => {
-                crtSourceCtx.fillText(normalizedText, rect.left, rect.top, Math.max(rect.width + 12, 10));
+                drawCrtText(normalizedText, rect, Math.max(rect.width + 12, 10), style, emphasizeInvertedText);
             });
         }
         function drawInputForCrt(input, style, rect) {
