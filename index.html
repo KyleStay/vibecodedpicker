@@ -2,10 +2,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading System...</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* Monospace font */
         @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;700&display=swap');
+        /* Small production utility subset replacing the runtime Tailwind CDN. */
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        .justify-between { justify-content: space-between; }
+        .gap-1 { gap: 0.25rem; }
+        .mb-3 { margin-bottom: 0.75rem; }
+        .mt-1 { margin-top: 0.25rem; }
+        .mr-2 { margin-right: 0.5rem; }
+        .font-medium { font-weight: 500; }
+        .font-semibold { font-weight: 600; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-gray-500 { color: #6b7280; }
+        .leading-none { line-height: 1; }
+        .outline-none { outline: 2px solid transparent; outline-offset: 2px; }
+        .opacity-70 { opacity: 0.7; }
+        .flex-grow { flex-grow: 1; }
+        .flex-shrink-0 { flex-shrink: 0; }
+        .overflow-hidden { overflow: hidden; }
+        .text-ellipsis { text-overflow: ellipsis; }
+        .whitespace-nowrap { white-space: nowrap; }
         :root {
             /* -- DARK MODE (Default) -- */
             --matrix-green: #39ff14;
@@ -14,7 +38,7 @@
             --matrix-bg: #000000;
             --matrix-bg-darker: #000000;
             --matrix-font: 'Source Code Pro', monospace;
-            --matrix-lead: #ffffff;
+            --matrix-lead: #f1ffe8;
             --matrix-flash: #ffffff;
 
             /* -- LIGHT MODE ('Construct Mode') -- */
@@ -625,15 +649,22 @@
             width: calc(100% - var(--crt-safe-x) - var(--crt-safe-x));
         }
         #progressBar {
-            display: flex; width: 100%; height: var(--progress-bar-height); background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
-            border-radius: 2px; overflow: hidden; gap: var(--segment-gap); padding: var(--segment-gap); box-sizing: border-box; transition: opacity 0.3s ease-in-out;
+            --progress-ratio: 0%;
+            width: 100%;
+            height: var(--progress-bar-height);
+            background:
+                linear-gradient(90deg, var(--primary-color-dark) 0 var(--progress-ratio), transparent var(--progress-ratio) 100%),
+                linear-gradient(90deg, var(--primary-color) 0 100%);
+            border: 1px solid var(--primary-color-dark);
+            border-radius: 2px;
+            overflow: hidden;
+            padding: var(--segment-gap);
+            box-sizing: border-box;
+            transition: opacity 0.3s ease-in-out, background 0.2s ease;
+            box-shadow: inset 0 0 0 var(--segment-gap) var(--bg-color-darker), 0 0 3px var(--primary-color);
         }
-        .construct-mode #progressBar { border-color: var(--construct-bg-darker); }
+        .construct-mode #progressBar { border-color: var(--construct-bg-darker); box-shadow: inset 0 0 0 var(--segment-gap) var(--construct-bg-darker); }
         #progressBar.hidden { opacity: 0; pointer-events: none; }
-        .progress-segment { flex: 1; background-color: var(--primary-color); border-radius: 1px; transition: background-color 0.3s ease, opacity 0.3s ease; box-shadow: 0 0 3px var(--primary-color); min-width: 1px; }
-        .construct-mode .progress-segment { box-shadow: none; }
-        .progress-segment.used { background-color: var(--primary-color-dark); opacity: 0.5; box-shadow: none; }
-        .construct-mode .progress-segment.used { background-color: var(--construct-bg-darker); }
 
         /* ---- Command Palette & Help Modal Styles ---- */
         .modal-overlay {
@@ -1174,7 +1205,9 @@ void main() {
   baseColor.a = 1.0;
   vec3 rawColor = texture2D(u_tex, remappedUV).rgb;
   float luminance = dot(rawColor, vec3(0.299, 0.587, 0.114));
-  float matrixLeadMask = smoothstep(0.58, 0.92, luminance);
+  float matrixLeadBrightness = smoothstep(0.44, 0.78, luminance);
+  float matrixLeadWhiteCore = smoothstep(0.14, 0.46, min(rawColor.r, rawColor.b));
+  float matrixLeadMask = matrixLeadBrightness * matrixLeadWhiteCore;
   float constructLeadMask = 1.0 - smoothstep(0.02, 0.35, luminance);
   float leadMask = mix(matrixLeadMask, constructLeadMask, u_constructMode);
 
@@ -1197,7 +1230,7 @@ void main() {
   vec3 matrixTrailColor = baseColor.rgb * terminalTint * (1.4 + 1.2 * u_intensity);
   vec3 constructTrailColor = mix(baseColor.rgb, vec3(luminance), 0.12) * (0.98 + 0.08 * crtIntensity);
   vec3 trailColor = mix(matrixTrailColor, constructTrailColor, u_constructMode);
-  vec3 matrixLeadColor = vec3(1.0, 0.96, 0.86) * (1.6 + 1.4 * u_intensity);
+  vec3 matrixLeadColor = vec3(0.92, 1.0, 0.86) * (1.6 + 1.4 * u_intensity);
   vec3 constructLeadColor = vec3(0.015, 0.015, 0.015);
   vec3 leadColor = mix(matrixLeadColor, constructLeadColor, u_constructMode);
   vec3 color = mix(trailColor, leadColor, leadMask);
@@ -1226,6 +1259,8 @@ void main() {
         const crtGl = crtCanvas.getContext('webgl', { preserveDrawingBuffer: false });
         const crtSourceCanvas = document.createElement('canvas');
         const crtSourceCtx = crtSourceCanvas.getContext('2d');
+        const crtUiCanvas = document.createElement('canvas');
+        const crtUiCtx = crtUiCanvas.getContext('2d');
         const clickTriggerArea = document.getElementById('clickTriggerArea');
         const menuToggleBtn = document.getElementById('menuToggleBtn');
         const managementPanel = document.getElementById('managementPanel');
@@ -1299,10 +1334,19 @@ void main() {
         let crtPositionBuffer = null;
         let crtTexCoordBuffer = null;
         let crtUniforms = null;
+        let crtAttributeLocations = null;
+        let crtTextureWidth = 0;
+        let crtTextureHeight = 0;
         let crtReady = false;
         let crtWarningShown = false;
         let crtSnapshotDirty = true;
         let crtCompositeAvailable = true;
+        let crtPaintCtx = crtUiCtx || crtSourceCtx;
+        let matrixRenderStyles = null;
+        let trailFillStyleCache = [];
+        let urlUpdateTimerId = null;
+        let resizeFrameId = null;
+        let nextCrtBlinkRefreshTime = 0;
         let crtEventState = {
             pointerId: null,
             target: null,
@@ -1326,6 +1370,7 @@ void main() {
         const COLUMN_SPACING_FACTOR = 1.0;
         const FLIP_CHANCE = 0.0025;
         const FLIP_DURATION_MS = 500;
+        const UPDATED_CHAR_HIGHLIGHT_MS = 500;
         const MAX_TRAIL_LENGTH = 25;
         const TARGET_ANIMATION_FPS = 60;
         const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS;
@@ -1337,6 +1382,8 @@ void main() {
         const CRT_EDGE_ZOOM_PER_FISHBOWL = 0.13;
         const CRT_SAFE_AREA_MARGIN_PX = 8;
         const CRT_TOUCH_SCROLL_THRESHOLD_PX = 6;
+        const URL_UPDATE_DEBOUNCE_MS = 150;
+        const CRT_BLINK_REFRESH_MS = 375;
 
         // --- Matrix Rain Setup ---
         let columns;
@@ -1352,6 +1399,7 @@ void main() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             crtCanvas.width = window.innerWidth; crtCanvas.height = window.innerHeight;
             crtSourceCanvas.width = window.innerWidth; crtSourceCanvas.height = window.innerHeight;
+            crtUiCanvas.width = window.innerWidth; crtUiCanvas.height = window.innerHeight;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
             drops = []; trails = [];
@@ -1359,6 +1407,8 @@ void main() {
                 drops[i] = { y: Math.floor(Math.random() * canvas.height / currentFontSize), delay: calculateColumnDelay(currentRainFPS), lastUpdateTime: 0 };
                 trails[i] = [];
             }
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
             setupCrtRenderer();
             updateCrtSafeArea();
         }
@@ -1416,6 +1466,11 @@ void main() {
                     0, 0, 1, 1, 1, 0
                 ]), crtGl.STATIC_DRAW);
 
+                crtAttributeLocations = {
+                    position: crtGl.getAttribLocation(crtProgram, 'aPosition'),
+                    texCoord: crtGl.getAttribLocation(crtProgram, 'aTexCoord')
+                };
+
                 crtTexture = crtGl.createTexture();
                 crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
                 crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_S, crtGl.CLAMP_TO_EDGE);
@@ -1435,6 +1490,7 @@ void main() {
 
                 crtReady = true;
                 bodyElement.classList.remove('crt-unavailable');
+                ensureCrtTextureSize();
                 updateCrtSafeArea();
             } catch (error) {
                 crtReady = false;
@@ -1445,6 +1501,14 @@ void main() {
                     crtWarningShown = true;
                 }
             }
+        }
+        function ensureCrtTextureSize() {
+            if (!crtGl || !crtTexture || crtCanvas.width <= 0 || crtCanvas.height <= 0) { return; }
+            if (crtTextureWidth === crtCanvas.width && crtTextureHeight === crtCanvas.height) { return; }
+            crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
+            crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtCanvas.width, crtCanvas.height, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, null);
+            crtTextureWidth = crtCanvas.width;
+            crtTextureHeight = crtCanvas.height;
         }
         function getCrtFishbowlAmount() {
             return (currentCrtFishbowlPercent / 100) * CRT_FISHBOWL_MULTIPLIER;
@@ -1482,14 +1546,23 @@ void main() {
             if (!(element instanceof Element) || element === canvas || element === crtCanvas || element.tagName === 'SCRIPT' || element.tagName === 'STYLE') {
                 return false;
             }
+            if (element.classList.contains('sr-only')) {
+                return false;
+            }
             const style = getComputedStyle(element);
             const rect = element.getBoundingClientRect();
             return style.display !== 'none' && style.visibility !== 'hidden' && parseFloat(style.opacity || '1') > 0.01 && rect.width > 0 && rect.height > 0;
         }
+        function getCrtStackLevel(element) {
+            if (!(element instanceof Element)) { return 0; }
+            const zIndex = getComputedStyle(element).zIndex;
+            const parsedZIndex = Number.parseInt(zIndex, 10);
+            return Number.isNaN(parsedZIndex) ? 0 : parsedZIndex;
+        }
         function drawElementBoxForCrt(element, style, rect) {
             if (isDrawableColor(style.backgroundColor)) {
-                crtSourceCtx.fillStyle = style.backgroundColor;
-                crtSourceCtx.fillRect(rect.left, rect.top, rect.width, rect.height);
+                crtPaintCtx.fillStyle = style.backgroundColor;
+                crtPaintCtx.fillRect(rect.left, rect.top, rect.width, rect.height);
             }
 
             const borderTopWidth = parseFloat(style.borderTopWidth) || 0;
@@ -1497,27 +1570,27 @@ void main() {
             const borderBottomWidth = parseFloat(style.borderBottomWidth) || 0;
             const borderLeftWidth = parseFloat(style.borderLeftWidth) || 0;
             if (borderTopWidth > 0 && isDrawableColor(style.borderTopColor)) {
-                crtSourceCtx.fillStyle = style.borderTopColor;
-                crtSourceCtx.fillRect(rect.left, rect.top, rect.width, borderTopWidth);
+                crtPaintCtx.fillStyle = style.borderTopColor;
+                crtPaintCtx.fillRect(rect.left, rect.top, rect.width, borderTopWidth);
             }
             if (borderRightWidth > 0 && isDrawableColor(style.borderRightColor)) {
-                crtSourceCtx.fillStyle = style.borderRightColor;
-                crtSourceCtx.fillRect(rect.right - borderRightWidth, rect.top, borderRightWidth, rect.height);
+                crtPaintCtx.fillStyle = style.borderRightColor;
+                crtPaintCtx.fillRect(rect.right - borderRightWidth, rect.top, borderRightWidth, rect.height);
             }
             if (borderBottomWidth > 0 && isDrawableColor(style.borderBottomColor)) {
-                crtSourceCtx.fillStyle = style.borderBottomColor;
-                crtSourceCtx.fillRect(rect.left, rect.bottom - borderBottomWidth, rect.width, borderBottomWidth);
+                crtPaintCtx.fillStyle = style.borderBottomColor;
+                crtPaintCtx.fillRect(rect.left, rect.bottom - borderBottomWidth, rect.width, borderBottomWidth);
             }
             if (borderLeftWidth > 0 && isDrawableColor(style.borderLeftColor)) {
-                crtSourceCtx.fillStyle = style.borderLeftColor;
-                crtSourceCtx.fillRect(rect.left, rect.top, borderLeftWidth, rect.height);
+                crtPaintCtx.fillStyle = style.borderLeftColor;
+                crtPaintCtx.fillRect(rect.left, rect.top, borderLeftWidth, rect.height);
             }
         }
         function applyTextStyleForCrt(style, color = style.color, fontWeight = style.fontWeight) {
-            crtSourceCtx.font = `${style.fontStyle} ${fontWeight} ${style.fontSize} ${style.fontFamily}`;
-            crtSourceCtx.fillStyle = color;
-            crtSourceCtx.textBaseline = 'top';
-            crtSourceCtx.textAlign = 'left';
+            crtPaintCtx.font = `${style.fontStyle} ${fontWeight} ${style.fontSize} ${style.fontFamily}`;
+            crtPaintCtx.fillStyle = color;
+            crtPaintCtx.textBaseline = 'top';
+            crtPaintCtx.textAlign = 'left';
         }
         function shouldEmphasizeCrtInvertedText(element) {
             if (isConstructMode || !(element instanceof Element)) { return false; }
@@ -1525,19 +1598,19 @@ void main() {
         }
         function drawCrtText(text, rect, maxWidth, style, emphasizeInvertedText = false) {
             if (!emphasizeInvertedText) {
-                crtSourceCtx.fillText(text, rect.left, rect.top, maxWidth);
+                crtPaintCtx.fillText(text, rect.left, rect.top, maxWidth);
                 return;
             }
 
-            crtSourceCtx.save();
+            crtPaintCtx.save();
             applyTextStyleForCrt(style, '#000000', '800');
-            crtSourceCtx.strokeStyle = '#000000';
-            crtSourceCtx.lineJoin = 'round';
-            crtSourceCtx.lineWidth = Math.max(2, parseFloat(style.fontSize) * 0.12);
-            crtSourceCtx.strokeText(text, rect.left, rect.top, maxWidth);
-            crtSourceCtx.fillText(text, rect.left, rect.top, maxWidth);
-            crtSourceCtx.fillText(text, rect.left + 0.75, rect.top, maxWidth);
-            crtSourceCtx.restore();
+            crtPaintCtx.strokeStyle = '#000000';
+            crtPaintCtx.lineJoin = 'round';
+            crtPaintCtx.lineWidth = Math.max(2, parseFloat(style.fontSize) * 0.12);
+            crtPaintCtx.strokeText(text, rect.left, rect.top, maxWidth);
+            crtPaintCtx.fillText(text, rect.left, rect.top, maxWidth);
+            crtPaintCtx.fillText(text, rect.left + 0.75, rect.top, maxWidth);
+            crtPaintCtx.restore();
         }
         function drawTextNodeForCrt(textNode) {
             const text = textNode.textContent;
@@ -1568,13 +1641,13 @@ void main() {
                 const ratio = max > min ? Math.max(0, Math.min(1, (value - min) / (max - min))) : 0;
                 const trackHeight = 4;
                 const trackY = rect.top + rect.height / 2 - trackHeight / 2;
-                crtSourceCtx.fillStyle = style.borderTopColor || 'rgba(255,255,255,0.35)';
-                crtSourceCtx.fillRect(rect.left, trackY, rect.width, trackHeight);
-                crtSourceCtx.fillStyle = getComputedStyle(bodyElement).getPropertyValue('--primary-color').trim() || style.color;
-                crtSourceCtx.fillRect(rect.left, trackY, rect.width * ratio, trackHeight);
-                crtSourceCtx.beginPath();
-                crtSourceCtx.arc(rect.left + rect.width * ratio, rect.top + rect.height / 2, 7, 0, Math.PI * 2);
-                crtSourceCtx.fill();
+                crtPaintCtx.fillStyle = style.borderTopColor || 'rgba(255,255,255,0.35)';
+                crtPaintCtx.fillRect(rect.left, trackY, rect.width, trackHeight);
+                crtPaintCtx.fillStyle = getComputedStyle(bodyElement).getPropertyValue('--primary-color').trim() || style.color;
+                crtPaintCtx.fillRect(rect.left, trackY, rect.width * ratio, trackHeight);
+                crtPaintCtx.beginPath();
+                crtPaintCtx.arc(rect.left + rect.width * ratio, rect.top + rect.height / 2, 7, 0, Math.PI * 2);
+                crtPaintCtx.fill();
                 return;
             }
 
@@ -1582,8 +1655,8 @@ void main() {
             const value = input.value || input.placeholder || '';
             if (value) {
                 applyTextStyleForCrt(style);
-                crtSourceCtx.fillStyle = input.value ? style.color : 'rgba(128,128,128,0.75)';
-                crtSourceCtx.fillText(value, rect.left + 8, rect.top + Math.max(4, (rect.height - parseFloat(style.fontSize)) / 2), rect.width - 16);
+                crtPaintCtx.fillStyle = input.value ? style.color : 'rgba(128,128,128,0.75)';
+                crtPaintCtx.fillText(value, rect.left + 8, rect.top + Math.max(4, (rect.height - parseFloat(style.fontSize)) / 2), rect.width - 16);
             }
         }
         function paintElementForCrt(element) {
@@ -1606,38 +1679,72 @@ void main() {
             });
         }
         function paintVisibleDomForCrt() {
-            Array.from(bodyElement.children).forEach(child => {
-                paintElementForCrt(child);
-            });
+            Array.from(bodyElement.children)
+                .map((child, index) => ({ child, index, stackLevel: getCrtStackLevel(child) }))
+                .sort((a, b) => a.stackLevel - b.stackLevel || a.index - b.index)
+                .forEach(({ child }) => {
+                    paintElementForCrt(child);
+                });
+        }
+        function repaintCrtUiLayer() {
+            if (!crtUiCtx) { return; }
+            crtUiCtx.clearRect(0, 0, crtUiCanvas.width, crtUiCanvas.height);
+            crtPaintCtx = crtUiCtx;
+            paintVisibleDomForCrt();
+            crtPaintCtx = crtSourceCtx;
+            crtSnapshotDirty = false;
         }
         function composeCrtSourceFrame() {
             if (!crtSourceCtx) { return canvas; }
             crtSourceCtx.clearRect(0, 0, crtSourceCanvas.width, crtSourceCanvas.height);
             crtSourceCtx.drawImage(canvas, 0, 0, crtSourceCanvas.width, crtSourceCanvas.height);
-            paintVisibleDomForCrt();
+            if (selectedNameDisplay.classList.contains('typing') && performance.now() >= nextCrtBlinkRefreshTime) {
+                nextCrtBlinkRefreshTime = performance.now() + CRT_BLINK_REFRESH_MS;
+                markCrtSnapshotDirty();
+            }
+            if (crtSnapshotDirty) {
+                repaintCrtUiLayer();
+            }
+            if (crtUiCanvas.width > 0 && crtUiCanvas.height > 0) {
+                crtSourceCtx.drawImage(crtUiCanvas, 0, 0);
+            }
             return crtSourceCanvas;
         }
+        function refreshMatrixRenderStyles() {
+            const computedStyle = getComputedStyle(bodyElement);
+            const trailColorRgb = isConstructMode ? computedStyle.getPropertyValue('--construct-text-rgb').trim() : computedStyle.getPropertyValue('--matrix-green-rgb').trim();
+            matrixRenderStyles = {
+                bgColor: isConstructMode ? `rgba(${computedStyle.getPropertyValue('--construct-bg-rgb').trim()}, 0.1)` : 'rgba(0, 0, 0, 0.1)',
+                trailColorRgb,
+                leadColor: computedStyle.getPropertyValue('--lead-color').trim(),
+                flashColor: computedStyle.getPropertyValue('--flash-color').trim(),
+                font: `${currentFontSize}px ${computedStyle.fontFamily}`
+            };
+            trailFillStyleCache = Array.from({ length: MAX_TRAIL_LENGTH }, (_, index) => {
+                const opacity = Math.max(0, 1.0 - (index / MAX_TRAIL_LENGTH));
+                return `rgba(${trailColorRgb}, ${opacity})`;
+            });
+        }
         function renderCrtFrame() {
-            if (!isCrtMode || !crtReady || !crtGl || !crtCompositeAvailable) { return; }
+            if (!isCrtMode || !crtReady || !crtGl || !crtCompositeAvailable || !crtAttributeLocations) { return; }
 
             crtGl.viewport(0, 0, crtCanvas.width, crtCanvas.height);
             crtGl.useProgram(crtProgram);
 
-            const positionLocation = crtGl.getAttribLocation(crtProgram, 'aPosition');
             crtGl.bindBuffer(crtGl.ARRAY_BUFFER, crtPositionBuffer);
-            crtGl.enableVertexAttribArray(positionLocation);
-            crtGl.vertexAttribPointer(positionLocation, 2, crtGl.FLOAT, false, 0, 0);
+            crtGl.enableVertexAttribArray(crtAttributeLocations.position);
+            crtGl.vertexAttribPointer(crtAttributeLocations.position, 2, crtGl.FLOAT, false, 0, 0);
 
-            const texCoordLocation = crtGl.getAttribLocation(crtProgram, 'aTexCoord');
             crtGl.bindBuffer(crtGl.ARRAY_BUFFER, crtTexCoordBuffer);
-            crtGl.enableVertexAttribArray(texCoordLocation);
-            crtGl.vertexAttribPointer(texCoordLocation, 2, crtGl.FLOAT, false, 0, 0);
+            crtGl.enableVertexAttribArray(crtAttributeLocations.texCoord);
+            crtGl.vertexAttribPointer(crtAttributeLocations.texCoord, 2, crtGl.FLOAT, false, 0, 0);
 
             crtGl.activeTexture(crtGl.TEXTURE0);
             crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
+            ensureCrtTextureSize();
             crtGl.pixelStorei(crtGl.UNPACK_FLIP_Y_WEBGL, false);
             try {
-                crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtGl.RGBA, crtGl.UNSIGNED_BYTE, composeCrtSourceFrame());
+                crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, composeCrtSourceFrame());
             } catch (error) {
                 crtCompositeAvailable = false;
                 bodyElement.classList.add('crt-unavailable');
@@ -1656,21 +1763,18 @@ void main() {
             crtGl.drawArrays(crtGl.TRIANGLES, 0, 6);
         }
         function drawMatrixRain() {
-            const computedStyle = getComputedStyle(document.body);
-            // Determine colors based on the current theme
-            const bgColor = isConstructMode ? `rgba(${computedStyle.getPropertyValue('--construct-bg-rgb').trim()}, 0.1)` : 'rgba(0, 0, 0, 0.1)';
-            const trailColorRgb = isConstructMode ? computedStyle.getPropertyValue('--construct-text-rgb').trim() : computedStyle.getPropertyValue('--matrix-green-rgb').trim();
-            const leadColor = computedStyle.getPropertyValue('--lead-color').trim();
-            const flashColor = computedStyle.getPropertyValue('--flash-color').trim();
+            if (!matrixRenderStyles) {
+                refreshMatrixRenderStyles();
+            }
 
-            ctx.fillStyle = bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.font = `${currentFontSize}px ${getComputedStyle(document.body).fontFamily}`;
+            ctx.fillStyle = matrixRenderStyles.bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = matrixRenderStyles.font;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR; const now = Date.now();
             for (let i = 0; i < drops.length; i++) {
                 const drop = drops[i];
                 if (now - drop.lastUpdateTime >= drop.delay) {
                     const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
-                    trails[i].unshift({ char: newLeaderChar, flipped: false }); if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); } drop.y++;
+                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now }); if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); } drop.y++;
                     if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) {
                         drop.y = 0;
                         trails[i] = [];
@@ -1683,19 +1787,22 @@ void main() {
                         let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
                         if (k > 0 && !trailItem.flipTimestamp && Math.random() < FLIP_CHANCE) {
                             let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
-                            trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now;
+                            trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now; trailItem.updateTimestamp = now;
                         }
                         let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
-                        if (isHighlighting) { ctx.fillStyle = flashColor; } else {
-                            const opacity = Math.max(0, 1.0 - (k / MAX_TRAIL_LENGTH));
-                            ctx.fillStyle = `rgba(${trailColorRgb}, ${opacity})`;
+                        let isRecentlyUpdated = trailItem.updateTimestamp && (now - trailItem.updateTimestamp < UPDATED_CHAR_HIGHLIGHT_MS);
+                        if (isHighlighting) { ctx.fillStyle = matrixRenderStyles.flashColor; } else if (isRecentlyUpdated) {
+                            ctx.fillStyle = matrixRenderStyles.leadColor;
+                        } else {
+                            ctx.fillStyle = trailFillStyleCache[k] || `rgba(${matrixRenderStyles.trailColorRgb}, 0)`;
                             if (trailItem.flipTimestamp && !isHighlighting) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
+                            if (trailItem.updateTimestamp) { trailItem.updateTimestamp = undefined; }
                         }
                         const trailXPos = i * effectiveColumnWidth; ctx.fillText(trailItem.char, trailXPos, trailYPos);
                     }
                     if (trails[i][0]) {
                         const leaderXPos = i * effectiveColumnWidth; const leaderYPos = drop.y * currentFontSize;
-                        if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) { ctx.fillStyle = leadColor; ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos); }
+                        if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) { ctx.fillStyle = matrixRenderStyles.leadColor; ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos); }
                     }
                 }
             }
@@ -1704,7 +1811,7 @@ void main() {
             if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); } let lastFrameTime = 0;
             function animateRain(currentTime) {
                 if (isAnimationPaused) {
-                    rainAnimationId = requestAnimationFrame(animateRain);
+                    rainAnimationId = null;
                     return;
                 }
                 rainAnimationId = requestAnimationFrame(animateRain); 
@@ -1724,7 +1831,7 @@ void main() {
         }
 
         // --- URL State Management ---
-        function updateURL() {
+        function buildStateURL() {
             const namesArray = allNames.map(op => {
                 const encodedName = encodeURIComponent(op.name);
                 const encodedValue = encodeURIComponent(op.value || '');
@@ -1747,8 +1854,26 @@ void main() {
             if (currentCrtVignettePercent !== 40) { params.push('crtVignette=' + currentCrtVignettePercent); }
             if (isConstructMode) { params.push('theme=construct'); }
 
-            const newUrl = window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
-            history.pushState({path: newUrl}, '', newUrl);
+            return window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
+        }
+        function updateURL() {
+            if (urlUpdateTimerId !== null) {
+                clearTimeout(urlUpdateTimerId);
+                urlUpdateTimerId = null;
+            }
+            const newUrl = buildStateURL();
+            if (newUrl !== window.location.pathname + window.location.search) {
+                history.replaceState({ path: newUrl }, '', newUrl);
+            }
+        }
+        function scheduleURLUpdate() {
+            if (urlUpdateTimerId !== null) {
+                clearTimeout(urlUpdateTimerId);
+            }
+            urlUpdateTimerId = setTimeout(() => {
+                urlUpdateTimerId = null;
+                updateURL();
+            }, URL_UPDATE_DEBOUNCE_MS);
         }
 
         // --- Initialization ---
@@ -1882,7 +2007,7 @@ void main() {
             updateRainSpeedDisplay(fps); if (drops && drops.length > 0) { drops.forEach(drop => { drop.delay = calculateColumnDelay(currentRainFPS); }); }
         }
         function updateFontSizeDisplay(size) {
-            currentFontSize = Math.max(8, Math.min(32, size)); if (fontSizeSlider) fontSizeSlider.value = currentFontSize; if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`; markCrtSnapshotDirty();
+            currentFontSize = Math.max(8, Math.min(32, size)); if (fontSizeSlider) fontSizeSlider.value = currentFontSize; if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`; matrixRenderStyles = null; markCrtSnapshotDirty();
         }
         function handleFontSizeChange(size) {
             updateFontSizeDisplay(size); if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain();
@@ -1947,6 +2072,7 @@ void main() {
             }
             // Re-apply brightness with the correct color overlay
             updateBrightness(currentBrightnessPercent);
+            matrixRenderStyles = null;
             // Redraw canvas with new colors
             if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
             startMatrixRain();
@@ -1957,17 +2083,15 @@ void main() {
         function renderProgressBar() {
             const totalCount = allNames.length;
             const selectedCount = allNames.filter(op => op.selected).length;
+            const progressRatio = totalCount > 0 ? `${(selectedCount / totalCount) * 100}%` : '0%';
             
             progressBarContainer.setAttribute('aria-valuemax', totalCount);
             progressBarContainer.setAttribute('aria-valuenow', selectedCount);
+            progressBar.style.setProperty('--progress-ratio', progressRatio);
 
-            progressBar.innerHTML = '';
             if (totalCount === 0 || isInMatrixMode) { progressBarContainer.classList.add('hidden'); }
             else {
                 progressBarContainer.classList.remove('hidden');
-                for (let i = 0; i < totalCount; i++) {
-                    const segment = document.createElement('div'); segment.className = 'progress-segment'; if (i < selectedCount) { segment.classList.add('used'); } progressBar.appendChild(segment);
-                }
             }
             updateBodyPadding();
         }
@@ -2015,9 +2139,10 @@ void main() {
                 const opIndex = allNames.findIndex(op => op.name === operative.name);
                 if (opIndex > -1) {
                     allNames[opIndex].value = e.target.value;
-                    updateURL();
+                    scheduleURLUpdate();
                 }
             });
+            valueInput.addEventListener('change', updateURL);
             valueRow.appendChild(valueInput);
             li.appendChild(valueRow);
 
@@ -2281,6 +2406,7 @@ void main() {
             menuToggleBtn.innerHTML = isVisible ? '✕' : '☰';
             menuToggleBtn.classList.toggle('active', isVisible);
             menuToggleBtn.setAttribute('aria-expanded', isVisible);
+            markCrtSnapshotDirty();
         }
 
         // --- Fullscreen Toggle Logic ---
@@ -2317,6 +2443,7 @@ void main() {
             if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => { console.warn(`FS request failed: ${err.message}`); }); }
             bodyElement.classList.add('matrix-mode-active');
             enterMatrixBtn.textContent = '[M] Exit Matrix'; renderProgressBar();
+            markCrtSnapshotDirty();
         }
         function exitMatrixMode() {
             if (!isInMatrixMode) return; isInMatrixMode = false; console.log("// Exiting Matrix Mode");
@@ -2325,6 +2452,7 @@ void main() {
             enterMatrixBtn.textContent = '[M] Enter Matrix'; renderProgressBar();
             menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active');
             menuToggleBtn.setAttribute('aria-expanded', 'false');
+            markCrtSnapshotDirty();
         }
 
         function handleFullscreenChange() {
@@ -2855,6 +2983,17 @@ void main() {
                 pickRandomName();
             }
         }
+        function handleWindowResize() {
+            if (resizeFrameId !== null) {
+                cancelAnimationFrame(resizeFrameId);
+            }
+            resizeFrameId = requestAnimationFrame(() => {
+                resizeFrameId = null;
+                if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
+                setupCanvas();
+                startMatrixRain();
+            });
+        }
 
         // --- Event Listeners ---
         menuToggleBtn.addEventListener('click', toggleManagementPanel);
@@ -2873,34 +3012,40 @@ void main() {
         newValueInput.addEventListener('input', markCrtSnapshotDirty);
         undoBtn.addEventListener('click', undoLastPick);
         rebootBtn.addEventListener('click', rebootSystem);
-        window.addEventListener('resize', () => { if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); markCrtSnapshotDirty(); setupCanvas(); startMatrixRain(); });
+        window.addEventListener('resize', handleWindowResize);
         
         // Settings Listeners
         brightnessSlider.addEventListener('input', (event) => {
             updateBrightness(parseInt(event.target.value));
-            updateURL();
+            scheduleURLUpdate();
         });
         speedSlider.addEventListener('input', (event) => {
             handleSpeedChange(parseInt(event.target.value));
-            updateURL();
+            scheduleURLUpdate();
         });
         fontSizeSlider.addEventListener('input', (event) => {
             handleFontSizeChange(parseInt(event.target.value));
-            updateURL();
+            scheduleURLUpdate();
         });
         crtFishbowlSlider.addEventListener('input', (event) => {
             updateCrtFishbowlDisplay(parseInt(event.target.value));
-            updateURL();
+            scheduleURLUpdate();
         });
         crtVignetteSlider.addEventListener('input', (event) => {
             updateCrtVignetteDisplay(parseInt(event.target.value));
-            updateURL();
+            scheduleURLUpdate();
         });
         titleInput.addEventListener('input', (event) => {
             updateSchemaTitle(event.target.value);
             markCrtSnapshotDirty();
-            updateURL();
+            scheduleURLUpdate();
         });
+        brightnessSlider.addEventListener('change', updateURL);
+        speedSlider.addEventListener('change', updateURL);
+        fontSizeSlider.addEventListener('change', updateURL);
+        crtFishbowlSlider.addEventListener('change', updateURL);
+        crtVignetteSlider.addEventListener('change', updateURL);
+        titleInput.addEventListener('change', updateURL);
         
         // Action Button Listeners
         themeToggleBtn.addEventListener('click', () => {
@@ -2941,8 +3086,15 @@ void main() {
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 isAnimationPaused = true;
+                if (rainAnimationId !== null) {
+                    cancelAnimationFrame(rainAnimationId);
+                    rainAnimationId = null;
+                }
             } else {
                 isAnimationPaused = false;
+                if (rainAnimationId === null) {
+                    startMatrixRain();
+                }
             }
         });
 
