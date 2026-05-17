@@ -2092,15 +2092,21 @@ void main() {
         }
         function refreshCrtControlLayout() {
             updateCrtSafeArea();
+            document.documentElement.getBoundingClientRect();
             markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(260);
             requestAnimationFrame(() => {
                 updateCrtSafeArea();
+                document.documentElement.getBoundingClientRect();
                 markCrtSnapshotDirty();
                 renderCrtFrame();
             });
         }
         function updateCrtMode() {
             const isPressed = isCrtMode;
+            if (isPressed) {
+                setupCrtRenderer();
+            }
             crtModeBtn.setAttribute('aria-pressed', isPressed);
             crtModeBtn.textContent = isPressed ? '[T] CRT Engaged' : '[T] Engage CRT';
             crtModeBtn.classList.toggle('active', isPressed);
