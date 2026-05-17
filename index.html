@@ -989,9 +989,9 @@
                 <div class="mb-3">
                     <label for="crtLeadFringeSlider" class="flex justify-between items-center">
                         <span>// Lead Fringe:</span>
-                        <span id="crtLeadFringeValue" class="font-semibold text-sm">12%</span>
+                        <span id="crtLeadFringeValue" class="font-semibold text-sm">5%</span>
                     </label>
-                    <input type="range" id="crtLeadFringeSlider" min="0" max="100" step="1" value="12">
+                    <input type="range" id="crtLeadFringeSlider" min="0" max="100" step="1" value="5">
                 </div>
             </div>
         </div>
@@ -1326,7 +1326,7 @@ void main() {
         let isCrtMode = true;
         let currentCrtFishbowlPercent = 25;
         let currentCrtVignettePercent = 40;
-        let currentCrtLeadFringePercent = 12;
+        let currentCrtLeadFringePercent = 5;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
@@ -1342,16 +1342,12 @@ void main() {
         let crtTextureHeight = 0;
         let crtReady = false;
         let crtWarningShown = false;
-        let crtSnapshotDirty = true;
         let crtCompositeAvailable = true;
         let crtPaintCtx = crtUiCtx || crtSourceCtx;
         let matrixRenderStyles = null;
         let trailFillStyleCache = [];
         let urlUpdateTimerId = null;
         let resizeFrameId = null;
-        let crtTransitionFrameId = null;
-        let crtTransitionDirtyUntil = 0;
-        let nextCrtBlinkRefreshTime = 0;
         let crtEventState = {
             pointerId: null,
             target: null,
@@ -1389,7 +1385,6 @@ void main() {
         const CRT_TOUCH_SCROLL_THRESHOLD_PX = 6;
         const CRT_HIT_SLOP_PX = 28;
         const URL_UPDATE_DEBOUNCE_MS = 150;
-        const CRT_BLINK_REFRESH_MS = 375;
         const CRT_INTERACTIVE_SELECTOR = 'button, input, textarea, label, .command-item, #selectedNameDisplayWrapper';
 
         // --- Matrix Rain Setup ---
@@ -1539,23 +1534,14 @@ void main() {
             bodyElement.style.setProperty('--crt-safe-y', `${safeY}px`);
         }
         function markCrtSnapshotDirty() {
-            crtSnapshotDirty = true;
+            repaintCrtUiLayer();
         }
         function markCrtSnapshotDirtyDuringTransition(durationMs) {
-            crtTransitionDirtyUntil = Math.max(crtTransitionDirtyUntil, performance.now() + durationMs);
-            if (crtTransitionFrameId !== null) { return; }
-
-            function markTransitionFrameDirty() {
+            markCrtSnapshotDirty();
+            requestAnimationFrame(() => {
                 markCrtSnapshotDirty();
-                if (performance.now() < crtTransitionDirtyUntil) {
-                    crtTransitionFrameId = requestAnimationFrame(markTransitionFrameDirty);
-                } else {
-                    crtTransitionFrameId = null;
-                    markCrtSnapshotDirty();
-                }
-            }
-
-            markTransitionFrameDirty();
+                renderCrtFrame();
+            });
         }
         function isDrawableColor(color) {
             if (!color) { return false; }
@@ -1754,19 +1740,12 @@ void main() {
             crtPaintCtx = crtUiCtx;
             paintVisibleDomForCrt();
             crtPaintCtx = crtSourceCtx;
-            crtSnapshotDirty = false;
         }
         function composeCrtSourceFrame() {
             if (!crtSourceCtx) { return canvas; }
             crtSourceCtx.clearRect(0, 0, crtSourceCanvas.width, crtSourceCanvas.height);
             crtSourceCtx.drawImage(canvas, 0, 0, crtSourceCanvas.width, crtSourceCanvas.height);
-            if (selectedNameDisplay.classList.contains('typing') && performance.now() >= nextCrtBlinkRefreshTime) {
-                nextCrtBlinkRefreshTime = performance.now() + CRT_BLINK_REFRESH_MS;
-                markCrtSnapshotDirty();
-            }
-            if (crtSnapshotDirty) {
-                repaintCrtUiLayer();
-            }
+            repaintCrtUiLayer();
             if (crtUiCanvas.width > 0 && crtUiCanvas.height > 0) {
                 crtSourceCtx.drawImage(crtUiCanvas, 0, 0);
             }
@@ -1819,7 +1798,8 @@ void main() {
             crtGl.uniform2f(crtUniforms.resolution, crtCanvas.width, crtCanvas.height);
             crtGl.uniform1f(crtUniforms.time, performance.now() / 1000);
             crtGl.uniform1f(crtUniforms.intensity, isCrtMode ? 0.88 : 0.0);
-            crtGl.uniform1f(crtUniforms.leadFringe, (currentCrtLeadFringePercent / 100) * 0.018);
+            const leadFringeMax = (currentFontSize * COLUMN_SPACING_FACTOR) / Math.max(1, crtCanvas.width);
+            crtGl.uniform1f(crtUniforms.leadFringe, (currentCrtLeadFringePercent / 100) * leadFringeMax);
             crtGl.uniform1f(crtUniforms.fishbowl, getCrtFishbowlAmount());
             crtGl.uniform1f(crtUniforms.vignette, getCrtVignetteAmount());
             crtGl.uniform1f(crtUniforms.constructMode, isConstructMode ? 1.0 : 0.0);
@@ -1915,7 +1895,7 @@ void main() {
             if (!isCrtMode) { params.push('crt=false'); }
             if (currentCrtFishbowlPercent !== 25) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
             if (currentCrtVignettePercent !== 40) { params.push('crtVignette=' + currentCrtVignettePercent); }
-            if (currentCrtLeadFringePercent !== 12) { params.push('crtLeadFringe=' + currentCrtLeadFringePercent); }
+            if (currentCrtLeadFringePercent !== 5) { params.push('crtLeadFringe=' + currentCrtLeadFringePercent); }
             if (isConstructMode) { params.push('theme=construct'); }
 
             return window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
@@ -1955,7 +1935,7 @@ void main() {
             isCrtMode = true;
             currentCrtFishbowlPercent = 25;
             currentCrtVignettePercent = 40;
-            currentCrtLeadFringePercent = 12;
+            currentCrtLeadFringePercent = 5;
             isConstructMode = false;
             selectionHistory = [];
             pendingNextOperatives = [];
