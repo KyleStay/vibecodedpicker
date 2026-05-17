@@ -121,6 +121,7 @@
             z-index: 100;
             display: none;
             pointer-events: auto;
+            touch-action: none;
         }
         body.crt-mode #crtCanvas { display: block; }
         body.crt-mode.crt-unavailable #matrixCanvas { display: block; }
@@ -217,13 +218,31 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 6; /* Above click area */
-            width: 90%;
-            max-width: 800px;
+            width: fit-content;
+            min-width: min(18rem, 90vw);
+            max-width: min(800px, 90vw);
             display: flex;
             flex-direction: column;
             align-items: center;
+            box-sizing: border-box;
+            padding: 1.35rem 1.75rem;
+            border: 2px solid rgba(var(--primary-color-rgb), 0.86);
+            border-radius: 0.25rem;
+            background:
+                linear-gradient(180deg, rgba(var(--primary-color-rgb), 0.09), rgba(var(--primary-color-rgb), 0.025)),
+                rgba(0, 0, 0, 0.62);
+            box-shadow:
+                0 0 0 1px rgba(var(--primary-color-rgb), 0.18) inset,
+                0 0 22px rgba(var(--primary-color-rgb), 0.22);
             pointer-events: none; /* Allow clicks to pass through container */
-            transition: opacity 0.3s ease-out;
+            transition: opacity 0.3s ease-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .construct-mode #mainDisplayContainer {
+            background:
+                linear-gradient(180deg, rgba(var(--construct-accent-rgb), 0.08), rgba(var(--construct-bg-rgb), 0.72)),
+                rgba(var(--construct-bg-rgb), 0.86);
+            border-color: rgba(var(--construct-accent-rgb), 0.82);
+            box-shadow: 0 0 0 1px rgba(var(--construct-accent-rgb), 0.18) inset;
         }
         /* Schema Title Display Area */
         #schemaTitleDisplay {
@@ -238,6 +257,9 @@
             min-height: 1.2em;
             line-height: 1.1;
             word-break: break-word;
+        }
+        #mainDisplayContainer:not(.has-schema-title) #schemaTitleDisplay {
+            display: none;
         }
         .construct-mode #schemaTitleDisplay { color: var(--primary-color); text-shadow: 1px 1px 0px var(--primary-color-dark); }
         /* Picker display area - Centered within container */
@@ -261,6 +283,7 @@
             line-height: 1.1;
             word-break: break-word;
             min-height: 1.2em;
+            max-width: 100%;
             transition: font-size 0.3s ease-in-out;
         }
         .construct-mode #selectedNameDisplay { text-shadow: 1px 1px 0px var(--primary-color-dark); }
@@ -298,6 +321,7 @@
         /* Hamburger Menu Button */
         #menuToggleBtn {
             right: var(--menu-btn-right);
+            z-index: 17;
             font-size: 1.8rem;
             padding: 0.3rem 0.6rem;
             line-height: 1;
@@ -377,7 +401,7 @@
             box-shadow: -5px 0 15px rgba(var(--primary-color-rgb), 0.2);
             transform: translateX(100%);
             transition: transform 0.35s ease-in-out, opacity 0.3s ease-out;
-            z-index: 10; /* Below menu button */
+            z-index: 16; /* Above previous button, below menu button */
             padding: 1.5rem;
             overflow-y: auto; /* Make the entire panel scrollable if content overflows */
             display: flex;
@@ -1528,8 +1552,11 @@ void main() {
 
             const edgeZoom = CRT_EDGE_ZOOM_BASE + (CRT_EDGE_ZOOM_PER_FISHBOWL * getCrtFishbowlAmount());
             const hiddenEdgeRatio = Math.max(0, 0.5 - (0.5 / edgeZoom));
-            const safeX = Math.ceil((hiddenEdgeRatio * window.innerWidth) + CRT_SAFE_AREA_MARGIN_PX);
-            const safeY = Math.ceil((hiddenEdgeRatio * window.innerHeight) + CRT_SAFE_AREA_MARGIN_PX);
+            const rect = crtCanvas.getBoundingClientRect();
+            const width = rect.width || window.innerWidth;
+            const height = rect.height || window.innerHeight;
+            const safeX = Math.ceil((hiddenEdgeRatio * width) + CRT_SAFE_AREA_MARGIN_PX);
+            const safeY = Math.ceil((hiddenEdgeRatio * height) + CRT_SAFE_AREA_MARGIN_PX);
             bodyElement.style.setProperty('--crt-safe-x', `${safeX}px`);
             bodyElement.style.setProperty('--crt-safe-y', `${safeY}px`);
         }
@@ -1870,7 +1897,15 @@ void main() {
 
         // --- Title Update Function ---
         function updateSchemaTitle(title) {
-            const displayTitle = title.trim(); if (schemaTitleDisplay) { schemaTitleDisplay.textContent = displayTitle || ''; } document.title = displayTitle || DEFAULT_TITLE;
+            const displayTitle = title.trim();
+            if (schemaTitleDisplay) {
+                schemaTitleDisplay.textContent = displayTitle || '';
+            }
+            if (mainDisplayContainer) {
+                mainDisplayContainer.classList.toggle('has-schema-title', displayTitle.length > 0);
+            }
+            document.title = displayTitle || DEFAULT_TITLE;
+            markCrtSnapshotDirty();
         }
 
         // --- URL State Management ---
@@ -2755,11 +2790,12 @@ void main() {
             return isCrtMode && crtReady && crtCompositeAvailable && !bodyElement.classList.contains('crt-unavailable');
         }
         function screenPointToSourcePoint(clientX, clientY) {
-            const width = Math.max(1, window.innerWidth);
-            const height = Math.max(1, window.innerHeight);
+            const rect = crtCanvas.getBoundingClientRect();
+            const width = Math.max(1, rect.width || window.innerWidth);
+            const height = Math.max(1, rect.height || window.innerHeight);
             const fishbowl = getCrtFishbowlAmount();
-            let uvX = clientX / width;
-            let uvY = clientY / height;
+            let uvX = (clientX - rect.left) / width;
+            let uvY = (clientY - rect.top) / height;
             let x = uvX * 2 - 1;
             let y = uvY * 2 - 1;
             const offsetX = Math.abs(y) / CRT_CURVATURE;
@@ -2772,8 +2808,8 @@ void main() {
             uvX = (uvX - 0.5) / edgeZoom + 0.5;
             uvY = (uvY - 0.5) / edgeZoom + 0.5;
             return {
-                x: Math.max(0, Math.min(width - 1, uvX * width)),
-                y: Math.max(0, Math.min(height - 1, uvY * height))
+                x: rect.left + Math.max(0, Math.min(width - 1, uvX * width)),
+                y: rect.top + Math.max(0, Math.min(height - 1, uvY * height))
             };
         }
         function getElementAtSourcePoint(point) {
