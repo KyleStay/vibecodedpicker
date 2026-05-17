@@ -649,22 +649,34 @@
             width: calc(100% - var(--crt-safe-x) - var(--crt-safe-x));
         }
         #progressBar {
-            --progress-ratio: 0%;
             width: 100%;
             height: var(--progress-bar-height);
-            background:
-                linear-gradient(90deg, var(--primary-color-dark) 0 var(--progress-ratio), transparent var(--progress-ratio) 100%),
-                linear-gradient(90deg, var(--primary-color) 0 100%);
+            background-color: var(--bg-color-darker);
             border: 1px solid var(--primary-color-dark);
             border-radius: 2px;
             overflow: hidden;
             padding: var(--segment-gap);
+            display: grid;
+            gap: var(--segment-gap);
             box-sizing: border-box;
-            transition: opacity 0.3s ease-in-out, background 0.2s ease;
+            transition: opacity 0.3s ease-in-out;
             box-shadow: inset 0 0 0 var(--segment-gap) var(--bg-color-darker), 0 0 3px var(--primary-color);
         }
         .construct-mode #progressBar { border-color: var(--construct-bg-darker); box-shadow: inset 0 0 0 var(--segment-gap) var(--construct-bg-darker); }
         #progressBar.hidden { opacity: 0; pointer-events: none; }
+        .progress-segment {
+            min-width: 0;
+            height: 100%;
+            background-color: var(--primary-color);
+            transition: background-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .progress-segment.filled {
+            background-color: var(--primary-color-dark);
+            box-shadow: 0 0 5px rgba(var(--primary-color-rgb), 0.45);
+        }
+        .construct-mode .progress-segment.filled {
+            box-shadow: none;
+        }
 
         /* ---- Command Palette & Help Modal Styles ---- */
         .modal-overlay {
@@ -1650,7 +1662,8 @@ void main() {
             applyTextStyleForCrt(style);
             const emphasizeInvertedText = shouldEmphasizeCrtInvertedText(parent);
             rects.slice(0, 1).forEach(rect => {
-                drawCrtText(normalizedText, rect, Math.max(rect.width + 12, 10), style, emphasizeInvertedText);
+                const maxWidth = Math.max(rect.width + 12, 10);
+                drawCrtText(normalizedText, rect, maxWidth, style, emphasizeInvertedText);
             });
         }
         function drawInputForCrt(input, style, rect) {
@@ -1682,7 +1695,6 @@ void main() {
         function drawProgressBarForCrt(element, style, rect) {
             const totalCount = parseInt(progressBarContainer.getAttribute('aria-valuemax') || '0', 10);
             const selectedCount = parseInt(progressBarContainer.getAttribute('aria-valuenow') || '0', 10);
-            const ratio = totalCount > 0 ? Math.max(0, Math.min(1, selectedCount / totalCount)) : 0;
             const computedBodyStyle = getComputedStyle(bodyElement);
             const primaryColor = computedBodyStyle.getPropertyValue('--primary-color').trim() || style.color;
             const usedColor = computedBodyStyle.getPropertyValue('--primary-color-dark').trim() || primaryColor;
@@ -1697,10 +1709,15 @@ void main() {
 
             crtPaintCtx.fillStyle = trackColor;
             crtPaintCtx.fillRect(rect.left, rect.top, rect.width, rect.height);
-            crtPaintCtx.fillStyle = primaryColor;
-            crtPaintCtx.fillRect(innerX, innerY, innerWidth, innerHeight);
-            crtPaintCtx.fillStyle = usedColor;
-            crtPaintCtx.fillRect(innerX, innerY, innerWidth * ratio, innerHeight);
+            if (totalCount > 0) {
+                const totalGapWidth = segmentGap * Math.max(0, totalCount - 1);
+                const segmentWidth = Math.max(0, (innerWidth - totalGapWidth) / totalCount);
+                for (let index = 0; index < totalCount; index++) {
+                    const segmentX = innerX + (index * (segmentWidth + segmentGap));
+                    crtPaintCtx.fillStyle = index < selectedCount ? usedColor : primaryColor;
+                    crtPaintCtx.fillRect(segmentX, innerY, segmentWidth, innerHeight);
+                }
+            }
             crtPaintCtx.fillStyle = borderColor;
             crtPaintCtx.fillRect(rect.left, rect.top, rect.width, borderWidth);
             crtPaintCtx.fillRect(rect.left, rect.bottom - borderWidth, rect.width, borderWidth);
@@ -2073,6 +2090,15 @@ void main() {
             extractionModeLed.classList.toggle('active', isPressed);
             markCrtSnapshotDirty();
         }
+        function refreshCrtControlLayout() {
+            updateCrtSafeArea();
+            markCrtSnapshotDirty();
+            requestAnimationFrame(() => {
+                updateCrtSafeArea();
+                markCrtSnapshotDirty();
+                renderCrtFrame();
+            });
+        }
         function updateCrtMode() {
             const isPressed = isCrtMode;
             crtModeBtn.setAttribute('aria-pressed', isPressed);
@@ -2082,9 +2108,7 @@ void main() {
             bodyElement.classList.toggle('crt-mode', isPressed);
             bodyElement.classList.toggle('crt-unavailable', isPressed && (!crtReady || !crtCompositeAvailable));
             crtSubSettings.classList.toggle('hidden', !isPressed);
-            updateCrtSafeArea();
-            markCrtSnapshotDirty();
-            renderCrtFrame();
+            refreshCrtControlLayout();
         }
         function updateCrtFishbowlDisplay(percent) {
             currentCrtFishbowlPercent = Math.max(0, Math.min(100, percent));
@@ -2136,11 +2160,18 @@ void main() {
         function renderProgressBar() {
             const totalCount = allNames.length;
             const selectedCount = allNames.filter(op => op.selected).length;
-            const progressRatio = totalCount > 0 ? `${(selectedCount / totalCount) * 100}%` : '0%';
             
             progressBarContainer.setAttribute('aria-valuemax', totalCount);
             progressBarContainer.setAttribute('aria-valuenow', selectedCount);
-            progressBar.style.setProperty('--progress-ratio', progressRatio);
+            progressBar.style.gridTemplateColumns = totalCount > 0 ? `repeat(${totalCount}, minmax(0, 1fr))` : '';
+            const progressSegments = document.createDocumentFragment();
+            Array.from({ length: totalCount }, (_, index) => {
+                const segment = document.createElement('span');
+                segment.className = `progress-segment${index < selectedCount ? ' filled' : ''}`;
+                segment.setAttribute('aria-hidden', 'true');
+                progressSegments.appendChild(segment);
+            });
+            progressBar.replaceChildren(progressSegments);
             markCrtSnapshotDirty();
 
             if (totalCount === 0 || isInMatrixMode) { progressBarContainer.classList.add('hidden'); }
