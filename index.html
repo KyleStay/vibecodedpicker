@@ -1346,6 +1346,8 @@ void main() {
         let trailFillStyleCache = [];
         let urlUpdateTimerId = null;
         let resizeFrameId = null;
+        let crtTransitionFrameId = null;
+        let crtTransitionDirtyUntil = 0;
         let nextCrtBlinkRefreshTime = 0;
         let crtEventState = {
             pointerId: null,
@@ -1382,8 +1384,10 @@ void main() {
         const CRT_EDGE_ZOOM_PER_FISHBOWL = 0.13;
         const CRT_SAFE_AREA_MARGIN_PX = 8;
         const CRT_TOUCH_SCROLL_THRESHOLD_PX = 6;
+        const CRT_HIT_SLOP_PX = 28;
         const URL_UPDATE_DEBOUNCE_MS = 150;
         const CRT_BLINK_REFRESH_MS = 375;
+        const CRT_INTERACTIVE_SELECTOR = 'button, input, textarea, label, .command-item, #selectedNameDisplayWrapper';
 
         // --- Matrix Rain Setup ---
         let columns;
@@ -1533,6 +1537,22 @@ void main() {
         function markCrtSnapshotDirty() {
             crtSnapshotDirty = true;
         }
+        function markCrtSnapshotDirtyDuringTransition(durationMs) {
+            crtTransitionDirtyUntil = Math.max(crtTransitionDirtyUntil, performance.now() + durationMs);
+            if (crtTransitionFrameId !== null) { return; }
+
+            function markTransitionFrameDirty() {
+                markCrtSnapshotDirty();
+                if (performance.now() < crtTransitionDirtyUntil) {
+                    crtTransitionFrameId = requestAnimationFrame(markTransitionFrameDirty);
+                } else {
+                    crtTransitionFrameId = null;
+                    markCrtSnapshotDirty();
+                }
+            }
+
+            markTransitionFrameDirty();
+        }
         function isDrawableColor(color) {
             if (!color) { return false; }
             const normalizedColor = color.trim().toLowerCase();
@@ -1659,10 +1679,43 @@ void main() {
                 crtPaintCtx.fillText(value, rect.left + 8, rect.top + Math.max(4, (rect.height - parseFloat(style.fontSize)) / 2), rect.width - 16);
             }
         }
+        function drawProgressBarForCrt(element, style, rect) {
+            const totalCount = parseInt(progressBarContainer.getAttribute('aria-valuemax') || '0', 10);
+            const selectedCount = parseInt(progressBarContainer.getAttribute('aria-valuenow') || '0', 10);
+            const ratio = totalCount > 0 ? Math.max(0, Math.min(1, selectedCount / totalCount)) : 0;
+            const computedBodyStyle = getComputedStyle(bodyElement);
+            const primaryColor = computedBodyStyle.getPropertyValue('--primary-color').trim() || style.color;
+            const usedColor = computedBodyStyle.getPropertyValue('--primary-color-dark').trim() || primaryColor;
+            const trackColor = computedBodyStyle.getPropertyValue('--bg-color-darker').trim() || style.backgroundColor;
+            const borderColor = style.borderTopColor || usedColor;
+            const borderWidth = parseFloat(style.borderTopWidth) || 1;
+            const segmentGap = parseFloat(computedBodyStyle.getPropertyValue('--segment-gap')) || 0;
+            const innerX = rect.left + borderWidth + segmentGap;
+            const innerY = rect.top + borderWidth + segmentGap;
+            const innerWidth = Math.max(0, rect.width - (borderWidth + segmentGap) * 2);
+            const innerHeight = Math.max(0, rect.height - (borderWidth + segmentGap) * 2);
+
+            crtPaintCtx.fillStyle = trackColor;
+            crtPaintCtx.fillRect(rect.left, rect.top, rect.width, rect.height);
+            crtPaintCtx.fillStyle = primaryColor;
+            crtPaintCtx.fillRect(innerX, innerY, innerWidth, innerHeight);
+            crtPaintCtx.fillStyle = usedColor;
+            crtPaintCtx.fillRect(innerX, innerY, innerWidth * ratio, innerHeight);
+            crtPaintCtx.fillStyle = borderColor;
+            crtPaintCtx.fillRect(rect.left, rect.top, rect.width, borderWidth);
+            crtPaintCtx.fillRect(rect.left, rect.bottom - borderWidth, rect.width, borderWidth);
+            crtPaintCtx.fillRect(rect.left, rect.top, borderWidth, rect.height);
+            crtPaintCtx.fillRect(rect.right - borderWidth, rect.top, borderWidth, rect.height);
+        }
         function paintElementForCrt(element) {
             if (!isElementVisibleForCrt(element)) { return; }
             const style = getComputedStyle(element);
             const rect = element.getBoundingClientRect();
+
+            if (element === progressBar) {
+                drawProgressBarForCrt(element, style, rect);
+                return;
+            }
 
             if (element instanceof HTMLInputElement) {
                 drawInputForCrt(element, style, rect);
@@ -1790,7 +1843,7 @@ void main() {
                             trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now; trailItem.updateTimestamp = now;
                         }
                         let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
-                        let isRecentlyUpdated = trailItem.updateTimestamp && (now - trailItem.updateTimestamp < UPDATED_CHAR_HIGHLIGHT_MS);
+                        let isRecentlyUpdated = k === 0 && trailItem.updateTimestamp && (now - trailItem.updateTimestamp < UPDATED_CHAR_HIGHLIGHT_MS);
                         if (isHighlighting) { ctx.fillStyle = matrixRenderStyles.flashColor; } else if (isRecentlyUpdated) {
                             ctx.fillStyle = matrixRenderStyles.leadColor;
                         } else {
@@ -2088,6 +2141,7 @@ void main() {
             progressBarContainer.setAttribute('aria-valuemax', totalCount);
             progressBarContainer.setAttribute('aria-valuenow', selectedCount);
             progressBar.style.setProperty('--progress-ratio', progressRatio);
+            markCrtSnapshotDirty();
 
             if (totalCount === 0 || isInMatrixMode) { progressBarContainer.classList.add('hidden'); }
             else {
@@ -2407,6 +2461,7 @@ void main() {
             menuToggleBtn.classList.toggle('active', isVisible);
             menuToggleBtn.setAttribute('aria-expanded', isVisible);
             markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(420);
         }
 
         // --- Fullscreen Toggle Logic ---
@@ -2695,11 +2750,51 @@ void main() {
             };
         }
         function getElementAtSourcePoint(point) {
+            const target = getElementAtViewportPoint(point.x, point.y);
+            if (isCrtBackgroundTarget(target) || !isCrtInteractiveTarget(target)) {
+                const nearbyTarget = getNearbyCrtInteractiveTarget(point);
+                if (nearbyTarget) { return nearbyTarget; }
+            }
+            return target;
+        }
+        function getElementAtViewportPoint(x, y) {
             const previousPointerEvents = crtCanvas.style.pointerEvents;
             crtCanvas.style.pointerEvents = 'none';
-            const target = document.elementFromPoint(point.x, point.y);
+            const target = document.elementFromPoint(x, y);
             crtCanvas.style.pointerEvents = previousPointerEvents;
             return target;
+        }
+        function isCrtBackgroundTarget(target) {
+            return target === clickTriggerArea || target === bodyElement || target === document.documentElement;
+        }
+        function isCrtInteractiveTarget(target) {
+            return target instanceof Element && !!target.closest(CRT_INTERACTIVE_SELECTOR);
+        }
+        function getNearbyCrtInteractiveTarget(point) {
+            const offsets = [
+                [-CRT_HIT_SLOP_PX, 0], [CRT_HIT_SLOP_PX, 0],
+                [0, -CRT_HIT_SLOP_PX], [0, CRT_HIT_SLOP_PX],
+                [-CRT_HIT_SLOP_PX, -CRT_HIT_SLOP_PX], [CRT_HIT_SLOP_PX, -CRT_HIT_SLOP_PX],
+                [-CRT_HIT_SLOP_PX, CRT_HIT_SLOP_PX], [CRT_HIT_SLOP_PX, CRT_HIT_SLOP_PX],
+                [-CRT_HIT_SLOP_PX / 2, 0], [CRT_HIT_SLOP_PX / 2, 0],
+                [0, -CRT_HIT_SLOP_PX / 2], [0, CRT_HIT_SLOP_PX / 2]
+            ];
+            for (const [offsetX, offsetY] of offsets) {
+                const target = getElementAtViewportPoint(point.x + offsetX, point.y + offsetY);
+                if (target instanceof Element) {
+                    const interactiveTarget = target.closest(CRT_INTERACTIVE_SELECTOR);
+                    if (interactiveTarget) {
+                        return target;
+                    }
+                }
+            }
+            for (const [offsetX, offsetY] of offsets) {
+                const target = getElementAtViewportPoint(point.x + offsetX, point.y + offsetY);
+                if (target instanceof Element && target.closest('#managementPanel')) {
+                    return target;
+                }
+            }
+            return null;
         }
         function dispatchCrtMouseEvent(type, target, point, sourceEvent) {
             if (!target) { return; }
@@ -2738,7 +2833,7 @@ void main() {
         }
         function getCrtClickableTarget(target) {
             if (!(target instanceof Element)) { return target; }
-            return target.closest('button, input, textarea, label, .command-item, #selectedNameDisplayWrapper, #clickTriggerArea') || target;
+            return target.closest(`${CRT_INTERACTIVE_SELECTOR}, #clickTriggerArea`) || target;
         }
         function isScrollableElement(element) {
             if (!(element instanceof Element)) { return false; }
