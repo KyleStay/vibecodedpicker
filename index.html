@@ -1153,9 +1153,9 @@
                         <div class="mb-3">
                             <label for="overdriveStrengthSlider" class="flex justify-between items-center">
                                 <span>// Overdrive Strength:</span>
-                                <span id="overdriveStrengthValue" class="font-semibold text-sm">50%</span>
+                                <span id="overdriveStrengthValue" class="font-semibold text-sm">100%</span>
                             </label>
-                            <input type="range" id="overdriveStrengthSlider" min="0" max="100" step="1" value="50">
+                            <input type="range" id="overdriveStrengthSlider" min="0" max="100" step="1" value="100">
                         </div>
                     </div>
                     <div class="control-group">
@@ -1530,7 +1530,7 @@ void main() {
         let currentCrtFishbowlPercent = 25;
         let currentCrtVignettePercent = 40;
         let currentCrtLeadFringePercent = 5;
-        let currentOverdriveStrengthPercent = 50;
+        let currentOverdriveStrengthPercent = 100;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
@@ -2223,7 +2223,7 @@ void main() {
             if (isExtractionMode) { params.push('extract=true'); }
             if (!isCrtMode) { params.push('crt=false'); }
             if (!isOverdriveMode) { params.push('overdrive=false'); }
-            if (currentOverdriveStrengthPercent !== 50) { params.push('overdriveStrength=' + currentOverdriveStrengthPercent); }
+            if (currentOverdriveStrengthPercent !== 100) { params.push('overdriveStrength=' + currentOverdriveStrengthPercent); }
             if (currentCrtFishbowlPercent !== 25) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
             if (currentCrtVignettePercent !== 40) { params.push('crtVignette=' + currentCrtVignettePercent); }
             if (!isOverdriveMode && currentCrtLeadFringePercent !== 5) { params.push('crtLeadFringe=' + currentCrtLeadFringePercent); }
@@ -2268,7 +2268,7 @@ void main() {
             currentCrtFishbowlPercent = 25;
             currentCrtVignettePercent = 40;
             currentCrtLeadFringePercent = 5;
-            currentOverdriveStrengthPercent = 50;
+            currentOverdriveStrengthPercent = 100;
             isConstructMode = false;
             selectionHistory = [];
             pendingNextOperatives = [];
