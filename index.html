@@ -558,23 +558,28 @@
         /* Specific Layout for Action Buttons Row */
         #managementPanel .action-button-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 0.5rem;
-            padding-top: 4rem; /* INCREASED padding above this row */
+            padding-top: 4rem;
         }
         #managementPanel .action-button-row button {
             width: 100%;
-            margin-bottom: 0; /* Remove bottom margin for this row */
+            margin-bottom: 0;
+        }
+        #managementPanel .panel-section-static {
+            border-top: none;
+            padding-top: 0;
+            margin-bottom: 1.35rem;
         }
         /* Specific Layout/Overrides for Add/Reboot Buttons */
-        #managementPanel .panel-section button:not(.remove-name-btn):not(.action-button-row button):not(.control-group button) {
+        #managementPanel .panel-section-content button:not(.remove-name-btn):not(.control-group button) {
             width: 100%; /* Make Add/Reboot full width */
             padding: 0.5rem 1rem; /* Restore original padding if needed */
         }
         #addNameBtn { border-width: 2px !important; } /* Make add button bolder */
         .construct-mode #addNameBtn { background-color: var(--primary-color); color: var(--construct-bg); border-color: var(--primary-color); }
         .construct-mode #addNameBtn:hover:not(:disabled) { background-color: var(--primary-color-dark); border-color: var(--primary-color-dark); }
-        #managementPanel .panel-section:last-of-type button:last-of-type:not(.remove-name-btn) {
+        #managementPanel .panel-section-content button:last-of-type:not(.remove-name-btn):not(.control-group button) {
             margin-bottom: 0; /* Remove margin from last button (Reboot) */
         }
         /* Remove Name Button ('X') - Keep specific small style */
@@ -610,19 +615,57 @@
         #managementPanel input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary-color); margin-top: 0.25rem; margin-bottom: 0.25rem; }
         /* Panel Sections for better structure and scrolling */
         .panel-section {
-            margin-bottom: 1rem;
-            padding-top: 0.5rem;
+            margin-bottom: 0.8rem;
             border-top: 1px solid var(--primary-color-dark);
-            flex-shrink: 0; /* Prevent sections from shrinking when panel scrolls */
+            flex-shrink: 0;
         }
         .construct-mode .panel-section { border-top-color: var(--construct-bg-darker); }
-        .panel-section.action-button-row {
-            border-top: none; /* No top border for the action button row */
-            padding-top: 1rem;
-            margin-bottom: 1rem; /* Ensure margin below action buttons */
-        }
         .panel-section:last-of-type {
-            margin-bottom: 0; /* No bottom margin for the last section */
+            margin-bottom: 0;
+        }
+        .panel-section-toggle {
+            width: 100%;
+            margin-bottom: 0.55rem !important;
+            justify-content: space-between !important;
+            padding: 0.6rem 0.75rem !important;
+            background: rgba(var(--primary-color-rgb), 0.08);
+            font-size: 1.02rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            line-height: 1.1;
+            text-transform: uppercase;
+            color: rgba(var(--primary-color-rgb), 0.95);
+            border-color: rgba(var(--primary-color-rgb), 0.55);
+            box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb), 0.08) inset;
+        }
+        .construct-mode .panel-section-toggle {
+            background: rgba(var(--construct-accent-rgb), 0.08);
+            color: var(--primary-color-dark);
+            border-color: rgba(var(--construct-accent-rgb), 0.48);
+            box-shadow: 0 0 0 1px rgba(var(--construct-accent-rgb), 0.1) inset;
+        }
+        .panel-section-chevron {
+            transition: transform 0.2s ease-in-out;
+        }
+        .panel-section-toggle[aria-expanded="false"] .panel-section-chevron {
+            transform: rotate(-90deg);
+        }
+        .panel-section[data-section="roster"] {
+            margin-top: 0.15rem;
+        }
+        .panel-section-content {
+            overflow: hidden;
+        }
+        .panel-section-content.hidden {
+            display: none !important;
+        }
+        .settings-subgroup {
+            margin-top: 1rem;
+            padding-top: 0.85rem;
+            border-top: 1px solid rgba(var(--primary-color-rgb), 0.2);
+        }
+        .construct-mode .settings-subgroup {
+            border-top-color: rgba(var(--construct-accent-rgb), 0.18);
         }
 
         /* List styling inside panel */
@@ -678,7 +721,7 @@
         .construct-mode #managementPanel .name-item.drag-over { border-top-color: var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.2); }
 
         /* Text & Titles inside panel */
-        #managementPanel h3 { font-size: 1.125rem; font-weight: 600; margin-bottom: 0.75rem; margin-top: 0.5rem; }
+        #managementPanel h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; margin-top: 0; letter-spacing: 0.04em; text-transform: uppercase; }
         #managementPanel p#footerText {
             font-size: 0.75rem; color: rgba(var(--primary-color-rgb), 0.6); text-align: center;
             margin-top: 1rem; /* Add space above footer */
@@ -890,11 +933,10 @@
             #menuToggleBtn { font-size: 1.5rem; padding: 0.2rem 0.5rem; }
             #undoBtn { font-size: 0.8rem; max-width: calc(100vw - 5.5rem); padding: 0.35rem 0.5rem; }
             #managementPanel { padding: 1rem; } /* Reduce padding on mobile */
-            /* Stack action buttons row on mobile */
             #managementPanel .action-button-row {
                 grid-template-columns: 1fr;
                 gap: 0.5rem;
-                padding-top: 3rem; /* Adjust mobile padding */
+                padding-top: 3rem;
             }
 
             #progressBarContainer { padding: 0.25rem 0.5rem; }
@@ -998,109 +1040,139 @@
 
     <aside id="managementPanel" aria-labelledby="managementPanelHeader">
         <h2 id="managementPanelHeader" class="sr-only">Management Panel</h2>
-        <div class="action-button-row panel-section">
-            <button id="themeToggleBtn" class="font-medium">
-                [C] Construct Mode
+        <div class="action-button-row panel-section panel-section-static">
+            <button id="enterMatrixBtn" class="font-medium">
+                [M] Matrix
             </button>
             <button id="fullscreenBtn" class="font-medium">
-                [FS] Fullscreen
-            </button>
-            <button id="enterMatrixBtn" class="font-medium">
-                [M] Enter Matrix
+                [FS] Full
             </button>
             <button id="helpBtn" class="font-medium" aria-controls="helpModalOverlay">
                 [?] Help
             </button>
         </div>
 
-        <div class="panel-section">
-            <label for="titleInput">// Operative Schema:</label>
-            <input type="text" id="titleInput" placeholder="Define schema name..." class="outline-none">
-        </div>
-
-        <div class="panel-section">
-            <h3 class="// System Parameters:"></h3>
-            <div class="mb-3">
-                <label for="brightnessSlider" class="flex justify-between items-center">
-                    <span id="brightnessLabel">// Intensity:</span>
-                    <span id="brightnessValue" class="font-semibold text-sm">60%</span>
-                </label>
-                <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="60">
-            </div>
-            <div class="mb-3">
-                <label for="speedSlider" class="flex justify-between items-center">
-                    <span>// Velocity (FPS):</span>
-                    <span id="speedValue" class="font-semibold text-sm">10 FPS</span>
-                </label>
-                <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
-            </div>
-            <div class="mb-3">
-                <label for="fontSizeSlider" class="flex justify-between items-center">
-                    <span>// Size (px):</span>
-                    <span id="fontSizeValue" class="font-semibold text-sm">24px</span>
-                </label>
-                <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24">
-            </div>
-            <!-- Extraction Mode Button with LED -->
-            <div class="control-group">
-                <button id="extractionModeBtn" aria-pressed="false">[E] Engage Extraction</button>
-                <div id="extractionModeLed" class="led-indicator" aria-hidden="true"></div>
-            </div>
-            <div class="control-group">
-                <button id="crtModeBtn" aria-pressed="false">[T] Engage CRT</button>
-                <div id="crtModeLed" class="led-indicator" aria-hidden="true"></div>
-            </div>
-            <div id="crtSubSettings" class="hidden">
-                <div class="mb-3">
-                    <label for="crtFishbowlSlider" class="flex justify-between items-center">
-                        <span>// Fisheye:</span>
-                        <span id="crtFishbowlValue" class="font-semibold text-sm">25%</span>
-                    </label>
-                    <input type="range" id="crtFishbowlSlider" min="0" max="100" step="1" value="25">
-                </div>
-                <div class="mb-3">
-                    <label for="crtVignetteSlider" class="flex justify-between items-center">
-                        <span>// Vignette:</span>
-                        <span id="crtVignetteValue" class="font-semibold text-sm">40%</span>
-                    </label>
-                    <input type="range" id="crtVignetteSlider" min="0" max="100" step="1" value="40">
-                </div>
-                <div class="mb-3">
-                    <label for="crtLeadFringeSlider" class="flex justify-between items-center">
-                        <span>// Lead Fringe:</span>
-                        <span id="crtLeadFringeValue" class="font-semibold text-sm">5%</span>
-                    </label>
-                    <input type="range" id="crtLeadFringeSlider" min="0" max="100" step="1" value="5">
-                </div>
-            </div>
-        </div>
-
-        <div class="panel-section">
-            <h3 class="// Manage Operatives:"></h3>
-            <label for="newNameInput">// Register New Operative:</label>
-            <input type="text" id="newNameInput" placeholder="Enter name..." class="outline-none">
-            <!-- Value Input Wrapper -->
-            <div id="newValueWrapper">
-                <label for="newValueInput" class="text-xs">// Extraction Alias (Optional):</label>
-                <input type="text" id="newValueInput" placeholder="Alias to copy..." class="outline-none">
-            </div>
-            <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
-                <span class="text-xl leading-none" aria-hidden="true">[+]</span>
-                Add
+        <section class="panel-section" data-section="roster">
+            <button class="panel-section-toggle" type="button" aria-expanded="true" aria-controls="rosterSectionBody">
+                <span>Roster</span>
+                <span class="panel-section-chevron" aria-hidden="true">▾</span>
             </button>
-        </div>
+            <div id="rosterSectionBody" class="panel-section-content">
+                <label for="titleInput">// Operative Schema:</label>
+                <input type="text" id="titleInput" placeholder="Define schema name..." class="outline-none">
+                <label for="newNameInput">// Register New Operative:</label>
+                <input type="text" id="newNameInput" placeholder="Enter name..." class="outline-none">
+                <div id="newValueWrapper">
+                    <label for="newValueInput" class="text-xs">// Extraction Alias (Optional):</label>
+                    <input type="text" id="newValueInput" placeholder="Alias to copy..." class="outline-none">
+                </div>
+                <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
+                    <span class="text-xl leading-none" aria-hidden="true">[+]</span>
+                    Add
+                </button>
+                <div class="list-container">
+                    <h3 id="rosterHeader">// Operative Roster (Drag to Reorder):</h3>
+                    <ul id="nameList" aria-labelledby="rosterHeader">
+                        <li id="noAvailableMessage" class="hidden">Roster empty...</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
 
-        <div class="list-container panel-section"> <h3 id="rosterHeader" class="// Operative Roster (Drag to Reorder):"></h3>
-            <ul id="nameList" aria-labelledby="rosterHeader">
-                <li id="noAvailableMessage" class="hidden">Roster empty...</li>
-            </ul>
-        </div>
-
-        <div class="panel-section">
-            <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
-                [R] Reboot System
+        <section class="panel-section" data-section="appearance">
+            <button class="panel-section-toggle" type="button" aria-expanded="true" aria-controls="appearanceSectionBody">
+                <span>Appearance</span>
+                <span class="panel-section-chevron" aria-hidden="true">▾</span>
             </button>
-        </div>
+            <div id="appearanceSectionBody" class="panel-section-content">
+                <button id="themeToggleBtn" class="font-medium">
+                    [C] Construct Mode
+                </button>
+                <div class="mb-3">
+                    <label for="brightnessSlider" class="flex justify-between items-center">
+                        <span id="brightnessLabel">// Intensity:</span>
+                        <span id="brightnessValue" class="font-semibold text-sm">60%</span>
+                    </label>
+                    <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="60">
+                </div>
+                <div class="mb-3">
+                    <label for="speedSlider" class="flex justify-between items-center">
+                        <span>// Velocity (FPS):</span>
+                        <span id="speedValue" class="font-semibold text-sm">10 FPS</span>
+                    </label>
+                    <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
+                </div>
+                <div class="mb-3">
+                    <label for="fontSizeSlider" class="flex justify-between items-center">
+                        <span>// Size (px):</span>
+                        <span id="fontSizeValue" class="font-semibold text-sm">24px</span>
+                    </label>
+                    <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24">
+                </div>
+
+                <div class="settings-subgroup">
+                    <h3>Effects</h3>
+                    <div class="control-group">
+                        <button id="overdriveModeBtn" aria-pressed="true">[O] Overdrive Engaged</button>
+                        <div id="overdriveModeLed" class="led-indicator" aria-hidden="true"></div>
+                    </div>
+                    <div id="overdriveSubSettings">
+                        <div class="mb-3">
+                            <label for="overdriveStrengthSlider" class="flex justify-between items-center">
+                                <span>// Overdrive Strength:</span>
+                                <span id="overdriveStrengthValue" class="font-semibold text-sm">50%</span>
+                            </label>
+                            <input type="range" id="overdriveStrengthSlider" min="0" max="100" step="1" value="50">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <button id="crtModeBtn" aria-pressed="false">[T] Engage CRT</button>
+                        <div id="crtModeLed" class="led-indicator" aria-hidden="true"></div>
+                    </div>
+                    <div id="crtSubSettings" class="hidden">
+                        <div class="mb-3">
+                            <label for="crtFishbowlSlider" class="flex justify-between items-center">
+                                <span>// Fisheye:</span>
+                                <span id="crtFishbowlValue" class="font-semibold text-sm">25%</span>
+                            </label>
+                            <input type="range" id="crtFishbowlSlider" min="0" max="100" step="1" value="25">
+                        </div>
+                        <div class="mb-3">
+                            <label for="crtVignetteSlider" class="flex justify-between items-center">
+                                <span>// Vignette:</span>
+                                <span id="crtVignetteValue" class="font-semibold text-sm">40%</span>
+                            </label>
+                            <input type="range" id="crtVignetteSlider" min="0" max="100" step="1" value="40">
+                        </div>
+                        <div id="crtFringeSettings" class="hidden">
+                            <div class="mb-3">
+                                <label for="crtLeadFringeSlider" class="flex justify-between items-center">
+                                    <span>// Lead Fringe:</span>
+                                    <span id="crtLeadFringeValue" class="font-semibold text-sm">5%</span>
+                                </label>
+                                <input type="range" id="crtLeadFringeSlider" min="0" max="100" step="1" value="5">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <button id="extractionModeBtn" aria-pressed="false">[E] Engage Extraction</button>
+                        <div id="extractionModeLed" class="led-indicator" aria-hidden="true"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="panel-section" data-section="system">
+            <button class="panel-section-toggle" type="button" aria-expanded="true" aria-controls="systemSectionBody">
+                <span>System</span>
+                <span class="panel-section-chevron" aria-hidden="true">▾</span>
+            </button>
+            <div id="systemSectionBody" class="panel-section-content">
+                <button id="rebootBtn" class="font-medium flex items-center justify-center gap-1">
+                    [R] Reboot System
+                </button>
+            </div>
+        </section>
 
         <p id="footerText" aria-live="polite">// System state is saved to the URL automatically.</p>
     </aside>
@@ -1189,6 +1261,13 @@
                             <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, and vignette.</p>
                         </div>
                         <span><kbd>T</kbd></span>
+                    </li>
+                    <li>
+                        <div>
+                            <span>Toggle Matrix Overdrive</span>
+                            <p class="text-sm opacity-70 mt-1">Pushes leader and glitch-highlight glyphs toward a brighter green-white glow that scales back with brightness.</p>
+                        </div>
+                        <span><kbd>O</kbd></span>
                     </li>
                      <li>
                         <div>
@@ -1359,11 +1438,18 @@ void main() {
         const speedValue = document.getElementById('speedValue');
         const fontSizeSlider = document.getElementById('fontSizeSlider');
         const fontSizeValue = document.getElementById('fontSizeValue');
+        const panelSectionToggles = Array.from(document.querySelectorAll('.panel-section-toggle'));
         const extractionModeBtn = document.getElementById('extractionModeBtn');
         const extractionModeLed = document.getElementById('extractionModeLed');
         const crtModeBtn = document.getElementById('crtModeBtn');
         const crtModeLed = document.getElementById('crtModeLed');
+        const overdriveModeBtn = document.getElementById('overdriveModeBtn');
+        const overdriveModeLed = document.getElementById('overdriveModeLed');
+        const overdriveSubSettings = document.getElementById('overdriveSubSettings');
+        const overdriveStrengthSlider = document.getElementById('overdriveStrengthSlider');
+        const overdriveStrengthValue = document.getElementById('overdriveStrengthValue');
         const crtSubSettings = document.getElementById('crtSubSettings');
+        const crtFringeSettings = document.getElementById('crtFringeSettings');
         const crtFishbowlSlider = document.getElementById('crtFishbowlSlider');
         const crtFishbowlValue = document.getElementById('crtFishbowlValue');
         const crtVignetteSlider = document.getElementById('crtVignetteSlider');
@@ -1403,9 +1489,11 @@ void main() {
         let isInMatrixMode = false;
         let isExtractionMode = false;
         let isCrtMode = true;
+        let isOverdriveMode = true;
         let currentCrtFishbowlPercent = 25;
         let currentCrtVignettePercent = 40;
         let currentCrtLeadFringePercent = 5;
+        let currentOverdriveStrengthPercent = 50;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
@@ -1464,6 +1552,7 @@ void main() {
         const CRT_TOUCH_SCROLL_THRESHOLD_PX = 6;
         const CRT_HIT_SLOP_PX = 28;
         const URL_UPDATE_DEBOUNCE_MS = 150;
+        const OVERDRIVE_CURVE_EXPONENT = Math.log(0.2) / Math.log(0.5);
         const CRT_INTERACTIVE_SELECTOR = 'button, input, textarea, label, .command-item, #selectedNameDisplayWrapper';
 
         // --- Matrix Rain Setup ---
@@ -1833,20 +1922,110 @@ void main() {
             }
             return crtSourceCanvas;
         }
+        function clampUnit(value) {
+            return Math.max(0, Math.min(1, value));
+        }
+        function parseRgbTriplet(rgbString) {
+            return rgbString.split(',').map(part => Math.max(0, Math.min(255, parseInt(part.trim(), 10) || 0))).slice(0, 3);
+        }
+        function toRgbaString(rgb, alpha = 1) {
+            return `rgba(${rgb.map(value => Math.round(Math.max(0, Math.min(255, value)))).join(', ')}, ${clampUnit(alpha)})`;
+        }
+        function mixRgb(rgbA, rgbB, amount) {
+            const t = clampUnit(amount);
+            return rgbA.map((value, index) => value + ((rgbB[index] - value) * t));
+        }
+        function getOverdriveAmount() {
+            if (!isOverdriveMode || isConstructMode) { return 0; }
+            const normalizedStrength = clampUnit(currentOverdriveStrengthPercent / 100);
+            const strength = Math.pow(normalizedStrength, OVERDRIVE_CURVE_EXPONENT);
+            const brightnessFactor = currentBrightnessPercent / 100;
+            return clampUnit(strength * brightnessFactor);
+        }
         function refreshMatrixRenderStyles() {
             const computedStyle = getComputedStyle(bodyElement);
             const trailColorRgb = isConstructMode ? computedStyle.getPropertyValue('--construct-text-rgb').trim() : computedStyle.getPropertyValue('--matrix-green-rgb').trim();
+            const trailRgb = parseRgbTriplet(trailColorRgb);
+            const leadRgb = isConstructMode ? trailRgb : [255, 255, 255];
+            const flashRgb = isConstructMode ? trailRgb : [255, 255, 255];
+            const overdriveTargetRgb = [236, 255, 228];
             matrixRenderStyles = {
                 bgColor: isConstructMode ? `rgba(${computedStyle.getPropertyValue('--construct-bg-rgb').trim()}, 0.1)` : 'rgba(0, 0, 0, 0.1)',
                 trailColorRgb,
+                trailRgb,
                 leadColor: computedStyle.getPropertyValue('--lead-color').trim(),
+                leadRgb,
                 flashColor: computedStyle.getPropertyValue('--flash-color').trim(),
+                flashRgb,
+                overdriveTargetRgb,
                 font: `${currentFontSize}px ${computedStyle.fontFamily}`
             };
             trailFillStyleCache = Array.from({ length: MAX_TRAIL_LENGTH }, (_, index) => {
                 const opacity = Math.max(0, 1.0 - (index / MAX_TRAIL_LENGTH));
                 return `rgba(${trailColorRgb}, ${opacity})`;
             });
+        }
+        function resolveMatrixGlyphStyle(kind, trailIndex = 0) {
+            if (!matrixRenderStyles) {
+                refreshMatrixRenderStyles();
+            }
+
+            const overdriveAmount = getOverdriveAmount();
+            const isCrtProfile = isCrtMode && !isConstructMode;
+            const isLegacyFringeMode = isCrtProfile && !isOverdriveMode;
+            if (kind === 'trail') {
+                return {
+                    fillStyle: trailFillStyleCache[trailIndex] || `rgba(${matrixRenderStyles.trailColorRgb}, 0)`,
+                    shadowColor: 'transparent',
+                    shadowBlur: 0
+                };
+            }
+
+            if (isLegacyFringeMode) {
+                if (kind === 'glitch') {
+                    return { fillStyle: matrixRenderStyles.flashColor, shadowColor: 'transparent', shadowBlur: 0 };
+                }
+                return { fillStyle: matrixRenderStyles.leadColor, shadowColor: 'transparent', shadowBlur: 0 };
+            }
+
+            if (overdriveAmount <= 0) {
+                if (kind === 'glitch') {
+                    return { fillStyle: matrixRenderStyles.flashColor, shadowColor: 'transparent', shadowBlur: 0 };
+                }
+                return { fillStyle: matrixRenderStyles.leadColor, shadowColor: 'transparent', shadowBlur: 0 };
+            }
+
+            if (isCrtProfile) {
+                const crtBaseRgb = kind === 'glitch'
+                    ? mixRgb(matrixRenderStyles.trailRgb, [145, 255, 145], 0.32)
+                    : mixRgb(matrixRenderStyles.trailRgb, [128, 255, 128], 0.24);
+                const crtTargetRgb = mixRgb(matrixRenderStyles.trailRgb, [214, 255, 206], 0.46 + (overdriveAmount * 0.26));
+                const crtBlendAmount = Math.pow(overdriveAmount, 1.28);
+                const fillRgb = mixRgb(crtBaseRgb, crtTargetRgb, crtBlendAmount);
+                const glowRgb = mixRgb(matrixRenderStyles.trailRgb, [120, 255, 135], 0.3 + (overdriveAmount * 0.24));
+                const glowAlpha = 0.05 + (overdriveAmount * 0.18);
+                return {
+                    fillStyle: toRgbaString(fillRgb),
+                    shadowColor: toRgbaString(glowRgb, glowAlpha),
+                    shadowBlur: 2 + (overdriveAmount * 8)
+                };
+            }
+
+            const baseRgb = kind === 'glitch' ? matrixRenderStyles.flashRgb : matrixRenderStyles.leadRgb;
+            const overdrivenRgb = mixRgb(matrixRenderStyles.trailRgb, matrixRenderStyles.overdriveTargetRgb, 0.35 + (overdriveAmount * 0.65));
+            const fillRgb = mixRgb(baseRgb, overdrivenRgb, overdriveAmount);
+            const glowAlpha = 0.18 + (overdriveAmount * 0.5);
+            const glowRgb = mixRgb(matrixRenderStyles.trailRgb, [180, 255, 185], 0.5 + (overdriveAmount * 0.5));
+            return {
+                fillStyle: toRgbaString(fillRgb),
+                shadowColor: toRgbaString(glowRgb, glowAlpha),
+                shadowBlur: 4 + (overdriveAmount * 20)
+            };
+        }
+        function applyMatrixGlyphStyle(style) {
+            ctx.fillStyle = style.fillStyle;
+            ctx.shadowColor = style.shadowColor || 'transparent';
+            ctx.shadowBlur = style.shadowBlur || 0;
         }
         function renderCrtFrame() {
             if (!isCrtMode || !crtReady || !crtGl || !crtCompositeAvailable || !crtAttributeLocations) { return; }
@@ -1881,7 +2060,8 @@ void main() {
             crtGl.uniform1f(crtUniforms.time, performance.now() / 1000);
             crtGl.uniform1f(crtUniforms.intensity, isCrtMode ? 0.88 : 0.0);
             const leadFringeMax = (currentFontSize * COLUMN_SPACING_FACTOR) / Math.max(1, crtCanvas.width);
-            crtGl.uniform1f(crtUniforms.leadFringe, (currentCrtLeadFringePercent / 100) * leadFringeMax);
+            const activeLeadFringePercent = isCrtMode && !isOverdriveMode ? currentCrtLeadFringePercent : 0;
+            crtGl.uniform1f(crtUniforms.leadFringe, (activeLeadFringePercent / 100) * leadFringeMax);
             crtGl.uniform1f(crtUniforms.fishbowl, getCrtFishbowlAmount());
             crtGl.uniform1f(crtUniforms.vignette, getCrtVignetteAmount());
             crtGl.uniform1f(crtUniforms.constructMode, isConstructMode ? 1.0 : 0.0);
@@ -1916,10 +2096,12 @@ void main() {
                         }
                         let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
                         let isRecentlyUpdated = k === 0 && trailItem.updateTimestamp && (now - trailItem.updateTimestamp < UPDATED_CHAR_HIGHLIGHT_MS);
-                        if (isHighlighting) { ctx.fillStyle = matrixRenderStyles.flashColor; } else if (isRecentlyUpdated) {
-                            ctx.fillStyle = matrixRenderStyles.leadColor;
+                        if (isHighlighting) {
+                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('glitch', k));
+                        } else if (isRecentlyUpdated) {
+                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('leader', k));
                         } else {
-                            ctx.fillStyle = trailFillStyleCache[k] || `rgba(${matrixRenderStyles.trailColorRgb}, 0)`;
+                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('trail', k));
                             if (trailItem.flipTimestamp && !isHighlighting) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
                             if (trailItem.updateTimestamp) { trailItem.updateTimestamp = undefined; }
                         }
@@ -1927,10 +2109,15 @@ void main() {
                     }
                     if (trails[i][0]) {
                         const leaderXPos = i * effectiveColumnWidth; const leaderYPos = drop.y * currentFontSize;
-                        if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) { ctx.fillStyle = matrixRenderStyles.leadColor; ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos); }
+                        if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) {
+                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('leader'));
+                            ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos);
+                        }
                     }
                 }
             }
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
         }
         function startMatrixRain() {
             if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); } let lastFrameTime = 0;
@@ -1983,9 +2170,11 @@ void main() {
             if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
             if (isExtractionMode) { params.push('extract=true'); }
             if (!isCrtMode) { params.push('crt=false'); }
+            if (!isOverdriveMode) { params.push('overdrive=false'); }
+            if (currentOverdriveStrengthPercent !== 50) { params.push('overdriveStrength=' + currentOverdriveStrengthPercent); }
             if (currentCrtFishbowlPercent !== 25) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
             if (currentCrtVignettePercent !== 40) { params.push('crtVignette=' + currentCrtVignettePercent); }
-            if (currentCrtLeadFringePercent !== 5) { params.push('crtLeadFringe=' + currentCrtLeadFringePercent); }
+            if (!isOverdriveMode && currentCrtLeadFringePercent !== 5) { params.push('crtLeadFringe=' + currentCrtLeadFringePercent); }
             if (isConstructMode) { params.push('theme=construct'); }
 
             return window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
@@ -2023,9 +2212,11 @@ void main() {
             currentFontSize = 24;
             isExtractionMode = false;
             isCrtMode = true;
+            isOverdriveMode = true;
             currentCrtFishbowlPercent = 25;
             currentCrtVignettePercent = 40;
             currentCrtLeadFringePercent = 5;
+            currentOverdriveStrengthPercent = 50;
             isConstructMode = false;
             selectionHistory = [];
             pendingNextOperatives = [];
@@ -2072,6 +2263,21 @@ void main() {
             if (urlParams.has('crt')) {
                 isCrtMode = urlParams.get('crt') !== 'false';
             }
+            if (urlParams.has('overdrive')) {
+                isOverdriveMode = urlParams.get('overdrive') !== 'false';
+            }
+            if (urlParams.has('overdriveStrength')) {
+                const overdriveStrengthParam = parseFloat(urlParams.get('overdriveStrength'));
+                if (!isNaN(overdriveStrengthParam) && overdriveStrengthParam >= 0 && overdriveStrengthParam <= 100) {
+                    currentOverdriveStrengthPercent = Math.round(overdriveStrengthParam);
+                }
+            }
+            if (urlParams.has('crtLeadFringe')) {
+                const fringeParam = parseFloat(urlParams.get('crtLeadFringe'));
+                if (!isNaN(fringeParam) && fringeParam >= 0 && fringeParam <= 100) {
+                    currentCrtLeadFringePercent = Math.round(fringeParam);
+                }
+            }
             if (urlParams.has('crtFishbowl')) {
                 const fishbowlParam = parseInt(urlParams.get('crtFishbowl'), 10);
                 if (!isNaN(fishbowlParam) && fishbowlParam >= 0 && fishbowlParam <= 100) {
@@ -2084,12 +2290,8 @@ void main() {
                     currentCrtVignettePercent = vignetteParam;
                 }
             }
-            if (urlParams.has('crtLeadFringe')) {
-                const fringeParam = parseFloat(urlParams.get('crtLeadFringe'));
-                if (!isNaN(fringeParam) && fringeParam >= 0 && fringeParam <= 100) {
-                    currentCrtLeadFringePercent = Math.round(fringeParam);
-                }
-            }
+            updateOverdriveButton();
+            updateOverdriveStrengthDisplay(currentOverdriveStrengthPercent);
             updateCrtFishbowlDisplay(currentCrtFishbowlPercent);
             updateCrtVignetteDisplay(currentCrtVignettePercent);
             updateCrtLeadFringeDisplay(currentCrtLeadFringePercent);
@@ -2163,6 +2365,41 @@ void main() {
             extractionModeLed.classList.toggle('active', isPressed);
             markCrtSnapshotDirty();
         }
+        function updateOverdriveButton() {
+            const isPressed = isOverdriveMode;
+            overdriveModeBtn.setAttribute('aria-pressed', isPressed);
+            overdriveModeBtn.textContent = isPressed ? '[O] Overdrive Engaged' : '[O] Engage Overdrive';
+            overdriveModeBtn.classList.toggle('active', isPressed);
+            overdriveModeLed.classList.toggle('active', isPressed);
+            syncEffectSubSettingsVisibility();
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateOverdriveStrengthDisplay(percent) {
+            currentOverdriveStrengthPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (overdriveStrengthSlider) overdriveStrengthSlider.value = currentOverdriveStrengthPercent;
+            if (overdriveStrengthValue) overdriveStrengthValue.textContent = `${currentOverdriveStrengthPercent}%`;
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateCrtLeadFringeDisplay(percent) {
+            currentCrtLeadFringePercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (crtLeadFringeSlider) crtLeadFringeSlider.value = currentCrtLeadFringePercent;
+            if (crtLeadFringeValue) crtLeadFringeValue.textContent = `${currentCrtLeadFringePercent}%`;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function syncEffectSubSettingsVisibility() {
+            const isCrtVisible = isCrtMode;
+            const isFringeVisible = isCrtMode && !isOverdriveMode;
+            overdriveSubSettings.classList.toggle('hidden', !isOverdriveMode);
+            crtSubSettings.classList.toggle('hidden', !isCrtVisible);
+            if (crtFringeSettings) {
+                crtFringeSettings.classList.toggle('hidden', !isFringeVisible);
+            }
+        }
         function refreshCrtControlLayout() {
             updateCrtSafeArea();
             document.documentElement.getBoundingClientRect();
@@ -2186,7 +2423,7 @@ void main() {
             crtModeLed.classList.toggle('active', isPressed);
             bodyElement.classList.toggle('crt-mode', isPressed);
             bodyElement.classList.toggle('crt-unavailable', isPressed && (!crtReady || !crtCompositeAvailable));
-            crtSubSettings.classList.toggle('hidden', !isPressed);
+            syncEffectSubSettingsVisibility();
             refreshCrtControlLayout();
         }
         function updateCrtFishbowlDisplay(percent) {
@@ -2204,19 +2441,23 @@ void main() {
             markCrtSnapshotDirty();
             renderCrtFrame();
         }
-        function updateCrtLeadFringeDisplay(percent) {
-            currentCrtLeadFringePercent = Math.max(0, Math.min(100, Math.round(percent)));
-            if (crtLeadFringeSlider) crtLeadFringeSlider.value = currentCrtLeadFringePercent;
-            if (crtLeadFringeValue) crtLeadFringeValue.textContent = `${currentCrtLeadFringePercent}%`;
-            markCrtSnapshotDirty();
-            renderCrtFrame();
-        }
         function updateExtractionUIVisibility() {
             newValueWrapper.classList.toggle('hidden', !isExtractionMode);
             // PERFORMANCE: Instead of re-rendering, just toggle visibility on existing items
             document.querySelectorAll('#nameList .value-row').forEach(row => {
                 row.classList.toggle('hidden', !isExtractionMode);
             });
+        }
+        function togglePanelSection(button, forceExpanded) {
+            const contentId = button.getAttribute('aria-controls');
+            const content = contentId ? document.getElementById(contentId) : null;
+            if (!content) { return; }
+            const isExpanded = button.getAttribute('aria-expanded') === 'true';
+            const nextExpanded = typeof forceExpanded === 'boolean' ? forceExpanded : !isExpanded;
+            button.setAttribute('aria-expanded', String(nextExpanded));
+            content.classList.toggle('hidden', !nextExpanded);
+            markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(200);
         }
 
         // --- Theme Toggle ---
@@ -2589,7 +2830,7 @@ void main() {
                 }
                 document.documentElement.requestFullscreen()
                     .then(() => {
-                        fullscreenBtn.textContent = '[FS] Exit Full';
+                        fullscreenBtn.textContent = '[FS] Exit';
                     })
                     .catch(err => {
                         console.error(`FS Error: ${err.message}`);
@@ -2599,7 +2840,7 @@ void main() {
                 if (document.exitFullscreen) {
                     document.exitFullscreen()
                         .then(() => {
-                            fullscreenBtn.textContent = '[FS] Fullscreen';
+                            fullscreenBtn.textContent = '[FS] Full';
                         })
                         .catch(err => {
                             console.error(`Exit FS Error: ${err.message}`);
@@ -2614,14 +2855,14 @@ void main() {
             if (managementPanel.classList.contains('visible')) { toggleManagementPanel(); }
             if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => { console.warn(`FS request failed: ${err.message}`); }); }
             bodyElement.classList.add('matrix-mode-active');
-            enterMatrixBtn.textContent = '[M] Exit Matrix'; renderProgressBar();
+            enterMatrixBtn.textContent = '[M] Exit'; renderProgressBar();
             markCrtSnapshotDirty();
         }
         function exitMatrixMode() {
             if (!isInMatrixMode) return; isInMatrixMode = false; console.log("// Exiting Matrix Mode");
             if (document.fullscreenElement && document.exitFullscreen) { document.exitFullscreen().catch(err => { console.warn(`Exit FS Error: ${err.message}`); }); }
             bodyElement.classList.remove('matrix-mode-active');
-            enterMatrixBtn.textContent = '[M] Enter Matrix'; renderProgressBar();
+            enterMatrixBtn.textContent = '[M] Matrix'; renderProgressBar();
             menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active');
             menuToggleBtn.setAttribute('aria-expanded', 'false');
             markCrtSnapshotDirty();
@@ -2629,7 +2870,7 @@ void main() {
 
         function handleFullscreenChange() {
             const isFullscreen = !!document.fullscreenElement; if (!isFullscreen && isInMatrixMode) { console.log("// FS exited externally, exiting Matrix Mode."); exitMatrixMode(); }
-            if (fullscreenBtn) { fullscreenBtn.textContent = isFullscreen ? '[FS] Exit Full' : '[FS] Fullscreen'; }
+            if (fullscreenBtn) { fullscreenBtn.textContent = isFullscreen ? '[FS] Exit' : '[FS] Full'; }
         }
         
         // --- Command Palette and Help Modal Logic ---
@@ -2638,6 +2879,7 @@ void main() {
             { name: "Toggle Construct Mode", action: () => themeToggleBtn.click(), shortcut: 'C' },
             { name: "Toggle Extraction Mode", action: () => extractionModeBtn.click(), shortcut: 'E' },
             { name: "Toggle CRT Mode", action: () => crtModeBtn.click(), shortcut: 'T' },
+            { name: "Toggle Matrix Overdrive", action: () => overdriveModeBtn.click(), shortcut: 'O' },
             { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
             { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
             { name: "Previous Operative", action: undoLastPick, shortcut: 'U' },
@@ -3209,6 +3451,9 @@ void main() {
         }
 
         // --- Event Listeners ---
+        panelSectionToggles.forEach(toggle => {
+            toggle.addEventListener('click', () => togglePanelSection(toggle));
+        });
         menuToggleBtn.addEventListener('click', toggleManagementPanel);
         selectedNameDisplayWrapper.addEventListener('click', pickRandomName);
         clickTriggerArea.addEventListener('click', handleScreenClick);
@@ -3252,6 +3497,10 @@ void main() {
             updateCrtLeadFringeDisplay(parseFloat(event.target.value));
             scheduleURLUpdate();
         });
+        overdriveStrengthSlider.addEventListener('input', (event) => {
+            updateOverdriveStrengthDisplay(parseFloat(event.target.value));
+            scheduleURLUpdate();
+        });
         titleInput.addEventListener('input', (event) => {
             updateSchemaTitle(event.target.value);
             markCrtSnapshotDirty();
@@ -3263,6 +3512,7 @@ void main() {
         crtFishbowlSlider.addEventListener('change', updateURL);
         crtVignetteSlider.addEventListener('change', updateURL);
         crtLeadFringeSlider.addEventListener('change', updateURL);
+        overdriveStrengthSlider.addEventListener('change', updateURL);
         titleInput.addEventListener('change', updateURL);
         
         // Action Button Listeners
@@ -3287,6 +3537,12 @@ void main() {
             isCrtMode = !isCrtMode;
             updateCrtMode();
             showTemporaryMessage(`// CRT Mode ${isCrtMode ? 'Engaged' : 'Disengaged'}.`);
+            updateURL();
+        });
+        overdriveModeBtn.addEventListener('click', () => {
+            isOverdriveMode = !isOverdriveMode;
+            updateOverdriveButton();
+            showTemporaryMessage(`// Overdrive ${isOverdriveMode ? 'Engaged' : 'Disengaged'}.`);
             updateURL();
         });
 
@@ -3375,6 +3631,7 @@ void main() {
                      case 'c': themeToggleBtn.click(); break;
                      case 'e': extractionModeBtn.click(); break;
                      case 't': crtModeBtn.click(); break;
+                     case 'o': overdriveModeBtn.click(); break;
                      case 'f': toggleFullScreen(); break;
                      case 'm': enterMatrixBtn.click(); break;
                      case 'u': undoLastPick(); break;
