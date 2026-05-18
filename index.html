@@ -249,8 +249,8 @@
         #mainDisplayContainer.has-schema-title {
             gap: 0;
             align-items: stretch;
+            width: min(40rem, 90vw);
             min-width: min(34rem, 90vw);
-            min-height: clamp(13rem, 26vh, 18rem);
             padding: 0;
             overflow: hidden;
         }
@@ -272,7 +272,10 @@
             text-align: center;
             width: 100%;
             line-height: 1.15;
-            word-break: break-word;
+            overflow-wrap: normal;
+            text-wrap: balance;
+            white-space: normal;
+            word-break: normal;
         }
         #mainDisplayContainer:not(.has-schema-title) #schemaTitleDisplay {
             display: none;
@@ -297,7 +300,7 @@
         }
         #mainDisplayContainer.has-schema-title #selectedNameDisplayWrapper {
             box-sizing: border-box;
-            flex: 1;
+            flex: 0 0 auto;
             padding: 0.8rem 1.75rem;
         }
         #selectedNameDisplay {
@@ -307,9 +310,12 @@
             font-size: 3rem;
             font-weight: 700;
             line-height: 1;
-            word-break: break-word;
             max-width: 100%;
             min-height: 1em;
+            overflow-wrap: normal;
+            text-wrap: balance;
+            white-space: normal;
+            word-break: normal;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -639,7 +645,15 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            min-width: 0;
             width: 100%;
+        }
+        #managementPanel .name-item .name-span {
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         #managementPanel .name-item .value-row {
             margin-top: 0.5rem;
@@ -859,7 +873,18 @@
         /* Responsive adjustments */
         @media (max-width: 768px) {
             :root { --menu-btn-top: 1rem; --menu-btn-right: 1rem; }
-            #mainDisplayContainer.has-schema-title { min-height: clamp(10rem, 22vh, 12rem); }
+            #mainDisplayContainer:not(.has-schema-title) { width: min(90vw, 40rem); }
+            #mainDisplayContainer.has-schema-title {
+                width: 90vw;
+            }
+            #mainDisplayContainer.has-schema-title #schemaTitleDisplay {
+                font-size: clamp(1.85rem, 8.2vw, 2.6rem);
+                padding: 0.6rem 0.8rem 0.5rem;
+            }
+            #mainDisplayContainer.has-schema-title #selectedNameDisplayWrapper {
+                flex: 0 0 auto;
+                padding: 0.75rem 1rem 0.85rem;
+            }
             #selectedNameDisplay { font-size: 2.25rem; }
             #selectedNameDisplay.quote { font-size: 1.25rem; }
             #menuToggleBtn { font-size: 1.5rem; padding: 0.2rem 0.5rem; }
