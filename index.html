@@ -218,16 +218,16 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 6; /* Above click area */
-            width: fit-content;
-            min-width: min(18rem, 90vw);
+            width: min(40rem, 90vw);
+            min-width: min(34rem, 90vw);
             max-width: min(800px, 90vw);
             display: flex;
             flex-direction: column;
-            align-items: center;
+            align-items: stretch;
             justify-content: center;
             gap: 0;
             box-sizing: border-box;
-            padding: 1.35rem 1.75rem;
+            padding: 0;
             border: 2px solid rgba(var(--primary-color-rgb), 0.86);
             border-radius: 0.25rem;
             background:
@@ -237,6 +237,7 @@
                 0 0 0 1px rgba(var(--primary-color-rgb), 0.18) inset,
                 0 0 22px rgba(var(--primary-color-rgb), 0.22);
             pointer-events: none; /* Allow clicks to pass through container */
+            overflow: hidden;
             transition: opacity 0.3s ease-out, border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
         .construct-mode #mainDisplayContainer {
@@ -248,11 +249,7 @@
         }
         #mainDisplayContainer.has-schema-title {
             gap: 0;
-            align-items: stretch;
             width: min(40rem, 90vw);
-            min-width: min(34rem, 90vw);
-            padding: 0;
-            overflow: hidden;
         }
         /* Schema Title Display Area */
         #schemaTitleDisplay {
@@ -297,10 +294,11 @@
             text-align: center;
             cursor: pointer;
             pointer-events: auto; /* Enable pointer events for this specific wrapper */
-        }
-        #mainDisplayContainer.has-schema-title #selectedNameDisplayWrapper {
             box-sizing: border-box;
             flex: 0 0 auto;
+            padding: 0.8rem 1.75rem;
+        }
+        #mainDisplayContainer.has-schema-title #selectedNameDisplayWrapper {
             padding: 0.8rem 1.75rem;
         }
         #selectedNameDisplay {
@@ -615,17 +613,21 @@
         #managementPanel input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary-color); margin-top: 0.25rem; margin-bottom: 0.25rem; }
         /* Panel Sections for better structure and scrolling */
         .panel-section {
-            margin-bottom: 0.8rem;
-            border-top: 1px solid var(--primary-color-dark);
+            margin-bottom: 0.95rem;
             flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.28rem;
         }
-        .construct-mode .panel-section { border-top-color: var(--construct-bg-darker); }
+        .panel-section.is-collapsed {
+            gap: 0;
+        }
         .panel-section:last-of-type {
             margin-bottom: 0;
         }
         .panel-section-toggle {
             width: 100%;
-            margin-bottom: 0.55rem !important;
+            margin-bottom: 0 !important;
             justify-content: space-between !important;
             padding: 0.6rem 0.75rem !important;
             background: rgba(var(--primary-color-rgb), 0.08);
@@ -655,9 +657,41 @@
         }
         .panel-section-content {
             overflow: hidden;
+            border: 1px solid rgba(var(--primary-color-rgb), 0.42);
+            border-radius: 0.3rem;
+            padding: 0.85rem 0.85rem 0.7rem;
+            background:
+                linear-gradient(180deg, rgba(var(--primary-color-rgb), 0.08), rgba(var(--primary-color-rgb), 0.025)),
+                rgba(0, 0, 0, 0.22);
+            box-shadow:
+                0 0 0 1px rgba(var(--primary-color-rgb), 0.08) inset,
+                0 0 10px rgba(var(--primary-color-rgb), 0.12);
+            min-height: 1.15rem;
+            transition: padding 0.2s ease, min-height 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
         }
-        .panel-section-content.hidden {
-            display: none !important;
+        .construct-mode .panel-section-content {
+            border-color: rgba(var(--construct-accent-rgb), 0.36);
+            background:
+                linear-gradient(180deg, rgba(var(--construct-accent-rgb), 0.05), rgba(var(--construct-bg-rgb), 0.7)),
+                rgba(var(--construct-bg-rgb), 0.78);
+            box-shadow: 0 0 0 1px rgba(var(--construct-accent-rgb), 0.08) inset;
+        }
+        .panel-section-content.is-collapsed {
+            min-height: 0;
+            max-height: 0;
+            padding: 0;
+            border-width: 0;
+            opacity: 0;
+            box-shadow: none;
+            background: transparent;
+        }
+        .construct-mode .panel-section-content.is-collapsed {
+            box-shadow: none;
+        }
+        .panel-section-content.is-collapsed > * {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
         }
         .settings-subgroup {
             margin-top: 1rem;
@@ -916,16 +950,15 @@
         /* Responsive adjustments */
         @media (max-width: 768px) {
             :root { --menu-btn-top: 1rem; --menu-btn-right: 1rem; }
-            #mainDisplayContainer:not(.has-schema-title) { width: min(90vw, 40rem); }
-            #mainDisplayContainer.has-schema-title {
+            #mainDisplayContainer {
                 width: 90vw;
+                min-width: 0;
             }
             #mainDisplayContainer.has-schema-title #schemaTitleDisplay {
                 font-size: clamp(1.85rem, 8.2vw, 2.6rem);
                 padding: 0.6rem 0.8rem 0.5rem;
             }
-            #mainDisplayContainer.has-schema-title #selectedNameDisplayWrapper {
-                flex: 0 0 auto;
+            #selectedNameDisplayWrapper {
                 padding: 0.75rem 1rem 0.85rem;
             }
             #selectedNameDisplay { font-size: 2.25rem; }
@@ -1091,9 +1124,9 @@
                 <div class="mb-3">
                     <label for="brightnessSlider" class="flex justify-between items-center">
                         <span id="brightnessLabel">// Intensity:</span>
-                        <span id="brightnessValue" class="font-semibold text-sm">60%</span>
+                        <span id="brightnessValue" class="font-semibold text-sm">100%</span>
                     </label>
-                    <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="60">
+                    <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="100">
                 </div>
                 <div class="mb-3">
                     <label for="speedSlider" class="flex justify-between items-center">
@@ -1377,7 +1410,10 @@ void main() {
   float noise = (random(gl_FragCoord.xy) - 0.5) * 0.035 * crtIntensity;
 
   vec3 terminalTint = vec3(0.25, 1.15, 1.35);
-  vec3 matrixTrailColor = baseColor.rgb * terminalTint * (1.4 + 1.2 * u_intensity);
+  float sourceWhiteness = min(rawColor.r, min(rawColor.g, rawColor.b));
+  float neutralTintMix = smoothstep(0.18, 0.82, sourceWhiteness);
+  vec3 effectiveTerminalTint = mix(terminalTint, vec3(1.0), neutralTintMix);
+  vec3 matrixTrailColor = baseColor.rgb * effectiveTerminalTint * (1.4 + 1.2 * u_intensity);
   vec3 constructTrailColor = mix(baseColor.rgb, vec3(luminance), 0.12) * (0.98 + 0.08 * crtIntensity);
   vec3 trailColor = mix(matrixTrailColor, constructTrailColor, u_constructMode);
   vec3 constructLeadColor = vec3(0.015, 0.015, 0.015);
@@ -1388,7 +1424,8 @@ void main() {
   float centeredGreenMask = matrixLeadMask * (1.0 - u_constructMode);
   float redFringeMask = redLeadMask * (1.0 - u_constructMode);
   float blueFringeMask = blueLeadMask * (1.0 - u_constructMode);
-  float fringeMask = clamp(redFringeMask + centeredGreenMask + blueFringeMask, 0.0, 1.0);
+  float fringeEnabled = step(0.00001, leadFringe);
+  float fringeMask = clamp((redFringeMask + centeredGreenMask + blueFringeMask) * fringeEnabled, 0.0, 1.0);
   float leadStrength = 1.6 + 1.4 * u_intensity;
   vec3 rgbLeadColor = clamp(vec3(redFringeMask, centeredGreenMask, blueFringeMask) * leadStrength, 0.0, 1.0);
   color = mix(color, rgbLeadColor, fringeMask);
@@ -1481,7 +1518,7 @@ void main() {
         let isPicking = false;
         let typeIntervalId = null;
         let draggedItemName = null;
-        let currentBrightnessPercent = 60;
+        let currentBrightnessPercent = 100;
         let currentRainFPS = 10;
         let currentFontSize = 24;
         let rainAnimationId = null;
@@ -1942,13 +1979,27 @@ void main() {
             const brightnessFactor = currentBrightnessPercent / 100;
             return clampUnit(strength * brightnessFactor);
         }
+        function getOverdriveFillAmount(overdriveAmount) {
+            if (overdriveAmount <= 0) { return 0; }
+            if (overdriveAmount <= 0.2) {
+                return clampUnit(0.367 * Math.pow(overdriveAmount / 0.2, 1.35));
+            }
+            if (overdriveAmount < 1) {
+                return clampUnit(0.367 + ((1 - 0.367) * Math.pow((overdriveAmount - 0.2) / 0.8, 0.9)));
+            }
+            return 1;
+        }
+        function getOverdriveOverlayRgb(amount) {
+            const t = clampUnit(amount);
+            const overlayChannel = 255 * t;
+            return [overlayChannel, 255, overlayChannel];
+        }
         function refreshMatrixRenderStyles() {
             const computedStyle = getComputedStyle(bodyElement);
             const trailColorRgb = isConstructMode ? computedStyle.getPropertyValue('--construct-text-rgb').trim() : computedStyle.getPropertyValue('--matrix-green-rgb').trim();
             const trailRgb = parseRgbTriplet(trailColorRgb);
             const leadRgb = isConstructMode ? trailRgb : [255, 255, 255];
             const flashRgb = isConstructMode ? trailRgb : [255, 255, 255];
-            const overdriveTargetRgb = [236, 255, 228];
             matrixRenderStyles = {
                 bgColor: isConstructMode ? `rgba(${computedStyle.getPropertyValue('--construct-bg-rgb').trim()}, 0.1)` : 'rgba(0, 0, 0, 0.1)',
                 trailColorRgb,
@@ -1957,7 +2008,6 @@ void main() {
                 leadRgb,
                 flashColor: computedStyle.getPropertyValue('--flash-color').trim(),
                 flashRgb,
-                overdriveTargetRgb,
                 font: `${currentFontSize}px ${computedStyle.fontFamily}`
             };
             trailFillStyleCache = Array.from({ length: MAX_TRAIL_LENGTH }, (_, index) => {
@@ -1971,6 +2021,7 @@ void main() {
             }
 
             const overdriveAmount = getOverdriveAmount();
+            const overdriveFillAmount = getOverdriveFillAmount(overdriveAmount);
             const isCrtProfile = isCrtMode && !isConstructMode;
             const isLegacyFringeMode = isCrtProfile && !isOverdriveMode;
             if (kind === 'trail') {
@@ -1988,6 +2039,14 @@ void main() {
                 return { fillStyle: matrixRenderStyles.leadColor, shadowColor: 'transparent', shadowBlur: 0 };
             }
 
+            if (isOverdriveMode && !isConstructMode && overdriveAmount <= 0) {
+                return {
+                    fillStyle: toRgbaString(getOverdriveOverlayRgb(0)),
+                    shadowColor: 'transparent',
+                    shadowBlur: 0
+                };
+            }
+
             if (overdriveAmount <= 0) {
                 if (kind === 'glitch') {
                     return { fillStyle: matrixRenderStyles.flashColor, shadowColor: 'transparent', shadowBlur: 0 };
@@ -1996,12 +2055,7 @@ void main() {
             }
 
             if (isCrtProfile) {
-                const crtBaseRgb = kind === 'glitch'
-                    ? mixRgb(matrixRenderStyles.trailRgb, [145, 255, 145], 0.32)
-                    : mixRgb(matrixRenderStyles.trailRgb, [128, 255, 128], 0.24);
-                const crtTargetRgb = mixRgb(matrixRenderStyles.trailRgb, [214, 255, 206], 0.46 + (overdriveAmount * 0.26));
-                const crtBlendAmount = Math.pow(overdriveAmount, 1.28);
-                const fillRgb = mixRgb(crtBaseRgb, crtTargetRgb, crtBlendAmount);
+                const fillRgb = getOverdriveOverlayRgb(Math.pow(overdriveFillAmount, 1.18));
                 const glowRgb = mixRgb(matrixRenderStyles.trailRgb, [120, 255, 135], 0.3 + (overdriveAmount * 0.24));
                 const glowAlpha = 0.05 + (overdriveAmount * 0.18);
                 return {
@@ -2011,9 +2065,7 @@ void main() {
                 };
             }
 
-            const baseRgb = kind === 'glitch' ? matrixRenderStyles.flashRgb : matrixRenderStyles.leadRgb;
-            const overdrivenRgb = mixRgb(matrixRenderStyles.trailRgb, matrixRenderStyles.overdriveTargetRgb, 0.35 + (overdriveAmount * 0.65));
-            const fillRgb = mixRgb(baseRgb, overdrivenRgb, overdriveAmount);
+            const fillRgb = getOverdriveOverlayRgb(overdriveFillAmount);
             const glowAlpha = 0.18 + (overdriveAmount * 0.5);
             const glowRgb = mixRgb(matrixRenderStyles.trailRgb, [180, 255, 185], 0.5 + (overdriveAmount * 0.5));
             return {
@@ -2165,7 +2217,7 @@ void main() {
             let params = [];
             if (encodedNames) { params.push('names=' + encodedNames); }
             if (encodedTitle) { params.push('title=' + encodedTitle); }
-            if (currentBrightnessPercent !== 60) { params.push('brightness=' + currentBrightnessPercent); }
+            if (currentBrightnessPercent !== 100) { params.push('brightness=' + currentBrightnessPercent); }
             if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
             if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
             if (isExtractionMode) { params.push('extract=true'); }
@@ -2207,7 +2259,7 @@ void main() {
             let pageTitle = DEFAULT_TITLE;
             let schemaTitle = '';
             // Reset settings to default before loading from URL
-            currentBrightnessPercent = 60;
+            currentBrightnessPercent = 100;
             currentRainFPS = 10;
             currentFontSize = 24;
             isExtractionMode = false;
@@ -2455,7 +2507,9 @@ void main() {
             const isExpanded = button.getAttribute('aria-expanded') === 'true';
             const nextExpanded = typeof forceExpanded === 'boolean' ? forceExpanded : !isExpanded;
             button.setAttribute('aria-expanded', String(nextExpanded));
-            content.classList.toggle('hidden', !nextExpanded);
+            content.parentElement?.classList.toggle('is-collapsed', !nextExpanded);
+            content.classList.toggle('is-collapsed', !nextExpanded);
+            content.inert = !nextExpanded;
             markCrtSnapshotDirty();
             markCrtSnapshotDirtyDuringTransition(200);
         }
