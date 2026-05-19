@@ -1142,6 +1142,34 @@
                     </label>
                     <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24">
                 </div>
+                <div class="mb-3">
+                    <label for="tailLengthSlider" class="flex justify-between items-center">
+                        <span>// Tail Length (Auto):</span>
+                        <span id="tailLengthValue" class="font-semibold text-sm">25</span>
+                    </label>
+                    <input type="range" id="tailLengthSlider" min="20" max="20" step="1" value="25" disabled>
+                </div>
+                <div class="mb-3">
+                    <label for="tailCurveSlider" class="flex justify-between items-center">
+                        <span>// Tail Dimming Curve:</span>
+                        <span id="tailCurveValue" class="font-semibold text-sm">10%</span>
+                    </label>
+                    <input type="range" id="tailCurveSlider" min="0" max="100" step="1" value="10">
+                </div>
+                <div class="mb-3">
+                    <label for="tailFloorSlider" class="flex justify-between items-center">
+                        <span>// Tail Visibility Floor:</span>
+                        <span id="tailFloorValue" class="font-semibold text-sm">1%</span>
+                    </label>
+                    <input type="range" id="tailFloorSlider" min="0" max="30" step="1" value="1">
+                </div>
+                <div class="mb-3">
+                    <label for="glitchFrequencySlider" class="flex justify-between items-center">
+                        <span>// Glitch Frequency:</span>
+                        <span id="glitchFrequencyValue" class="font-semibold text-sm">50%</span>
+                    </label>
+                    <input type="range" id="glitchFrequencySlider" min="0" max="100" step="1" value="50">
+                </div>
 
                 <div class="settings-subgroup">
                     <h3>Effects</h3>
@@ -1156,6 +1184,10 @@
                                 <span id="overdriveStrengthValue" class="font-semibold text-sm">100%</span>
                             </label>
                             <input type="range" id="overdriveStrengthSlider" min="0" max="100" step="1" value="100">
+                        </div>
+                        <div class="control-group">
+                            <button id="glitchOverdriveBtn" aria-pressed="true">Glitch Overdrive Enabled</button>
+                            <div id="glitchOverdriveLed" class="led-indicator" aria-hidden="true"></div>
                         </div>
                     </div>
                     <div class="control-group">
@@ -1475,6 +1507,14 @@ void main() {
         const speedValue = document.getElementById('speedValue');
         const fontSizeSlider = document.getElementById('fontSizeSlider');
         const fontSizeValue = document.getElementById('fontSizeValue');
+        const tailLengthSlider = document.getElementById('tailLengthSlider');
+        const tailLengthValue = document.getElementById('tailLengthValue');
+        const tailCurveSlider = document.getElementById('tailCurveSlider');
+        const tailCurveValue = document.getElementById('tailCurveValue');
+        const tailFloorSlider = document.getElementById('tailFloorSlider');
+        const tailFloorValue = document.getElementById('tailFloorValue');
+        const glitchFrequencySlider = document.getElementById('glitchFrequencySlider');
+        const glitchFrequencyValue = document.getElementById('glitchFrequencyValue');
         const panelSectionToggles = Array.from(document.querySelectorAll('.panel-section-toggle'));
         const extractionModeBtn = document.getElementById('extractionModeBtn');
         const extractionModeLed = document.getElementById('extractionModeLed');
@@ -1485,6 +1525,8 @@ void main() {
         const overdriveSubSettings = document.getElementById('overdriveSubSettings');
         const overdriveStrengthSlider = document.getElementById('overdriveStrengthSlider');
         const overdriveStrengthValue = document.getElementById('overdriveStrengthValue');
+        const glitchOverdriveBtn = document.getElementById('glitchOverdriveBtn');
+        const glitchOverdriveLed = document.getElementById('glitchOverdriveLed');
         const crtSubSettings = document.getElementById('crtSubSettings');
         const crtFringeSettings = document.getElementById('crtFringeSettings');
         const crtFishbowlSlider = document.getElementById('crtFishbowlSlider');
@@ -1521,12 +1563,17 @@ void main() {
         let currentBrightnessPercent = 100;
         let currentRainFPS = 10;
         let currentFontSize = 24;
+        let currentTailLength = 25;
+        let currentTailCurvePercent = 10;
+        let currentTailFloorPercent = 1;
+        let currentGlitchFrequencyPercent = 50;
         let rainAnimationId = null;
         let isAnimationPaused = false;
         let isInMatrixMode = false;
         let isExtractionMode = false;
         let isCrtMode = true;
         let isOverdriveMode = true;
+        let isGlitchOverdriveEnabled = true;
         let currentCrtFishbowlPercent = 25;
         let currentCrtVignettePercent = 40;
         let currentCrtLeadFringePercent = 5;
@@ -1550,6 +1597,7 @@ void main() {
         let crtPaintCtx = crtUiCtx || crtSourceCtx;
         let matrixRenderStyles = null;
         let trailFillStyleCache = [];
+        let trailOpacityCache = [];
         let urlUpdateTimerId = null;
         let resizeFrameId = null;
         let crtEventState = {
@@ -1573,10 +1621,11 @@ void main() {
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
         const COLUMN_SPACING_FACTOR = 1.0;
-        const FLIP_CHANCE = 0.0025;
+        const DEFAULT_GLITCH_FLIP_CHANCE = 0.0025;
         const FLIP_DURATION_MS = 500;
         const UPDATED_CHAR_HIGHLIGHT_MS = 500;
-        const MAX_TRAIL_LENGTH = 25;
+        const MIN_TRAIL_LENGTH = 20;
+        const MAX_TRAIL_LENGTH = 400;
         const TARGET_ANIMATION_FPS = 60;
         const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS;
         const MAX_FPS_PERCENT_OFFSET = 0.90;
@@ -1591,6 +1640,7 @@ void main() {
         const URL_UPDATE_DEBOUNCE_MS = 150;
         const OVERDRIVE_CURVE_EXPONENT = Math.log(0.2) / Math.log(0.5);
         const CRT_INTERACTIVE_SELECTOR = 'button, input, textarea, label, .command-item, #selectedNameDisplayWrapper';
+        const OVERDRIVE_MASK_ELEMENTS = [mainDisplayContainer, managementPanel, helpModal, commandPalette, menuToggleBtn, undoBtn];
 
         // --- Matrix Rain Setup ---
         let columns;
@@ -1607,6 +1657,7 @@ void main() {
             crtCanvas.width = window.innerWidth; crtCanvas.height = window.innerHeight;
             crtSourceCanvas.width = window.innerWidth; crtSourceCanvas.height = window.innerHeight;
             crtUiCanvas.width = window.innerWidth; crtUiCanvas.height = window.innerHeight;
+            updateTailLengthDisplay();
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
             drops = []; trails = [];
@@ -1979,6 +2030,34 @@ void main() {
             const brightnessFactor = currentBrightnessPercent / 100;
             return clampUnit(strength * brightnessFactor);
         }
+        function getViewportTailLength() {
+            const visibleRows = Math.floor(canvas.height / Math.max(1, currentFontSize));
+            return Math.max(MIN_TRAIL_LENGTH, Math.min(MAX_TRAIL_LENGTH, visibleRows));
+        }
+        function getActiveTrailLength() {
+            return getViewportTailLength();
+        }
+        function getTailCurveProfile() {
+            const normalizedCurve = clampUnit(currentTailCurvePercent / 100);
+            if (normalizedCurve <= 0.5) {
+                const t = normalizedCurve / 0.5;
+                return {
+                    reciprocalScale: 14.0 + ((5.0 - 14.0) * t),
+                    reciprocalPower: 2.2 + ((1.35 - 2.2) * t)
+                };
+            }
+            return {
+                reciprocalScale: 5.0 + ((1.4 - 5.0) * ((normalizedCurve - 0.5) / 0.5)),
+                reciprocalPower: 1.35 + ((0.78 - 1.35) * ((normalizedCurve - 0.5) / 0.5))
+            };
+        }
+        function getTailFloorAmount() {
+            return clampUnit(currentTailFloorPercent / 100);
+        }
+        function getGlitchFlipChance() {
+            const normalizedFrequency = clampUnit(currentGlitchFrequencyPercent / 100);
+            return DEFAULT_GLITCH_FLIP_CHANCE * Math.pow(normalizedFrequency / 0.5, 2.0);
+        }
         function getOverdriveFillAmount(overdriveAmount) {
             if (overdriveAmount <= 0) { return 0; }
             if (overdriveAmount <= 0.2) {
@@ -1993,6 +2072,58 @@ void main() {
             const t = clampUnit(amount);
             const overlayChannel = 255 * t;
             return [overlayChannel, 255, overlayChannel];
+        }
+        function getTrailOpacity(trailIndex) {
+            return trailOpacityCache[trailIndex] ?? 0;
+        }
+        function getOverlayMaskVisibility(element) {
+            if (!element) { return false; }
+            if (element === managementPanel) {
+                return managementPanel.classList.contains('visible');
+            }
+            if (element === helpModal) {
+                return helpModalOverlay.classList.contains('visible');
+            }
+            if (element === commandPalette) {
+                return commandPaletteOverlay.classList.contains('visible');
+            }
+            return true;
+        }
+        function getOverdriveMaskRects() {
+            return OVERDRIVE_MASK_ELEMENTS
+                .filter(element => getOverlayMaskVisibility(element) && isElementVisibleForCrt(element))
+                .map(element => element.getBoundingClientRect())
+                .filter(rect => rect.width > 0 && rect.height > 0);
+        }
+        function isOverdriveMaskedAtGlyph(x, y, width, height, maskRects) {
+            if (!maskRects || maskRects.length === 0) { return false; }
+            const glyphRect = {
+                left: x,
+                right: x + width,
+                top: y - currentFontSize,
+                bottom: y + Math.max(2, currentFontSize * 0.18)
+            };
+            return maskRects.some(rect =>
+                glyphRect.right > rect.left &&
+                glyphRect.left < rect.right &&
+                glyphRect.bottom > rect.top &&
+                glyphRect.top < rect.bottom
+            );
+        }
+        function getIntersectingOverdriveMaskRects(x, y, width, height, maskRects) {
+            if (!maskRects || maskRects.length === 0) { return []; }
+            const glyphRect = {
+                left: x,
+                right: x + width,
+                top: y - currentFontSize,
+                bottom: y + Math.max(2, currentFontSize * 0.18)
+            };
+            return maskRects.filter(rect =>
+                glyphRect.right > rect.left &&
+                glyphRect.left < rect.right &&
+                glyphRect.bottom > rect.top &&
+                glyphRect.top < rect.bottom
+            );
         }
         function refreshMatrixRenderStyles() {
             const computedStyle = getComputedStyle(bodyElement);
@@ -2010,20 +2141,32 @@ void main() {
                 flashRgb,
                 font: `${currentFontSize}px ${computedStyle.fontFamily}`
             };
-            trailFillStyleCache = Array.from({ length: MAX_TRAIL_LENGTH }, (_, index) => {
-                const opacity = Math.max(0, 1.0 - (index / MAX_TRAIL_LENGTH));
-                return `rgba(${trailColorRgb}, ${opacity})`;
+            const trailCurveProfile = getTailCurveProfile();
+            const activeTrailLength = getActiveTrailLength();
+            const tailFloorAmount = getTailFloorAmount();
+            trailOpacityCache = Array.from({ length: MAX_TRAIL_LENGTH }, (_, index) => {
+                if (index >= activeTrailLength) { return 0; }
+                if (index >= activeTrailLength - 1) { return 0; }
+                const normalizedIndex = index / Math.max(1, activeTrailLength - 1);
+                const shapedOpacity = 1 / Math.pow(1 + (trailCurveProfile.reciprocalScale * normalizedIndex), trailCurveProfile.reciprocalPower);
+                return clampUnit(tailFloorAmount + ((1 - tailFloorAmount) * shapedOpacity));
             });
+            trailFillStyleCache = trailOpacityCache.map(opacity => `rgba(${trailColorRgb}, ${opacity})`);
         }
-        function resolveMatrixGlyphStyle(kind, trailIndex = 0) {
+        function resolveMatrixGlyphStyle(kind, trailIndex = 0, options = {}) {
             if (!matrixRenderStyles) {
                 refreshMatrixRenderStyles();
             }
 
             const overdriveAmount = getOverdriveAmount();
             const overdriveFillAmount = getOverdriveFillAmount(overdriveAmount);
+            const baseTrailOpacity = trailIndex > 0 ? getTrailOpacity(trailIndex) : 1;
+            const isOverdriveAllowed = !options.disableOverdrive && !isConstructMode;
             const isCrtProfile = isCrtMode && !isConstructMode;
-            const isLegacyFringeMode = isCrtProfile && !isOverdriveMode;
+            const isLegacyFringeMode = isCrtProfile && !isOverdriveMode && !options.disableOverdrive;
+            const isGlitchOverdriveActive = kind === 'glitch' && isOverdriveMode && isOverdriveAllowed && isGlitchOverdriveEnabled;
+            const renderedOpacity = isGlitchOverdriveActive ? 1 : baseTrailOpacity;
+            const hasFullGreenIntensity = renderedOpacity >= 0.999;
             if (kind === 'trail') {
                 return {
                     fillStyle: trailFillStyleCache[trailIndex] || `rgba(${matrixRenderStyles.trailColorRgb}, 0)`,
@@ -2032,26 +2175,41 @@ void main() {
                 };
             }
 
-            if (isLegacyFringeMode) {
-                if (kind === 'glitch') {
-                    return { fillStyle: matrixRenderStyles.flashColor, shadowColor: 'transparent', shadowBlur: 0 };
-                }
-                return { fillStyle: matrixRenderStyles.leadColor, shadowColor: 'transparent', shadowBlur: 0 };
-            }
-
-            if (isOverdriveMode && !isConstructMode && overdriveAmount <= 0) {
+            if (options.disableOverdrive && !isConstructMode) {
                 return {
-                    fillStyle: toRgbaString(getOverdriveOverlayRgb(0)),
+                    fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity),
                     shadowColor: 'transparent',
                     shadowBlur: 0
                 };
             }
 
-            if (overdriveAmount <= 0) {
+            if (isLegacyFringeMode) {
                 if (kind === 'glitch') {
-                    return { fillStyle: matrixRenderStyles.flashColor, shadowColor: 'transparent', shadowBlur: 0 };
+                    return { fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0 };
                 }
-                return { fillStyle: matrixRenderStyles.leadColor, shadowColor: 'transparent', shadowBlur: 0 };
+                return { fillStyle: toRgbaString(matrixRenderStyles.leadRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0 };
+            }
+
+            if (isOverdriveMode && isOverdriveAllowed && overdriveAmount <= 0) {
+                return {
+                    fillStyle: toRgbaString(getOverdriveOverlayRgb(0), renderedOpacity),
+                    shadowColor: 'transparent',
+                    shadowBlur: 0
+                };
+            }
+
+            if (overdriveAmount <= 0 || !isOverdriveAllowed || (kind === 'glitch' && !isGlitchOverdriveEnabled)) {
+                if (kind === 'glitch') {
+                    return { fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0 };
+                }
+                return { fillStyle: toRgbaString(matrixRenderStyles.leadRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0 };
+            }
+
+            if (!hasFullGreenIntensity) {
+                if (kind === 'glitch') {
+                    return { fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0 };
+                }
+                return { fillStyle: toRgbaString(matrixRenderStyles.leadRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0 };
             }
 
             if (isCrtProfile) {
@@ -2059,8 +2217,8 @@ void main() {
                 const glowRgb = mixRgb(matrixRenderStyles.trailRgb, [120, 255, 135], 0.3 + (overdriveAmount * 0.24));
                 const glowAlpha = 0.05 + (overdriveAmount * 0.18);
                 return {
-                    fillStyle: toRgbaString(fillRgb),
-                    shadowColor: toRgbaString(glowRgb, glowAlpha),
+                    fillStyle: toRgbaString(fillRgb, renderedOpacity),
+                    shadowColor: toRgbaString(glowRgb, glowAlpha * renderedOpacity),
                     shadowBlur: 2 + (overdriveAmount * 8)
                 };
             }
@@ -2069,8 +2227,8 @@ void main() {
             const glowAlpha = 0.18 + (overdriveAmount * 0.5);
             const glowRgb = mixRgb(matrixRenderStyles.trailRgb, [180, 255, 185], 0.5 + (overdriveAmount * 0.5));
             return {
-                fillStyle: toRgbaString(fillRgb),
-                shadowColor: toRgbaString(glowRgb, glowAlpha),
+                fillStyle: toRgbaString(fillRgb, renderedOpacity),
+                shadowColor: toRgbaString(glowRgb, glowAlpha * renderedOpacity),
                 shadowBlur: 4 + (overdriveAmount * 20)
             };
         }
@@ -2078,6 +2236,31 @@ void main() {
             ctx.fillStyle = style.fillStyle;
             ctx.shadowColor = style.shadowColor || 'transparent';
             ctx.shadowBlur = style.shadowBlur || 0;
+        }
+        function drawMatrixGlyph(char, x, y, kind, trailIndex = 0, maskRects = []) {
+            const overdriveIntersectingRects = isOverdriveMode && !isConstructMode && kind !== 'trail'
+                ? getIntersectingOverdriveMaskRects(x, y, currentFontSize * COLUMN_SPACING_FACTOR, currentFontSize, maskRects)
+                : [];
+
+            if (overdriveIntersectingRects.length === 0) {
+                applyMatrixGlyphStyle(resolveMatrixGlyphStyle(kind, trailIndex));
+                ctx.fillText(char, x, y);
+                return;
+            }
+
+            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('trail', trailIndex));
+            ctx.fillText(char, x, y);
+
+            ctx.save();
+            const clipPath = new Path2D();
+            clipPath.rect(0, 0, canvas.width, canvas.height);
+            overdriveIntersectingRects.forEach(rect => {
+                clipPath.rect(rect.left, rect.top, rect.width, rect.height);
+            });
+            ctx.clip(clipPath, 'evenodd');
+            applyMatrixGlyphStyle(resolveMatrixGlyphStyle(kind, trailIndex));
+            ctx.fillText(char, x, y);
+            ctx.restore();
         }
         function renderCrtFrame() {
             if (!isCrtMode || !crtReady || !crtGl || !crtCompositeAvailable || !crtAttributeLocations) { return; }
@@ -2127,11 +2310,13 @@ void main() {
             ctx.fillStyle = matrixRenderStyles.bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.font = matrixRenderStyles.font;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR; const now = Date.now();
+            const glitchFlipChance = getGlitchFlipChance();
+            const overdriveMaskRects = isOverdriveMode ? getOverdriveMaskRects() : [];
             for (let i = 0; i < drops.length; i++) {
                 const drop = drops[i];
                 if (now - drop.lastUpdateTime >= drop.delay) {
                     const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
-                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now }); if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); } drop.y++;
+                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now }); if (trails[i].length > getActiveTrailLength()) { trails[i].pop(); } drop.y++;
                     if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) {
                         drop.y = 0;
                         trails[i] = [];
@@ -2142,28 +2327,27 @@ void main() {
                 if (trails[i]) {
                     for (let k = 0; k < trails[i].length; k++) {
                         let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
-                        if (k > 0 && !trailItem.flipTimestamp && Math.random() < FLIP_CHANCE) {
+                        const trailXPos = i * effectiveColumnWidth;
+                        if (k > 0 && !trailItem.flipTimestamp && Math.random() < glitchFlipChance) {
                             let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
                             trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now; trailItem.updateTimestamp = now;
                         }
                         let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
                         let isRecentlyUpdated = k === 0 && trailItem.updateTimestamp && (now - trailItem.updateTimestamp < UPDATED_CHAR_HIGHLIGHT_MS);
                         if (isHighlighting) {
-                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('glitch', k));
+                            drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'glitch', k, overdriveMaskRects);
                         } else if (isRecentlyUpdated) {
-                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('leader', k));
+                            drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'leader', k, overdriveMaskRects);
                         } else {
-                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('trail', k));
+                            drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'trail', k);
                             if (trailItem.flipTimestamp && !isHighlighting) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
                             if (trailItem.updateTimestamp) { trailItem.updateTimestamp = undefined; }
                         }
-                        const trailXPos = i * effectiveColumnWidth; ctx.fillText(trailItem.char, trailXPos, trailYPos);
                     }
                     if (trails[i][0]) {
                         const leaderXPos = i * effectiveColumnWidth; const leaderYPos = drop.y * currentFontSize;
                         if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) {
-                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('leader'));
-                            ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos);
+                            drawMatrixGlyph(trails[i][0].char, leaderXPos, leaderYPos, 'leader', 0, overdriveMaskRects);
                         }
                     }
                 }
@@ -2220,10 +2404,14 @@ void main() {
             if (currentBrightnessPercent !== 100) { params.push('brightness=' + currentBrightnessPercent); }
             if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
             if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
+            if (currentTailCurvePercent !== 10) { params.push('tailCurve=' + currentTailCurvePercent); }
+            if (currentTailFloorPercent !== 1) { params.push('tailFloor=' + currentTailFloorPercent); }
+            if (currentGlitchFrequencyPercent !== 50) { params.push('glitchFrequency=' + currentGlitchFrequencyPercent); }
             if (isExtractionMode) { params.push('extract=true'); }
             if (!isCrtMode) { params.push('crt=false'); }
             if (!isOverdriveMode) { params.push('overdrive=false'); }
             if (currentOverdriveStrengthPercent !== 100) { params.push('overdriveStrength=' + currentOverdriveStrengthPercent); }
+            if (!isGlitchOverdriveEnabled) { params.push('glitchOverdrive=false'); }
             if (currentCrtFishbowlPercent !== 25) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
             if (currentCrtVignettePercent !== 40) { params.push('crtVignette=' + currentCrtVignettePercent); }
             if (!isOverdriveMode && currentCrtLeadFringePercent !== 5) { params.push('crtLeadFringe=' + currentCrtLeadFringePercent); }
@@ -2262,9 +2450,14 @@ void main() {
             currentBrightnessPercent = 100;
             currentRainFPS = 10;
             currentFontSize = 24;
+            currentTailLength = getViewportTailLength();
+            currentTailCurvePercent = 10;
+            currentTailFloorPercent = 1;
+            currentGlitchFrequencyPercent = 50;
             isExtractionMode = false;
             isCrtMode = true;
             isOverdriveMode = true;
+            isGlitchOverdriveEnabled = true;
             currentCrtFishbowlPercent = 25;
             currentCrtVignettePercent = 40;
             currentCrtLeadFringePercent = 5;
@@ -2306,6 +2499,28 @@ void main() {
                 }
             }
             updateFontSizeDisplay(currentFontSize);
+            updateTailLengthDisplay();
+            if (urlParams.has('tailCurve')) {
+                const tailCurveParam = parseInt(urlParams.get('tailCurve'), 10);
+                if (!isNaN(tailCurveParam) && tailCurveParam >= 0 && tailCurveParam <= 100) {
+                    currentTailCurvePercent = tailCurveParam;
+                }
+            }
+            updateTailCurveDisplay(currentTailCurvePercent);
+            if (urlParams.has('tailFloor')) {
+                const tailFloorParam = parseInt(urlParams.get('tailFloor'), 10);
+                if (!isNaN(tailFloorParam) && tailFloorParam >= 0 && tailFloorParam <= 30) {
+                    currentTailFloorPercent = tailFloorParam;
+                }
+            }
+            updateTailFloorDisplay(currentTailFloorPercent);
+            if (urlParams.has('glitchFrequency')) {
+                const glitchFrequencyParam = parseInt(urlParams.get('glitchFrequency'), 10);
+                if (!isNaN(glitchFrequencyParam) && glitchFrequencyParam >= 0 && glitchFrequencyParam <= 100) {
+                    currentGlitchFrequencyPercent = glitchFrequencyParam;
+                }
+            }
+            updateGlitchFrequencyDisplay(currentGlitchFrequencyPercent);
             if (urlParams.has('extract')) {
                 isExtractionMode = urlParams.get('extract') === 'true';
             }
@@ -2323,6 +2538,9 @@ void main() {
                 if (!isNaN(overdriveStrengthParam) && overdriveStrengthParam >= 0 && overdriveStrengthParam <= 100) {
                     currentOverdriveStrengthPercent = Math.round(overdriveStrengthParam);
                 }
+            }
+            if (urlParams.has('glitchOverdrive')) {
+                isGlitchOverdriveEnabled = urlParams.get('glitchOverdrive') !== 'false';
             }
             if (urlParams.has('crtLeadFringe')) {
                 const fringeParam = parseFloat(urlParams.get('crtLeadFringe'));
@@ -2344,6 +2562,7 @@ void main() {
             }
             updateOverdriveButton();
             updateOverdriveStrengthDisplay(currentOverdriveStrengthPercent);
+            updateGlitchOverdriveButton();
             updateCrtFishbowlDisplay(currentCrtFishbowlPercent);
             updateCrtVignetteDisplay(currentCrtVignettePercent);
             updateCrtLeadFringeDisplay(currentCrtLeadFringePercent);
@@ -2409,6 +2628,20 @@ void main() {
         function handleFontSizeChange(size) {
             updateFontSizeDisplay(size); if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain();
         }
+        function updateTailLengthDisplay() {
+            currentTailLength = getViewportTailLength();
+            if (tailLengthSlider) {
+                tailLengthSlider.min = String(MIN_TRAIL_LENGTH);
+                tailLengthSlider.max = String(currentTailLength);
+                tailLengthSlider.value = String(currentTailLength);
+                tailLengthSlider.disabled = true;
+            }
+            if (tailLengthValue) tailLengthValue.textContent = `${currentTailLength}`;
+            trails = trails.map(trail => Array.isArray(trail) ? trail.slice(0, currentTailLength) : trail);
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
         function updateExtractionButton() {
             const isPressed = isExtractionMode;
             extractionModeBtn.setAttribute('aria-pressed', isPressed);
@@ -2432,6 +2665,38 @@ void main() {
             currentOverdriveStrengthPercent = Math.max(0, Math.min(100, Math.round(percent)));
             if (overdriveStrengthSlider) overdriveStrengthSlider.value = currentOverdriveStrengthPercent;
             if (overdriveStrengthValue) overdriveStrengthValue.textContent = `${currentOverdriveStrengthPercent}%`;
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateTailCurveDisplay(percent) {
+            currentTailCurvePercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (tailCurveSlider) tailCurveSlider.value = currentTailCurvePercent;
+            if (tailCurveValue) tailCurveValue.textContent = `${currentTailCurvePercent}%`;
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateTailFloorDisplay(percent) {
+            currentTailFloorPercent = Math.max(0, Math.min(30, Math.round(percent)));
+            if (tailFloorSlider) tailFloorSlider.value = currentTailFloorPercent;
+            if (tailFloorValue) tailFloorValue.textContent = `${currentTailFloorPercent}%`;
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateGlitchFrequencyDisplay(percent) {
+            currentGlitchFrequencyPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (glitchFrequencySlider) glitchFrequencySlider.value = currentGlitchFrequencyPercent;
+            if (glitchFrequencyValue) glitchFrequencyValue.textContent = `${currentGlitchFrequencyPercent}%`;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateGlitchOverdriveButton() {
+            glitchOverdriveBtn.setAttribute('aria-pressed', String(isGlitchOverdriveEnabled));
+            glitchOverdriveBtn.textContent = isGlitchOverdriveEnabled ? 'Glitch Overdrive Enabled' : 'Glitch Overdrive Disabled';
+            glitchOverdriveBtn.classList.toggle('active', isGlitchOverdriveEnabled);
+            glitchOverdriveLed.classList.toggle('active', isGlitchOverdriveEnabled);
             matrixRenderStyles = null;
             markCrtSnapshotDirty();
             renderCrtFrame();
@@ -3539,6 +3804,18 @@ void main() {
             handleFontSizeChange(parseInt(event.target.value));
             scheduleURLUpdate();
         });
+        tailCurveSlider.addEventListener('input', (event) => {
+            updateTailCurveDisplay(parseInt(event.target.value, 10));
+            scheduleURLUpdate();
+        });
+        tailFloorSlider.addEventListener('input', (event) => {
+            updateTailFloorDisplay(parseInt(event.target.value, 10));
+            scheduleURLUpdate();
+        });
+        glitchFrequencySlider.addEventListener('input', (event) => {
+            updateGlitchFrequencyDisplay(parseInt(event.target.value, 10));
+            scheduleURLUpdate();
+        });
         crtFishbowlSlider.addEventListener('input', (event) => {
             updateCrtFishbowlDisplay(parseInt(event.target.value));
             scheduleURLUpdate();
@@ -3563,6 +3840,9 @@ void main() {
         brightnessSlider.addEventListener('change', updateURL);
         speedSlider.addEventListener('change', updateURL);
         fontSizeSlider.addEventListener('change', updateURL);
+        tailCurveSlider.addEventListener('change', updateURL);
+        tailFloorSlider.addEventListener('change', updateURL);
+        glitchFrequencySlider.addEventListener('change', updateURL);
         crtFishbowlSlider.addEventListener('change', updateURL);
         crtVignetteSlider.addEventListener('change', updateURL);
         crtLeadFringeSlider.addEventListener('change', updateURL);
@@ -3597,6 +3877,12 @@ void main() {
             isOverdriveMode = !isOverdriveMode;
             updateOverdriveButton();
             showTemporaryMessage(`// Overdrive ${isOverdriveMode ? 'Engaged' : 'Disengaged'}.`);
+            updateURL();
+        });
+        glitchOverdriveBtn.addEventListener('click', () => {
+            isGlitchOverdriveEnabled = !isGlitchOverdriveEnabled;
+            updateGlitchOverdriveButton();
+            showTemporaryMessage(`// Glitch Overdrive ${isGlitchOverdriveEnabled ? 'Enabled' : 'Disabled'}.`);
             updateURL();
         });
 
