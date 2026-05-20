@@ -806,10 +806,11 @@
 
         /* ---- Command Palette & Help Modal Styles ---- */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; inset: 0;
             background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
             z-index: 50; display: flex; justify-content: center; align-items: center;
             padding: 2rem;
+            box-sizing: border-box;
             opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out;
         }
         body.crt-mode:not(.crt-unavailable) .modal-overlay {
@@ -818,7 +819,7 @@
         .modal-overlay.visible { opacity: 1; pointer-events: auto; }
         .modal-content {
             position: relative;
-            width: 90%; max-width: 600px;
+            width: min(90vw, 40rem);
             background-color: rgba(var(--matrix-bg-darker), 0.95);
             border: 2px solid var(--primary-color);
             box-shadow: 0 0 20px rgba(var(--primary-color-rgb), 0.3);
@@ -827,8 +828,17 @@
             max-height: 85vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            box-sizing: border-box;
+            margin: 0 auto;
             transform: translate3d(0,0,0);
         }
+        .modal-content,
+        .modal-content * {
+            box-sizing: border-box;
+        }
+        #helpModal { width: min(92vw, 46rem); }
+        #commandPalette { width: min(90vw, 40rem); }
         .modal-content.dragging {
             user-select: none;
             opacity: 0.95;
@@ -850,13 +860,25 @@
         .construct-mode .modal-content h2 { border-bottom-color: var(--construct-bg-darker); }
 
         .modal-scroll-content {
-            padding: 1.5rem;
             overflow-y: auto;
+        }
+        .modal-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-width: 0;
+        }
+        .modal-body > * {
+            margin: 0;
+        }
+        .modal-body.modal-body-help {
+            gap: 0;
         }
 
         /* Command Palette Specific */
         .modal-scroll-content #commandPaletteInput {
-             width: 100%; padding: 0.75rem; margin-bottom: 1rem;
+             display: block; width: 100%; padding: 0.85rem 0.9rem;
              background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
              color: var(--font-color); font-family: var(--matrix-font);
              font-size: 1.1rem; border-radius: 2px;
@@ -868,11 +890,17 @@
         .construct-mode #commandPaletteInput {
             background-color: var(--construct-bg-darker); border-color: #ccc; color: var(--construct-text);
         }
-        #commandPaletteList { max-height: 40vh; overflow-y: auto; }
+        #commandPaletteList {
+            max-height: 40vh;
+            overflow-y: auto;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
         .command-item {
             display: flex; justify-content: space-between; align-items: center;
             gap: 1rem;
-            padding: 0.75rem; border-radius: 2px;
+            padding: 0.85rem 0.9rem; border-radius: 2px;
             cursor: pointer; transition: background-color 0.15s ease;
         }
         .command-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -898,13 +926,21 @@
         }
 
         /* Help Modal & General Shortcut Display */
+        .shortcut-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
         .shortcut-list li { 
             display: flex; 
             justify-content: space-between; 
             align-items: flex-start; 
-            padding: 0.75rem 0; 
+            gap: 1rem;
+            padding: 0.9rem 0; 
         }
         .shortcut-list li > div { flex-grow: 1; margin-right: 1rem; }
+        .shortcut-list li:first-child { padding-top: 0; }
+        .shortcut-list li:last-child { padding-bottom: 0; }
         .shortcut-list li:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
         .construct-mode .shortcut-list li:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
         .shortcut-list span:last-of-type { flex-shrink: 0; }
@@ -1251,9 +1287,11 @@
         <div id="commandPalette" class="modal-content" role="dialog" aria-modal="true" aria-labelledby="commandPaletteHeader">
             <h2 id="commandPaletteHeader">// Command Palette</h2>
             <div class="modal-scroll-content">
-                <label for="commandPaletteInput" class="sr-only">Type a command</label>
-                <input type="text" id="commandPaletteInput" placeholder="// Type a command..." autocomplete="off">
-                <ul id="commandPaletteList" role="listbox"></ul>
+                <div class="modal-body">
+                    <label for="commandPaletteInput" class="sr-only">Type a command</label>
+                    <input type="text" id="commandPaletteInput" placeholder="// Type a command..." autocomplete="off">
+                    <ul id="commandPaletteList" role="listbox"></ul>
+                </div>
             </div>
         </div>
     </div>
@@ -1263,92 +1301,94 @@
         <div id="helpModal" class="modal-content" role="dialog" aria-modal="true" aria-labelledby="helpModalHeader">
             <h2 id="helpModalHeader">// System Manual</h2>
             <div class="modal-scroll-content">
-                <ul class="shortcut-list">
-                    <li>
-                        <div>
-                            <span>Pick Next Operative</span>
-                            <p class="text-sm opacity-70 mt-1">Restores reverted operatives first, then selects a random operative from the available roster.</p>
-                        </div>
-                        <span><kbd>Enter</kbd> or <kbd>Space</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle Main Menu</span>
-                            <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
-                        </div>
-                        <span><kbd>Esc</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Previous Operative</span>
-                            <p class="text-sm opacity-70 mt-1">Undoes the last pick, restores the previous operative, and queues the reverted operative for the next pick.</p>
-                        </div>
-                        <span><kbd>U</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Reboot System</span>
-                            <p class="text-sm opacity-70 mt-1">Resets the selection state, making all operatives available to be picked again.</p>
-                        </div>
-                        <span><kbd>R</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Open Command Palette</span>
-                            <p class="text-sm opacity-70 mt-1">Quickly access all system commands by typing.</p>
-                        </div>
-                        <span><kbd>⌘</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>/</kbd></span>
-                    </li>
-                     <li>
-                        <div>
-                            <span>Open Help Manual</span>
-                             <p class="text-sm opacity-70 mt-1">Displays this list of commands and shortcuts.</p>
-                        </div>
-                        <span><kbd>⌘</kbd><kbd>Shift</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>/</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle Construct Mode</span>
-                            <p class="text-sm opacity-70 mt-1">Switches to a clean, high-contrast "light mode" interface.</p>
-                        </div>
-                        <span><kbd>C</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle Extraction Mode</span>
-                            <p class="text-sm opacity-70 mt-1">When engaged, picking an operative automatically copies their name or alias to the clipboard.</p>
-                        </div>
-                        <span><kbd>E</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle CRT Mode</span>
-                            <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, and vignette.</p>
-                        </div>
-                        <span><kbd>T</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle Matrix Overdrive</span>
-                            <p class="text-sm opacity-70 mt-1">Pushes leader and glitch-highlight glyphs toward a brighter green-white glow that scales back with brightness.</p>
-                        </div>
-                        <span><kbd>O</kbd></span>
-                    </li>
-                     <li>
-                        <div>
-                            <span>Toggle Fullscreen</span>
-                             <p class="text-sm opacity-70 mt-1">Expands the interface to fill the entire screen.</p>
-                        </div>
-                        <span><kbd>F</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Enter/Exit Matrix Mode</span>
-                            <p class="text-sm opacity-70 mt-1">Engages a fullscreen, immersive digital rain experience. Click or press 'M' to exit.</p>
-                        </div>
-                        <span><kbd>M</kbd></span>
-                    </li>
-                </ul>
+                <div class="modal-body modal-body-help">
+                    <ul class="shortcut-list">
+                        <li>
+                            <div>
+                                <span>Pick Next Operative</span>
+                                <p class="text-sm opacity-70 mt-1">Restores reverted operatives first, then selects a random operative from the available roster.</p>
+                            </div>
+                            <span><kbd>Enter</kbd> or <kbd>Space</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Toggle Main Menu</span>
+                                <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
+                            </div>
+                            <span><kbd>Esc</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Previous Operative</span>
+                                <p class="text-sm opacity-70 mt-1">Undoes the last pick, restores the previous operative, and queues the reverted operative for the next pick.</p>
+                            </div>
+                            <span><kbd>U</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Reboot System</span>
+                                <p class="text-sm opacity-70 mt-1">Resets the selection state, making all operatives available to be picked again.</p>
+                            </div>
+                            <span><kbd>R</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Open Command Palette</span>
+                                <p class="text-sm opacity-70 mt-1">Quickly access all system commands by typing.</p>
+                            </div>
+                            <span><kbd>⌘</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>/</kbd></span>
+                        </li>
+                         <li>
+                            <div>
+                                <span>Open Help Manual</span>
+                                 <p class="text-sm opacity-70 mt-1">Displays this list of commands and shortcuts.</p>
+                            </div>
+                            <span><kbd>⌘</kbd><kbd>Shift</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>/</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Toggle Construct Mode</span>
+                                <p class="text-sm opacity-70 mt-1">Switches to a clean, high-contrast "light mode" interface.</p>
+                            </div>
+                            <span><kbd>C</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Toggle Extraction Mode</span>
+                                <p class="text-sm opacity-70 mt-1">When engaged, picking an operative automatically copies their name or alias to the clipboard.</p>
+                            </div>
+                            <span><kbd>E</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Toggle CRT Mode</span>
+                                <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, and vignette.</p>
+                            </div>
+                            <span><kbd>T</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Toggle Matrix Overdrive</span>
+                                <p class="text-sm opacity-70 mt-1">Pushes leader and glitch-highlight glyphs toward a brighter green-white glow that scales back with brightness.</p>
+                            </div>
+                            <span><kbd>O</kbd></span>
+                        </li>
+                         <li>
+                            <div>
+                                <span>Toggle Fullscreen</span>
+                                 <p class="text-sm opacity-70 mt-1">Expands the interface to fill the entire screen.</p>
+                            </div>
+                            <span><kbd>F</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Enter/Exit Matrix Mode</span>
+                                <p class="text-sm opacity-70 mt-1">Engages a fullscreen, immersive digital rain experience. Click or press 'M' to exit.</p>
+                            </div>
+                            <span><kbd>M</kbd></span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -4011,8 +4051,8 @@ void main() {
                 const overlayRect = overlay.getBoundingClientRect();
                 const modalRect = modal.getBoundingClientRect();
                 if (overlayRect.width <= 0 || overlayRect.height <= 0 || modalRect.width <= 0 || modalRect.height <= 0) { return; }
-                const targetCenterX = overlayRect.left + (overlayRect.width / 2);
-                const targetCenterY = overlayRect.top + (overlayRect.height / 2);
+                const targetCenterX = window.innerWidth / 2;
+                const targetCenterY = window.innerHeight / 2;
                 const deltaX = targetCenterX - (modalRect.left + (modalRect.width / 2));
                 const deltaY = targetCenterY - (modalRect.top + (modalRect.height / 2));
                 if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) { return; }
