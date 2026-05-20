@@ -806,10 +806,11 @@
 
         /* ---- Command Palette & Help Modal Styles ---- */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            position: fixed; inset: 0;
             background-color: rgba(0,0,0,0.7); backdrop-filter: blur(5px);
             z-index: 50; display: flex; justify-content: center; align-items: center;
             padding: 2rem;
+            box-sizing: border-box;
             opacity: 0; pointer-events: none; transition: opacity 0.2s ease-in-out;
         }
         body.crt-mode:not(.crt-unavailable) .modal-overlay {
@@ -818,7 +819,7 @@
         .modal-overlay.visible { opacity: 1; pointer-events: auto; }
         .modal-content {
             position: relative;
-            width: 90%; max-width: 600px;
+            width: min(90vw, 40rem);
             background-color: rgba(var(--matrix-bg-darker), 0.95);
             border: 2px solid var(--primary-color);
             box-shadow: 0 0 20px rgba(var(--primary-color-rgb), 0.3);
@@ -827,8 +828,17 @@
             max-height: 85vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
+            box-sizing: border-box;
+            margin: 0 auto;
             transform: translate3d(0,0,0);
         }
+        .modal-content,
+        .modal-content * {
+            box-sizing: border-box;
+        }
+        #helpModal { width: min(92vw, 46rem); }
+        #commandPalette { width: min(90vw, 40rem); }
         .modal-content.dragging {
             user-select: none;
             opacity: 0.95;
@@ -850,13 +860,25 @@
         .construct-mode .modal-content h2 { border-bottom-color: var(--construct-bg-darker); }
 
         .modal-scroll-content {
-            padding: 1.5rem;
             overflow-y: auto;
+        }
+        .modal-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            min-width: 0;
+        }
+        .modal-body > * {
+            margin: 0;
+        }
+        .modal-body.modal-body-help {
+            gap: 0;
         }
 
         /* Command Palette Specific */
         .modal-scroll-content #commandPaletteInput {
-             width: 100%; padding: 0.75rem; margin-bottom: 1rem;
+             display: block; width: 100%; padding: 0.85rem 0.9rem;
              background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
              color: var(--font-color); font-family: var(--matrix-font);
              font-size: 1.1rem; border-radius: 2px;
@@ -868,11 +890,17 @@
         .construct-mode #commandPaletteInput {
             background-color: var(--construct-bg-darker); border-color: #ccc; color: var(--construct-text);
         }
-        #commandPaletteList { max-height: 40vh; overflow-y: auto; }
+        #commandPaletteList {
+            max-height: 40vh;
+            overflow-y: auto;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
         .command-item {
             display: flex; justify-content: space-between; align-items: center;
             gap: 1rem;
-            padding: 0.75rem; border-radius: 2px;
+            padding: 0.85rem 0.9rem; border-radius: 2px;
             cursor: pointer; transition: background-color 0.15s ease;
         }
         .command-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -898,13 +926,21 @@
         }
 
         /* Help Modal & General Shortcut Display */
+        .shortcut-list {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
         .shortcut-list li { 
             display: flex; 
             justify-content: space-between; 
             align-items: flex-start; 
-            padding: 0.75rem 0; 
+            gap: 1rem;
+            padding: 0.9rem 0; 
         }
         .shortcut-list li > div { flex-grow: 1; margin-right: 1rem; }
+        .shortcut-list li:first-child { padding-top: 0; }
+        .shortcut-list li:last-child { padding-bottom: 0; }
         .shortcut-list li:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
         .construct-mode .shortcut-list li:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
         .shortcut-list span:last-of-type { flex-shrink: 0; }
@@ -1142,6 +1178,34 @@
                     </label>
                     <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24">
                 </div>
+                <div class="mb-3">
+                    <label for="tailLengthSlider" class="flex justify-between items-center">
+                        <span>// Tail Length (Auto):</span>
+                        <span id="tailLengthValue" class="font-semibold text-sm">25</span>
+                    </label>
+                    <input type="range" id="tailLengthSlider" min="20" max="20" step="1" value="25" disabled>
+                </div>
+                <div class="mb-3">
+                    <label for="tailCurveSlider" class="flex justify-between items-center">
+                        <span>// Tail Dimming Curve:</span>
+                        <span id="tailCurveValue" class="font-semibold text-sm">10%</span>
+                    </label>
+                    <input type="range" id="tailCurveSlider" min="0" max="100" step="1" value="10">
+                </div>
+                <div class="mb-3">
+                    <label for="tailFloorSlider" class="flex justify-between items-center">
+                        <span>// Tail Visibility Floor:</span>
+                        <span id="tailFloorValue" class="font-semibold text-sm">1%</span>
+                    </label>
+                    <input type="range" id="tailFloorSlider" min="0" max="30" step="1" value="1">
+                </div>
+                <div class="mb-3">
+                    <label for="glitchFrequencySlider" class="flex justify-between items-center">
+                        <span>// Glitch Frequency:</span>
+                        <span id="glitchFrequencyValue" class="font-semibold text-sm">50%</span>
+                    </label>
+                    <input type="range" id="glitchFrequencySlider" min="0" max="100" step="1" value="50">
+                </div>
 
                 <div class="settings-subgroup">
                     <h3>Effects</h3>
@@ -1156,6 +1220,10 @@
                                 <span id="overdriveStrengthValue" class="font-semibold text-sm">100%</span>
                             </label>
                             <input type="range" id="overdriveStrengthSlider" min="0" max="100" step="1" value="100">
+                        </div>
+                        <div class="control-group">
+                            <button id="glitchOverdriveBtn" aria-pressed="true">Glitch Overdrive Enabled</button>
+                            <div id="glitchOverdriveLed" class="led-indicator" aria-hidden="true"></div>
                         </div>
                     </div>
                     <div class="control-group">
@@ -1219,9 +1287,11 @@
         <div id="commandPalette" class="modal-content" role="dialog" aria-modal="true" aria-labelledby="commandPaletteHeader">
             <h2 id="commandPaletteHeader">// Command Palette</h2>
             <div class="modal-scroll-content">
-                <label for="commandPaletteInput" class="sr-only">Type a command</label>
-                <input type="text" id="commandPaletteInput" placeholder="// Type a command..." autocomplete="off">
-                <ul id="commandPaletteList" role="listbox"></ul>
+                <div class="modal-body">
+                    <label for="commandPaletteInput" class="sr-only">Type a command</label>
+                    <input type="text" id="commandPaletteInput" placeholder="// Type a command..." autocomplete="off">
+                    <ul id="commandPaletteList" role="listbox"></ul>
+                </div>
             </div>
         </div>
     </div>
@@ -1231,92 +1301,94 @@
         <div id="helpModal" class="modal-content" role="dialog" aria-modal="true" aria-labelledby="helpModalHeader">
             <h2 id="helpModalHeader">// System Manual</h2>
             <div class="modal-scroll-content">
-                <ul class="shortcut-list">
-                    <li>
-                        <div>
-                            <span>Pick Next Operative</span>
-                            <p class="text-sm opacity-70 mt-1">Restores reverted operatives first, then selects a random operative from the available roster.</p>
-                        </div>
-                        <span><kbd>Enter</kbd> or <kbd>Space</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle Main Menu</span>
-                            <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
-                        </div>
-                        <span><kbd>Esc</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Previous Operative</span>
-                            <p class="text-sm opacity-70 mt-1">Undoes the last pick, restores the previous operative, and queues the reverted operative for the next pick.</p>
-                        </div>
-                        <span><kbd>U</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Reboot System</span>
-                            <p class="text-sm opacity-70 mt-1">Resets the selection state, making all operatives available to be picked again.</p>
-                        </div>
-                        <span><kbd>R</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Open Command Palette</span>
-                            <p class="text-sm opacity-70 mt-1">Quickly access all system commands by typing.</p>
-                        </div>
-                        <span><kbd>⌘</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>/</kbd></span>
-                    </li>
-                     <li>
-                        <div>
-                            <span>Open Help Manual</span>
-                             <p class="text-sm opacity-70 mt-1">Displays this list of commands and shortcuts.</p>
-                        </div>
-                        <span><kbd>⌘</kbd><kbd>Shift</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>/</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle Construct Mode</span>
-                            <p class="text-sm opacity-70 mt-1">Switches to a clean, high-contrast "light mode" interface.</p>
-                        </div>
-                        <span><kbd>C</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle Extraction Mode</span>
-                            <p class="text-sm opacity-70 mt-1">When engaged, picking an operative automatically copies their name or alias to the clipboard.</p>
-                        </div>
-                        <span><kbd>E</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle CRT Mode</span>
-                            <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, and vignette.</p>
-                        </div>
-                        <span><kbd>T</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Toggle Matrix Overdrive</span>
-                            <p class="text-sm opacity-70 mt-1">Pushes leader and glitch-highlight glyphs toward a brighter green-white glow that scales back with brightness.</p>
-                        </div>
-                        <span><kbd>O</kbd></span>
-                    </li>
-                     <li>
-                        <div>
-                            <span>Toggle Fullscreen</span>
-                             <p class="text-sm opacity-70 mt-1">Expands the interface to fill the entire screen.</p>
-                        </div>
-                        <span><kbd>F</kbd></span>
-                    </li>
-                    <li>
-                        <div>
-                            <span>Enter/Exit Matrix Mode</span>
-                            <p class="text-sm opacity-70 mt-1">Engages a fullscreen, immersive digital rain experience. Click or press 'M' to exit.</p>
-                        </div>
-                        <span><kbd>M</kbd></span>
-                    </li>
-                </ul>
+                <div class="modal-body modal-body-help">
+                    <ul class="shortcut-list">
+                        <li>
+                            <div>
+                                <span>Pick Next Operative</span>
+                                <p class="text-sm opacity-70 mt-1">Restores reverted operatives first, then selects a random operative from the available roster.</p>
+                            </div>
+                            <span><kbd>Enter</kbd> or <kbd>Space</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Toggle Main Menu</span>
+                                <p class="text-sm opacity-70 mt-1">Opens or closes the main settings panel.</p>
+                            </div>
+                            <span><kbd>Esc</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Previous Operative</span>
+                                <p class="text-sm opacity-70 mt-1">Undoes the last pick, restores the previous operative, and queues the reverted operative for the next pick.</p>
+                            </div>
+                            <span><kbd>U</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Reboot System</span>
+                                <p class="text-sm opacity-70 mt-1">Resets the selection state, making all operatives available to be picked again.</p>
+                            </div>
+                            <span><kbd>R</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Open Command Palette</span>
+                                <p class="text-sm opacity-70 mt-1">Quickly access all system commands by typing.</p>
+                            </div>
+                            <span><kbd>⌘</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>/</kbd></span>
+                        </li>
+                         <li>
+                            <div>
+                                <span>Open Help Manual</span>
+                                 <p class="text-sm opacity-70 mt-1">Displays this list of commands and shortcuts.</p>
+                            </div>
+                            <span><kbd>⌘</kbd><kbd>Shift</kbd><kbd>/</kbd> or <kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>/</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Toggle Construct Mode</span>
+                                <p class="text-sm opacity-70 mt-1">Switches to a clean, high-contrast "light mode" interface.</p>
+                            </div>
+                            <span><kbd>C</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Toggle Extraction Mode</span>
+                                <p class="text-sm opacity-70 mt-1">When engaged, picking an operative automatically copies their name or alias to the clipboard.</p>
+                            </div>
+                            <span><kbd>E</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Toggle CRT Mode</span>
+                                <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, and vignette.</p>
+                            </div>
+                            <span><kbd>T</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Toggle Matrix Overdrive</span>
+                                <p class="text-sm opacity-70 mt-1">Pushes leader and glitch-highlight glyphs toward a brighter green-white glow that scales back with brightness.</p>
+                            </div>
+                            <span><kbd>O</kbd></span>
+                        </li>
+                         <li>
+                            <div>
+                                <span>Toggle Fullscreen</span>
+                                 <p class="text-sm opacity-70 mt-1">Expands the interface to fill the entire screen.</p>
+                            </div>
+                            <span><kbd>F</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Enter/Exit Matrix Mode</span>
+                                <p class="text-sm opacity-70 mt-1">Engages a fullscreen, immersive digital rain experience. Click or press 'M' to exit.</p>
+                            </div>
+                            <span><kbd>M</kbd></span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
@@ -1342,8 +1414,10 @@ precision mediump float;
 
 varying vec2 vTexCoord;
 
-uniform sampler2D u_tex;
+uniform sampler2D u_matrixTex;
+uniform sampler2D u_uiTex;
 uniform vec2 u_resolution;
+uniform vec2 u_matrixResolution;
 uniform float u_time;
 uniform float u_intensity;
 uniform float u_leadFringe;
@@ -1363,12 +1437,48 @@ float random(vec2 co) {
   return fract(sin(dot(co.xy, vec2(12.9898, 78.233)) + u_time) * 43758.5453);
 }
 
+vec4 sampleMatrixColor(vec2 sampleUV) {
+  return texture2D(u_matrixTex, sampleUV);
+}
+
+vec4 sampleUiColor(vec2 sampleUV) {
+  return texture2D(u_uiTex, sampleUV);
+}
+
+vec3 sampleCombinedColor(vec2 sampleUV) {
+  vec4 matrixColor = sampleMatrixColor(sampleUV);
+  vec4 uiColor = sampleUiColor(sampleUV);
+  return mix(matrixColor.rgb, uiColor.rgb, clamp(uiColor.a, 0.0, 1.0));
+}
+
+float uiOcclusionAt(vec2 sampleUV) {
+  return clamp(sampleUiColor(sampleUV).a, 0.0, 1.0);
+}
+
+float matrixEffectVisibilityAt(vec2 sampleUV) {
+  return 1.0 - smoothstep(0.01, 0.08, uiOcclusionAt(sampleUV));
+}
+
 float matrixLeadAmountAt(vec2 sampleUV) {
-  vec3 sampleColor = texture2D(u_tex, sampleUV).rgb;
+  vec3 sampleColor = sampleMatrixColor(sampleUV).rgb;
   float sampleLuminance = dot(sampleColor, vec3(0.299, 0.587, 0.114));
   float sampleBrightness = smoothstep(0.12, 0.40, sampleLuminance);
   float sampleWhiteCore = smoothstep(0.06, 0.28, min(sampleColor.r, sampleColor.b));
-  return sampleBrightness * sampleWhiteCore;
+  return sampleBrightness * sampleWhiteCore * matrixEffectVisibilityAt(sampleUV);
+}
+
+float greenHaloSourceAt(vec2 sampleUV) {
+  vec3 sampleColor = sampleMatrixColor(sampleUV).rgb;
+  float spill = min(sampleColor.r, sampleColor.b);
+  float greenCore = smoothstep(0.24, 0.96, sampleColor.g);
+  float spillSuppression = 1.0 - smoothstep(0.02, 0.38, spill);
+  return greenCore * spillSuppression * matrixEffectVisibilityAt(sampleUV);
+}
+
+float whiteBloomSourceAt(vec2 sampleUV) {
+  vec3 sampleColor = sampleMatrixColor(sampleUV).rgb;
+  float spill = min(sampleColor.r, sampleColor.b);
+  return smoothstep(0.03, 0.62, spill) * matrixEffectVisibilityAt(sampleUV);
 }
 
 void main() {
@@ -1385,11 +1495,11 @@ void main() {
   float crtIntensity = mix(u_intensity, u_intensity * 0.42, u_constructMode);
   float chroma = 0.0018 * crtIntensity;
   vec4 baseColor;
-  baseColor.r = texture2D(u_tex, remappedUV + vec2(chroma, 0.0)).r;
-  baseColor.g = texture2D(u_tex, remappedUV).g;
-  baseColor.b = texture2D(u_tex, remappedUV - vec2(chroma, 0.0)).b;
+  baseColor.r = sampleCombinedColor(remappedUV + vec2(chroma, 0.0)).r;
+  baseColor.g = sampleCombinedColor(remappedUV).g;
+  baseColor.b = sampleCombinedColor(remappedUV - vec2(chroma, 0.0)).b;
   baseColor.a = 1.0;
-  vec3 rawColor = texture2D(u_tex, remappedUV).rgb;
+  vec3 rawColor = sampleCombinedColor(remappedUV);
   float luminance = dot(rawColor, vec3(0.299, 0.587, 0.114));
   float matrixLeadMask = matrixLeadAmountAt(remappedUV);
   float constructLeadMask = 1.0 - smoothstep(0.02, 0.35, luminance);
@@ -1430,9 +1540,76 @@ void main() {
   vec3 rgbLeadColor = clamp(vec3(redFringeMask, centeredGreenMask, blueFringeMask) * leadStrength, 0.0, 1.0);
   color = mix(color, rgbLeadColor, fringeMask);
   color *= scanline * grille * vignette;
+
+  vec2 glowTexel = 1.0 / max(u_matrixResolution, vec2(1.0));
+  float greenHalo = greenHaloSourceAt(remappedUV) * 0.42;
+  greenHalo += greenHaloSourceAt(remappedUV + vec2(glowTexel.x * 2.2, 0.0)) * 0.145;
+  greenHalo += greenHaloSourceAt(remappedUV - vec2(glowTexel.x * 2.2, 0.0)) * 0.145;
+  greenHalo += greenHaloSourceAt(remappedUV + vec2(0.0, glowTexel.y * 2.2)) * 0.145;
+  greenHalo += greenHaloSourceAt(remappedUV - vec2(0.0, glowTexel.y * 2.2)) * 0.145;
+
+  float whiteBloom = whiteBloomSourceAt(remappedUV) * 0.5;
+  whiteBloom += whiteBloomSourceAt(remappedUV + vec2(glowTexel.x * 1.1, 0.0)) * 0.125;
+  whiteBloom += whiteBloomSourceAt(remappedUV - vec2(glowTexel.x * 1.1, 0.0)) * 0.125;
+  whiteBloom += whiteBloomSourceAt(remappedUV + vec2(0.0, glowTexel.y * 1.1)) * 0.125;
+  whiteBloom += whiteBloomSourceAt(remappedUV - vec2(0.0, glowTexel.y * 1.1)) * 0.125;
+
+  vec3 greenGlowColor = vec3(0.06, 1.0, 0.08) * greenHalo * (0.12 + (0.34 * crtIntensity)) * vignette;
+  vec3 whiteBloomColor = vec3(1.0) * whiteBloom * (0.05 + (0.18 * crtIntensity)) * vignette;
+  color += greenGlowColor + whiteBloomColor;
   color += noise;
 
   gl_FragColor = vec4(color, 1.0);
+}
+    </script>
+
+    <script id="matrix-fx-fragment-shader" type="x-shader/x-fragment">
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+varying vec2 vTexCoord;
+
+uniform sampler2D u_fxTex;
+uniform vec2 u_resolution;
+
+vec3 sampleFxColor(vec2 sampleUV) {
+  return texture2D(u_fxTex, sampleUV).rgb;
+}
+
+float greenHaloSourceAt(vec2 sampleUV) {
+  vec3 sampleColor = sampleFxColor(sampleUV);
+  float spill = min(sampleColor.r, sampleColor.b);
+  float greenCore = smoothstep(0.24, 0.96, sampleColor.g);
+  float spillSuppression = 1.0 - smoothstep(0.02, 0.38, spill);
+  return greenCore * spillSuppression;
+}
+
+float whiteBloomSourceAt(vec2 sampleUV) {
+  vec3 sampleColor = sampleFxColor(sampleUV);
+  float spill = min(sampleColor.r, sampleColor.b);
+  return smoothstep(0.03, 0.62, spill);
+}
+
+void main() {
+  vec2 uv = vTexCoord;
+  vec2 texel = 1.0 / max(u_resolution, vec2(1.0));
+
+  float greenHalo = greenHaloSourceAt(uv) * 0.42;
+  greenHalo += greenHaloSourceAt(uv + vec2(texel.x * 2.2, 0.0)) * 0.145;
+  greenHalo += greenHaloSourceAt(uv - vec2(texel.x * 2.2, 0.0)) * 0.145;
+  greenHalo += greenHaloSourceAt(uv + vec2(0.0, texel.y * 2.2)) * 0.145;
+  greenHalo += greenHaloSourceAt(uv - vec2(0.0, texel.y * 2.2)) * 0.145;
+
+  float whiteBloom = whiteBloomSourceAt(uv) * 0.5;
+  whiteBloom += whiteBloomSourceAt(uv + vec2(texel.x * 1.1, 0.0)) * 0.125;
+  whiteBloom += whiteBloomSourceAt(uv - vec2(texel.x * 1.1, 0.0)) * 0.125;
+  whiteBloom += whiteBloomSourceAt(uv + vec2(0.0, texel.y * 1.1)) * 0.125;
+  whiteBloom += whiteBloomSourceAt(uv - vec2(0.0, texel.y * 1.1)) * 0.125;
+
+  vec3 greenGlowColor = vec3(0.06, 1.0, 0.08) * greenHalo * 0.34;
+  vec3 whiteBloomColor = vec3(1.0) * whiteBloom * 0.24;
+  gl_FragColor = vec4(greenGlowColor + whiteBloomColor, 1.0);
 }
     </script>
 
@@ -1450,6 +1627,14 @@ void main() {
         const noAvailableMessage = document.getElementById('noAvailableMessage');
         const canvas = document.getElementById('matrixCanvas');
         const ctx = canvas.getContext('2d');
+        const matrixFillCanvas = document.createElement('canvas');
+        const matrixFillCtx = matrixFillCanvas.getContext('2d');
+        const matrixHighlightCanvas = document.createElement('canvas');
+        const matrixHighlightCtx = matrixHighlightCanvas.getContext('2d');
+        const matrixFxMaskCanvas = document.createElement('canvas');
+        const matrixFxMaskCtx = matrixFxMaskCanvas.getContext('2d');
+        const matrixFxCanvas = document.createElement('canvas');
+        const matrixFxGl = matrixFxCanvas.getContext('webgl', { preserveDrawingBuffer: false, alpha: false });
         const crtCanvas = document.getElementById('crtCanvas');
         const crtGl = crtCanvas.getContext('webgl', { preserveDrawingBuffer: false });
         const crtSourceCanvas = document.createElement('canvas');
@@ -1475,6 +1660,14 @@ void main() {
         const speedValue = document.getElementById('speedValue');
         const fontSizeSlider = document.getElementById('fontSizeSlider');
         const fontSizeValue = document.getElementById('fontSizeValue');
+        const tailLengthSlider = document.getElementById('tailLengthSlider');
+        const tailLengthValue = document.getElementById('tailLengthValue');
+        const tailCurveSlider = document.getElementById('tailCurveSlider');
+        const tailCurveValue = document.getElementById('tailCurveValue');
+        const tailFloorSlider = document.getElementById('tailFloorSlider');
+        const tailFloorValue = document.getElementById('tailFloorValue');
+        const glitchFrequencySlider = document.getElementById('glitchFrequencySlider');
+        const glitchFrequencyValue = document.getElementById('glitchFrequencyValue');
         const panelSectionToggles = Array.from(document.querySelectorAll('.panel-section-toggle'));
         const extractionModeBtn = document.getElementById('extractionModeBtn');
         const extractionModeLed = document.getElementById('extractionModeLed');
@@ -1485,6 +1678,8 @@ void main() {
         const overdriveSubSettings = document.getElementById('overdriveSubSettings');
         const overdriveStrengthSlider = document.getElementById('overdriveStrengthSlider');
         const overdriveStrengthValue = document.getElementById('overdriveStrengthValue');
+        const glitchOverdriveBtn = document.getElementById('glitchOverdriveBtn');
+        const glitchOverdriveLed = document.getElementById('glitchOverdriveLed');
         const crtSubSettings = document.getElementById('crtSubSettings');
         const crtFringeSettings = document.getElementById('crtFringeSettings');
         const crtFishbowlSlider = document.getElementById('crtFishbowlSlider');
@@ -1521,12 +1716,17 @@ void main() {
         let currentBrightnessPercent = 100;
         let currentRainFPS = 10;
         let currentFontSize = 24;
+        let currentTailLength = 25;
+        let currentTailCurvePercent = 10;
+        let currentTailFloorPercent = 1;
+        let currentGlitchFrequencyPercent = 50;
         let rainAnimationId = null;
         let isAnimationPaused = false;
         let isInMatrixMode = false;
         let isExtractionMode = false;
         let isCrtMode = true;
         let isOverdriveMode = true;
+        let isGlitchOverdriveEnabled = true;
         let currentCrtFishbowlPercent = 25;
         let currentCrtVignettePercent = 40;
         let currentCrtLeadFringePercent = 5;
@@ -1538,18 +1738,42 @@ void main() {
         let elementToFocusOnModalClose = null; 
         let crtProgram = null;
         let crtTexture = null;
+        let crtUiTexture = null;
         let crtPositionBuffer = null;
         let crtTexCoordBuffer = null;
         let crtUniforms = null;
         let crtAttributeLocations = null;
         let crtTextureWidth = 0;
         let crtTextureHeight = 0;
+        let crtUiTextureWidth = 0;
+        let crtUiTextureHeight = 0;
         let crtReady = false;
         let crtWarningShown = false;
         let crtCompositeAvailable = true;
         let crtPaintCtx = crtUiCtx || crtSourceCtx;
+        let crtUiSnapshotDirty = true;
+        let crtTransitionRefreshFrameId = null;
+        let crtTransitionRefreshEndTime = 0;
+        let lastCrtFrameTime = 0;
+        let nonCrtFxProgram = null;
+        let nonCrtFxTexture = null;
+        let nonCrtFxPositionBuffer = null;
+        let nonCrtFxTexCoordBuffer = null;
+        let nonCrtFxUniforms = null;
+        let nonCrtFxAttributeLocations = null;
+        let nonCrtFxTextureWidth = 0;
+        let nonCrtFxTextureHeight = 0;
+        let nonCrtFxReady = false;
+        let nonCrtFxWarningShown = false;
+        let nonCrtCompositeAvailable = true;
+        let overdriveMaskRectsCache = [];
+        let overdriveMaskDirty = true;
+        let overdriveMaskTransitionFrameId = null;
+        let overdriveMaskTransitionEndTime = 0;
+        let pendingModalOpenTimeoutId = null;
         let matrixRenderStyles = null;
         let trailFillStyleCache = [];
+        let trailOpacityCache = [];
         let urlUpdateTimerId = null;
         let resizeFrameId = null;
         let crtEventState = {
@@ -1573,12 +1797,17 @@ void main() {
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
         const COLUMN_SPACING_FACTOR = 1.0;
-        const FLIP_CHANCE = 0.0025;
+        const DEFAULT_GLITCH_FLIP_CHANCE = 0.0025;
         const FLIP_DURATION_MS = 500;
         const UPDATED_CHAR_HIGHLIGHT_MS = 500;
-        const MAX_TRAIL_LENGTH = 25;
+        const MIN_TRAIL_LENGTH = 20;
+        const MAX_TRAIL_LENGTH = 400;
         const TARGET_ANIMATION_FPS = 60;
         const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS;
+        const CRT_TARGET_FPS = 30;
+        const CRT_FRAME_DELAY = 1000 / CRT_TARGET_FPS;
+        const CRT_SOURCE_SCALE = 0.7;
+        const NON_CRT_FX_SCALE = 0.6;
         const MAX_FPS_PERCENT_OFFSET = 0.90;
         const CRT_FISHBOWL_MULTIPLIER = 1.85;
         const CRT_VIGNETTE_MULTIPLIER = 1.7;
@@ -1591,6 +1820,7 @@ void main() {
         const URL_UPDATE_DEBOUNCE_MS = 150;
         const OVERDRIVE_CURVE_EXPONENT = Math.log(0.2) / Math.log(0.5);
         const CRT_INTERACTIVE_SELECTOR = 'button, input, textarea, label, .command-item, #selectedNameDisplayWrapper';
+        const OVERDRIVE_MASK_ELEMENTS = [mainDisplayContainer, managementPanel, helpModal, commandPalette, menuToggleBtn, undoBtn];
 
         // --- Matrix Rain Setup ---
         let columns;
@@ -1604,9 +1834,16 @@ void main() {
         }
         function setupCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            matrixFillCanvas.width = window.innerWidth; matrixFillCanvas.height = window.innerHeight;
+            matrixHighlightCanvas.width = window.innerWidth; matrixHighlightCanvas.height = window.innerHeight;
+            matrixFxMaskCanvas.width = Math.max(1, Math.floor(window.innerWidth * NON_CRT_FX_SCALE));
+            matrixFxMaskCanvas.height = Math.max(1, Math.floor(window.innerHeight * NON_CRT_FX_SCALE));
+            matrixFxCanvas.width = matrixFxMaskCanvas.width; matrixFxCanvas.height = matrixFxMaskCanvas.height;
             crtCanvas.width = window.innerWidth; crtCanvas.height = window.innerHeight;
-            crtSourceCanvas.width = window.innerWidth; crtSourceCanvas.height = window.innerHeight;
+            crtSourceCanvas.width = Math.max(1, Math.floor(window.innerWidth * CRT_SOURCE_SCALE));
+            crtSourceCanvas.height = Math.max(1, Math.floor(window.innerHeight * CRT_SOURCE_SCALE));
             crtUiCanvas.width = window.innerWidth; crtUiCanvas.height = window.innerHeight;
+            updateTailLengthDisplay();
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
             drops = []; trails = [];
@@ -1616,6 +1853,8 @@ void main() {
             }
             matrixRenderStyles = null;
             markCrtSnapshotDirty();
+            markOverdriveMaskDirty();
+            setupNonCrtFxRenderer();
             setupCrtRenderer();
             updateCrtSafeArea();
         }
@@ -1623,14 +1862,14 @@ void main() {
             const shaderElement = document.getElementById(id);
             return shaderElement ? shaderElement.textContent.trim() : '';
         }
-        function createCrtShader(type, source) {
-            const shader = crtGl.createShader(type);
-            crtGl.shaderSource(shader, source);
-            crtGl.compileShader(shader);
-            if (!crtGl.getShaderParameter(shader, crtGl.COMPILE_STATUS)) {
-                const message = crtGl.getShaderInfoLog(shader);
-                crtGl.deleteShader(shader);
-                throw new Error(message || 'CRT shader compilation failed.');
+        function createWebGlShader(gl, type, source, errorLabel) {
+            const shader = gl.createShader(type);
+            gl.shaderSource(shader, source);
+            gl.compileShader(shader);
+            if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
+                const message = gl.getShaderInfoLog(shader);
+                gl.deleteShader(shader);
+                throw new Error(message || errorLabel || 'WebGL shader compilation failed.');
             }
             return shader;
         }
@@ -1649,8 +1888,8 @@ void main() {
             if (crtReady) { return; }
 
             try {
-                const vertexShader = createCrtShader(crtGl.VERTEX_SHADER, getInlineShaderSource('crt-vertex-shader'));
-                const fragmentShader = createCrtShader(crtGl.FRAGMENT_SHADER, getInlineShaderSource('crt-fragment-shader'));
+                const vertexShader = createWebGlShader(crtGl, crtGl.VERTEX_SHADER, getInlineShaderSource('crt-vertex-shader'), 'CRT vertex shader compilation failed.');
+                const fragmentShader = createWebGlShader(crtGl, crtGl.FRAGMENT_SHADER, getInlineShaderSource('crt-fragment-shader'), 'CRT fragment shader compilation failed.');
                 crtProgram = crtGl.createProgram();
                 crtGl.attachShader(crtProgram, vertexShader);
                 crtGl.attachShader(crtProgram, fragmentShader);
@@ -1685,9 +1924,18 @@ void main() {
                 crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MIN_FILTER, crtGl.LINEAR);
                 crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MAG_FILTER, crtGl.LINEAR);
 
+                crtUiTexture = crtGl.createTexture();
+                crtGl.bindTexture(crtGl.TEXTURE_2D, crtUiTexture);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_S, crtGl.CLAMP_TO_EDGE);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_T, crtGl.CLAMP_TO_EDGE);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MIN_FILTER, crtGl.LINEAR);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MAG_FILTER, crtGl.LINEAR);
+
                 crtUniforms = {
-                    texture: crtGl.getUniformLocation(crtProgram, 'u_tex'),
+                    matrixTexture: crtGl.getUniformLocation(crtProgram, 'u_matrixTex'),
+                    uiTexture: crtGl.getUniformLocation(crtProgram, 'u_uiTex'),
                     resolution: crtGl.getUniformLocation(crtProgram, 'u_resolution'),
+                    matrixResolution: crtGl.getUniformLocation(crtProgram, 'u_matrixResolution'),
                     time: crtGl.getUniformLocation(crtProgram, 'u_time'),
                     intensity: crtGl.getUniformLocation(crtProgram, 'u_intensity'),
                     leadFringe: crtGl.getUniformLocation(crtProgram, 'u_leadFringe'),
@@ -1710,13 +1958,97 @@ void main() {
                 }
             }
         }
+        function setupNonCrtFxRenderer() {
+            if (!matrixFxGl) {
+                nonCrtCompositeAvailable = false;
+                if (!nonCrtFxWarningShown) {
+                    console.warn('// Non-CRT FX renderer unavailable: WebGL not supported.');
+                    nonCrtFxWarningShown = true;
+                }
+                return;
+            }
+
+            matrixFxGl.viewport(0, 0, matrixFxCanvas.width, matrixFxCanvas.height);
+            if (nonCrtFxReady) { return; }
+
+            try {
+                const vertexShader = createWebGlShader(matrixFxGl, matrixFxGl.VERTEX_SHADER, getInlineShaderSource('crt-vertex-shader'), 'Matrix FX vertex shader compilation failed.');
+                const fragmentShader = createWebGlShader(matrixFxGl, matrixFxGl.FRAGMENT_SHADER, getInlineShaderSource('matrix-fx-fragment-shader'), 'Matrix FX fragment shader compilation failed.');
+                nonCrtFxProgram = matrixFxGl.createProgram();
+                matrixFxGl.attachShader(nonCrtFxProgram, vertexShader);
+                matrixFxGl.attachShader(nonCrtFxProgram, fragmentShader);
+                matrixFxGl.linkProgram(nonCrtFxProgram);
+                if (!matrixFxGl.getProgramParameter(nonCrtFxProgram, matrixFxGl.LINK_STATUS)) {
+                    throw new Error(matrixFxGl.getProgramInfoLog(nonCrtFxProgram) || 'Matrix FX shader link failed.');
+                }
+
+                nonCrtFxPositionBuffer = matrixFxGl.createBuffer();
+                matrixFxGl.bindBuffer(matrixFxGl.ARRAY_BUFFER, nonCrtFxPositionBuffer);
+                matrixFxGl.bufferData(matrixFxGl.ARRAY_BUFFER, new Float32Array([
+                    -1, -1, 1, -1, -1, 1,
+                    -1, 1, 1, -1, 1, 1
+                ]), matrixFxGl.STATIC_DRAW);
+
+                nonCrtFxTexCoordBuffer = matrixFxGl.createBuffer();
+                matrixFxGl.bindBuffer(matrixFxGl.ARRAY_BUFFER, nonCrtFxTexCoordBuffer);
+                matrixFxGl.bufferData(matrixFxGl.ARRAY_BUFFER, new Float32Array([
+                    0, 1, 1, 1, 0, 0,
+                    0, 0, 1, 1, 1, 0
+                ]), matrixFxGl.STATIC_DRAW);
+
+                nonCrtFxAttributeLocations = {
+                    position: matrixFxGl.getAttribLocation(nonCrtFxProgram, 'aPosition'),
+                    texCoord: matrixFxGl.getAttribLocation(nonCrtFxProgram, 'aTexCoord')
+                };
+                nonCrtFxTexture = matrixFxGl.createTexture();
+                matrixFxGl.bindTexture(matrixFxGl.TEXTURE_2D, nonCrtFxTexture);
+                matrixFxGl.texParameteri(matrixFxGl.TEXTURE_2D, matrixFxGl.TEXTURE_WRAP_S, matrixFxGl.CLAMP_TO_EDGE);
+                matrixFxGl.texParameteri(matrixFxGl.TEXTURE_2D, matrixFxGl.TEXTURE_WRAP_T, matrixFxGl.CLAMP_TO_EDGE);
+                matrixFxGl.texParameteri(matrixFxGl.TEXTURE_2D, matrixFxGl.TEXTURE_MIN_FILTER, matrixFxGl.LINEAR);
+                matrixFxGl.texParameteri(matrixFxGl.TEXTURE_2D, matrixFxGl.TEXTURE_MAG_FILTER, matrixFxGl.LINEAR);
+                nonCrtFxUniforms = {
+                    fxTexture: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_fxTex'),
+                    resolution: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_resolution')
+                };
+
+                nonCrtFxReady = true;
+                nonCrtCompositeAvailable = true;
+                ensureNonCrtFxTextureSize();
+            } catch (error) {
+                nonCrtFxReady = false;
+                nonCrtCompositeAvailable = false;
+                if (!nonCrtFxWarningShown) {
+                    console.warn('// Non-CRT FX renderer failed, falling back to CPU glow path.', error);
+                    nonCrtFxWarningShown = true;
+                }
+            }
+        }
         function ensureCrtTextureSize() {
-            if (!crtGl || !crtTexture || crtCanvas.width <= 0 || crtCanvas.height <= 0) { return; }
-            if (crtTextureWidth === crtCanvas.width && crtTextureHeight === crtCanvas.height) { return; }
-            crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
-            crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtCanvas.width, crtCanvas.height, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, null);
-            crtTextureWidth = crtCanvas.width;
-            crtTextureHeight = crtCanvas.height;
+            if (!crtGl) { return; }
+            if (crtTexture && crtSourceCanvas.width > 0 && crtSourceCanvas.height > 0 && (crtTextureWidth !== crtSourceCanvas.width || crtTextureHeight !== crtSourceCanvas.height)) {
+                crtGl.activeTexture(crtGl.TEXTURE0);
+                crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
+                crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtSourceCanvas.width, crtSourceCanvas.height, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, null);
+                crtTextureWidth = crtSourceCanvas.width;
+                crtTextureHeight = crtSourceCanvas.height;
+            }
+            if (crtUiTexture && crtUiCanvas.width > 0 && crtUiCanvas.height > 0 && (crtUiTextureWidth !== crtUiCanvas.width || crtUiTextureHeight !== crtUiCanvas.height)) {
+                crtGl.activeTexture(crtGl.TEXTURE1);
+                crtGl.bindTexture(crtGl.TEXTURE_2D, crtUiTexture);
+                crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtUiCanvas.width, crtUiCanvas.height, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, null);
+                crtUiTextureWidth = crtUiCanvas.width;
+                crtUiTextureHeight = crtUiCanvas.height;
+                crtUiSnapshotDirty = true;
+            }
+        }
+        function ensureNonCrtFxTextureSize() {
+            if (!matrixFxGl || !nonCrtFxTexture || matrixFxMaskCanvas.width <= 0 || matrixFxMaskCanvas.height <= 0) { return; }
+            if (nonCrtFxTextureWidth === matrixFxMaskCanvas.width && nonCrtFxTextureHeight === matrixFxMaskCanvas.height) { return; }
+            matrixFxGl.activeTexture(matrixFxGl.TEXTURE0);
+            matrixFxGl.bindTexture(matrixFxGl.TEXTURE_2D, nonCrtFxTexture);
+            matrixFxGl.texImage2D(matrixFxGl.TEXTURE_2D, 0, matrixFxGl.RGBA, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height, 0, matrixFxGl.RGBA, matrixFxGl.UNSIGNED_BYTE, null);
+            nonCrtFxTextureWidth = matrixFxMaskCanvas.width;
+            nonCrtFxTextureHeight = matrixFxMaskCanvas.height;
         }
         function getCrtFishbowlAmount() {
             return (currentCrtFishbowlPercent / 100) * CRT_FISHBOWL_MULTIPLIER;
@@ -1728,6 +2060,7 @@ void main() {
             if (!isCrtMode || !crtReady || !crtCompositeAvailable) {
                 bodyElement.style.setProperty('--crt-safe-x', '0px');
                 bodyElement.style.setProperty('--crt-safe-y', '0px');
+                markCrtSnapshotDirty();
                 return;
             }
 
@@ -1740,16 +2073,38 @@ void main() {
             const safeY = Math.ceil((hiddenEdgeRatio * height) + CRT_SAFE_AREA_MARGIN_PX);
             bodyElement.style.setProperty('--crt-safe-x', `${safeX}px`);
             bodyElement.style.setProperty('--crt-safe-y', `${safeY}px`);
+            markCrtSnapshotDirty();
         }
         function markCrtSnapshotDirty() {
-            repaintCrtUiLayer();
+            crtUiSnapshotDirty = true;
+        }
+        function cancelCrtTransitionRefresh() {
+            if (crtTransitionRefreshFrameId !== null) {
+                cancelAnimationFrame(crtTransitionRefreshFrameId);
+                crtTransitionRefreshFrameId = null;
+            }
+            crtTransitionRefreshEndTime = 0;
         }
         function markCrtSnapshotDirtyDuringTransition(durationMs) {
             markCrtSnapshotDirty();
-            requestAnimationFrame(() => {
+            if (!isCrtMode || !crtReady || !crtCompositeAvailable) { return; }
+            const transitionDuration = Math.max(0, durationMs || 0);
+            const refreshBufferMs = 80;
+            crtTransitionRefreshEndTime = Math.max(crtTransitionRefreshEndTime, performance.now() + transitionDuration + refreshBufferMs);
+            if (crtTransitionRefreshFrameId !== null) { return; }
+
+            const refreshDuringTransition = (now) => {
+                crtTransitionRefreshFrameId = null;
                 markCrtSnapshotDirty();
-                renderCrtFrame();
-            });
+                if (isCrtMode) {
+                    renderCrtFrame();
+                }
+                if (now < crtTransitionRefreshEndTime) {
+                    crtTransitionRefreshFrameId = requestAnimationFrame(refreshDuringTransition);
+                }
+            };
+
+            crtTransitionRefreshFrameId = requestAnimationFrame(refreshDuringTransition);
         }
         function isDrawableColor(color) {
             if (!color) { return false; }
@@ -1777,9 +2132,36 @@ void main() {
             const parsedZIndex = Number.parseInt(zIndex, 10);
             return Number.isNaN(parsedZIndex) ? 0 : parsedZIndex;
         }
+        function isDedicatedCrtModalRoot(element) {
+            return element?.id === 'helpModalOverlay' || element?.id === 'commandPaletteOverlay';
+        }
+        function toOpaqueCrtColor(color, fallback = 'rgba(0, 0, 0, 1)') {
+            if (!color) { return fallback; }
+            const normalizedColor = color.trim();
+            const rgbaMatch = normalizedColor.match(/^rgba\(([^)]+)\)$/i);
+            if (!rgbaMatch) { return normalizedColor; }
+            const parts = rgbaMatch[1].split(',').map(part => part.trim());
+            if (parts.length < 3) { return fallback; }
+            return `rgba(${parts[0]}, ${parts[1]}, ${parts[2]}, 1)`;
+        }
+        function getCrtElementBackgroundColor(element, style) {
+            if (!(element instanceof Element) || !isDrawableColor(style.backgroundColor)) {
+                return null;
+            }
+
+            if (element.classList.contains('modal-content')) {
+                return toOpaqueCrtColor(style.backgroundColor, 'rgba(0, 0, 0, 1)');
+            }
+            if (element.classList.contains('modal-overlay')) {
+                return 'rgba(0, 0, 0, 0.84)';
+            }
+
+            return style.backgroundColor;
+        }
         function drawElementBoxForCrt(element, style, rect) {
-            if (isDrawableColor(style.backgroundColor)) {
-                crtPaintCtx.fillStyle = style.backgroundColor;
+            const backgroundColor = getCrtElementBackgroundColor(element, style);
+            if (backgroundColor && isDrawableColor(backgroundColor)) {
+                crtPaintCtx.fillStyle = backgroundColor;
                 crtPaintCtx.fillRect(rect.left, rect.top, rect.width, rect.height);
             }
 
@@ -1804,11 +2186,21 @@ void main() {
                 crtPaintCtx.fillRect(rect.left, rect.top, borderLeftWidth, rect.height);
             }
         }
+        function rectsOverlap(rectA, rectB) {
+            return rectA.left < rectB.right && rectA.right > rectB.left && rectA.top < rectB.bottom && rectA.bottom > rectB.top;
+        }
         function applyTextStyleForCrt(style, color = style.color, fontWeight = style.fontWeight) {
             crtPaintCtx.font = `${style.fontStyle} ${fontWeight} ${style.fontSize} ${style.fontFamily}`;
             crtPaintCtx.fillStyle = color;
             crtPaintCtx.textBaseline = 'top';
             crtPaintCtx.textAlign = 'left';
+        }
+        function shouldClipCrtChildren(element, style) {
+            if (!(element instanceof Element)) { return false; }
+            const overflowValues = [style.overflow, style.overflowX, style.overflowY].filter(Boolean);
+            const hasClippedOverflow = overflowValues.some(value => value !== 'visible');
+            if (hasClippedOverflow) { return true; }
+            return !!element.closest('.modal-content, .modal-scroll-content') || element.id === 'commandPaletteList' || element.id === 'managementPanel';
         }
         function shouldEmphasizeCrtInvertedText(element) {
             if (isConstructMode || !(element instanceof Element)) { return false; }
@@ -1830,6 +2222,44 @@ void main() {
             crtPaintCtx.fillText(text, rect.left + 0.75, rect.top, maxWidth);
             crtPaintCtx.restore();
         }
+        function wrapCrtTextToRects(text, rects) {
+            const normalizedText = text.replace(/\s+/g, ' ').trim();
+            if (!normalizedText) { return []; }
+            if (rects.length <= 1) { return [normalizedText]; }
+
+            const words = normalizedText.split(' ');
+            const lines = [];
+
+            rects.forEach((rect, index) => {
+                if (words.length === 0) { return; }
+                const maxWidth = Math.max(rect.width - 4, 10);
+                let currentLine = '';
+
+                while (words.length > 0) {
+                    const nextWord = words[0];
+                    const candidate = currentLine ? `${currentLine} ${nextWord}` : nextWord;
+                    if (!currentLine || crtPaintCtx.measureText(candidate).width <= maxWidth) {
+                        currentLine = candidate;
+                        words.shift();
+                    } else {
+                        break;
+                    }
+                }
+
+                if (!currentLine) {
+                    currentLine = words.shift() || '';
+                }
+
+                if (index === rects.length - 1 && words.length > 0) {
+                    currentLine = `${currentLine} ${words.join(' ')}`.trim();
+                    words.length = 0;
+                }
+
+                lines.push(currentLine);
+            });
+
+            return lines;
+        }
         function drawTextNodeForCrt(textNode) {
             const text = textNode.textContent;
             if (!text || !text.trim()) { return; }
@@ -1844,12 +2274,14 @@ void main() {
             range.detach();
             if (rects.length === 0) { return; }
 
-            const normalizedText = text.replace(/\s+/g, ' ').trim();
             applyTextStyleForCrt(style);
             const emphasizeInvertedText = shouldEmphasizeCrtInvertedText(parent);
-            rects.slice(0, 1).forEach(rect => {
-                const maxWidth = Math.max(rect.width + 12, 10);
-                drawCrtText(normalizedText, rect, maxWidth, style, emphasizeInvertedText);
+            const wrappedLines = wrapCrtTextToRects(text, rects);
+            rects.forEach((rect, index) => {
+                const lineText = wrappedLines[index];
+                if (!lineText) { return; }
+                const maxWidth = Math.max(rect.width + 6, 10);
+                drawCrtText(lineText, rect, maxWidth, style, emphasizeInvertedText);
             });
         }
         function drawInputForCrt(input, style, rect) {
@@ -1925,7 +2357,16 @@ void main() {
                 return;
             }
 
+            const shouldClipChildren = shouldClipCrtChildren(element, style);
+            if (shouldClipChildren) {
+                crtPaintCtx.save();
+            }
             drawElementBoxForCrt(element, style, rect);
+            if (shouldClipChildren) {
+                crtPaintCtx.beginPath();
+                crtPaintCtx.rect(rect.left, rect.top, rect.width, rect.height);
+                crtPaintCtx.clip();
+            }
             Array.from(element.childNodes).forEach(child => {
                 if (child.nodeType === Node.TEXT_NODE) {
                     drawTextNodeForCrt(child);
@@ -1933,30 +2374,98 @@ void main() {
                     paintElementForCrt(child);
                 }
             });
+            if (shouldClipChildren) {
+                crtPaintCtx.restore();
+            }
+        }
+        function paintModalBackdropForCrt(overlay) {
+            const rect = overlay.getBoundingClientRect();
+            const style = getComputedStyle(overlay);
+            drawElementBoxForCrt(overlay, style, rect);
+        }
+        function paintModalShellForCrt(modal, header, body) {
+            const modalRect = modal.getBoundingClientRect();
+            const headerRect = header.getBoundingClientRect();
+            const bodyRect = body.getBoundingClientRect();
+            drawElementBoxForCrt(modal, getComputedStyle(modal), modalRect);
+            drawElementBoxForCrt(header, getComputedStyle(header), headerRect);
+            if (bodyRect.width > 0 && bodyRect.height > 0) {
+                crtPaintCtx.save();
+                crtPaintCtx.fillStyle = 'rgba(0, 0, 0, 0.96)';
+                crtPaintCtx.fillRect(bodyRect.left, bodyRect.top, bodyRect.width, bodyRect.height);
+                crtPaintCtx.restore();
+            }
+            paintElementForCrt(header);
+        }
+        function paintVisibleModalChildrenForCrt(children, clipRect) {
+            crtPaintCtx.save();
+            crtPaintCtx.beginPath();
+            crtPaintCtx.rect(clipRect.left, clipRect.top, clipRect.width, clipRect.height);
+            crtPaintCtx.clip();
+            children.forEach((element) => {
+                if (!(element instanceof Element) || !isElementVisibleForCrt(element)) { return; }
+                const rect = element.getBoundingClientRect();
+                if (!rectsOverlap(rect, clipRect)) { return; }
+                paintElementForCrt(element);
+            });
+            crtPaintCtx.restore();
+        }
+        function paintHelpModalForCrt() {
+            if (!helpModalOverlay.classList.contains('visible')) { return; }
+            const scrollContent = helpModal.querySelector('.modal-scroll-content');
+            const helpItems = Array.from(helpModal.querySelectorAll('.shortcut-list > li'));
+            if (!(scrollContent instanceof Element) || helpItems.length === 0) { return; }
+            paintModalBackdropForCrt(helpModalOverlay);
+            paintModalShellForCrt(helpModal, helpModalHeader, scrollContent);
+            paintVisibleModalChildrenForCrt(helpItems, scrollContent.getBoundingClientRect());
+        }
+        function paintCommandPaletteForCrt() {
+            if (!commandPaletteOverlay.classList.contains('visible')) { return; }
+            const scrollContent = commandPalette.querySelector('.modal-scroll-content');
+            if (!(scrollContent instanceof Element)) { return; }
+            const contentRect = scrollContent.getBoundingClientRect();
+            const commandItems = Array.from(commandPaletteList.querySelectorAll('.command-item'));
+            paintModalBackdropForCrt(commandPaletteOverlay);
+            paintModalShellForCrt(commandPalette, commandPaletteHeader, scrollContent);
+            crtPaintCtx.save();
+            crtPaintCtx.beginPath();
+            crtPaintCtx.rect(contentRect.left, contentRect.top, contentRect.width, contentRect.height);
+            crtPaintCtx.clip();
+            paintElementForCrt(commandPaletteInput);
+            commandItems.forEach((item) => {
+                const rect = item.getBoundingClientRect();
+                if (rectsOverlap(rect, contentRect)) {
+                    paintElementForCrt(item);
+                }
+            });
+            crtPaintCtx.restore();
+        }
+        function paintCrtModals() {
+            paintHelpModalForCrt();
+            paintCommandPaletteForCrt();
         }
         function paintVisibleDomForCrt() {
             Array.from(bodyElement.children)
                 .map((child, index) => ({ child, index, stackLevel: getCrtStackLevel(child) }))
                 .sort((a, b) => a.stackLevel - b.stackLevel || a.index - b.index)
                 .forEach(({ child }) => {
+                    if (isDedicatedCrtModalRoot(child)) { return; }
                     paintElementForCrt(child);
                 });
+            paintCrtModals();
         }
         function repaintCrtUiLayer() {
-            if (!crtUiCtx) { return; }
+            if (!crtUiCtx || !crtUiSnapshotDirty) { return; }
             crtUiCtx.clearRect(0, 0, crtUiCanvas.width, crtUiCanvas.height);
             crtPaintCtx = crtUiCtx;
             paintVisibleDomForCrt();
             crtPaintCtx = crtSourceCtx;
+            crtUiSnapshotDirty = false;
         }
         function composeCrtSourceFrame() {
             if (!crtSourceCtx) { return canvas; }
             crtSourceCtx.clearRect(0, 0, crtSourceCanvas.width, crtSourceCanvas.height);
             crtSourceCtx.drawImage(canvas, 0, 0, crtSourceCanvas.width, crtSourceCanvas.height);
-            repaintCrtUiLayer();
-            if (crtUiCanvas.width > 0 && crtUiCanvas.height > 0) {
-                crtSourceCtx.drawImage(crtUiCanvas, 0, 0);
-            }
             return crtSourceCanvas;
         }
         function clampUnit(value) {
@@ -1979,6 +2488,34 @@ void main() {
             const brightnessFactor = currentBrightnessPercent / 100;
             return clampUnit(strength * brightnessFactor);
         }
+        function getViewportTailLength() {
+            const visibleRows = Math.floor(canvas.height / Math.max(1, currentFontSize));
+            return Math.max(MIN_TRAIL_LENGTH, Math.min(MAX_TRAIL_LENGTH, visibleRows));
+        }
+        function getActiveTrailLength() {
+            return getViewportTailLength();
+        }
+        function getTailCurveProfile() {
+            const normalizedCurve = clampUnit(currentTailCurvePercent / 100);
+            if (normalizedCurve <= 0.5) {
+                const t = normalizedCurve / 0.5;
+                return {
+                    reciprocalScale: 14.0 + ((5.0 - 14.0) * t),
+                    reciprocalPower: 2.2 + ((1.35 - 2.2) * t)
+                };
+            }
+            return {
+                reciprocalScale: 5.0 + ((1.4 - 5.0) * ((normalizedCurve - 0.5) / 0.5)),
+                reciprocalPower: 1.35 + ((0.78 - 1.35) * ((normalizedCurve - 0.5) / 0.5))
+            };
+        }
+        function getTailFloorAmount() {
+            return clampUnit(currentTailFloorPercent / 100);
+        }
+        function getGlitchFlipChance() {
+            const normalizedFrequency = clampUnit(currentGlitchFrequencyPercent / 100);
+            return DEFAULT_GLITCH_FLIP_CHANCE * Math.pow(normalizedFrequency / 0.5, 2.0);
+        }
         function getOverdriveFillAmount(overdriveAmount) {
             if (overdriveAmount <= 0) { return 0; }
             if (overdriveAmount <= 0.2) {
@@ -1989,10 +2526,147 @@ void main() {
             }
             return 1;
         }
-        function getOverdriveOverlayRgb(amount) {
-            const t = clampUnit(amount);
-            const overlayChannel = 255 * t;
-            return [overlayChannel, 255, overlayChannel];
+        function resolveAdditiveOverdriveProfile(baseTrailOpacity, overdriveAmount, overdriveFillAmount, isCrtProfile) {
+            const baseGreen = 255 * clampUnit(baseTrailOpacity);
+            const addedEnergy = 255 * clampUnit(overdriveFillAmount);
+            const green = Math.min(255, baseGreen + addedEnergy);
+            const spill = Math.max(0, (baseGreen + addedEnergy) - 255);
+            const fillRgb = [spill, green, spill];
+            if (isCrtProfile) {
+                return {
+                    fillStyle: toRgbaString(fillRgb, 1),
+                    shadowColor: 'transparent',
+                    shadowBlur: 0,
+                    glowPasses: []
+                };
+            }
+            const greenHeadroom = Math.max(0, 255 - baseGreen);
+            const greenGlowStrength = greenHeadroom > 0 ? clampUnit(Math.min(addedEnergy, greenHeadroom) / greenHeadroom) : 0;
+            const whiteBloomStrength = clampUnit(spill / 255);
+            const glowVisibility = clampUnit(baseTrailOpacity + (overdriveAmount * 0.5));
+            const greenGlowAlpha = greenGlowStrength * glowVisibility * (isCrtProfile ? 0.16 : 0.34);
+            const whiteBloomAlpha = whiteBloomStrength * glowVisibility * (isCrtProfile ? 0.12 : 0.24);
+            const greenGlowBlur = (isCrtProfile ? 3 : 7) + (overdriveAmount * (isCrtProfile ? 7 : 16));
+            const whiteBloomBlur = (isCrtProfile ? 1.5 : 3) + (whiteBloomStrength * (isCrtProfile ? 4.5 : 9));
+            const glowPasses = [];
+
+            if (greenGlowAlpha > 0.002) {
+                glowPasses.push({
+                    fillStyle: toRgbaString([0, 255, 0], 0.015),
+                    shadowColor: toRgbaString([0, 255, 0], greenGlowAlpha),
+                    shadowBlur: greenGlowBlur,
+                    compositeOperation: 'lighter'
+                });
+            }
+
+            if (whiteBloomAlpha > 0.002) {
+                glowPasses.push({
+                    fillStyle: toRgbaString([255, 255, 255], 0.012),
+                    shadowColor: toRgbaString([255, 255, 255], whiteBloomAlpha),
+                    shadowBlur: whiteBloomBlur,
+                    compositeOperation: 'lighter'
+                });
+            }
+
+            return {
+                fillStyle: toRgbaString(fillRgb, 1),
+                shadowColor: 'transparent',
+                shadowBlur: 0,
+                glowPasses
+            };
+        }
+        function getTrailOpacity(trailIndex) {
+            return trailOpacityCache[trailIndex] ?? 0;
+        }
+        function getOverlayMaskVisibility(element) {
+            if (!element) { return false; }
+            if (element === managementPanel) {
+                return managementPanel.classList.contains('visible');
+            }
+            if (element === helpModal) {
+                return helpModalOverlay.classList.contains('visible');
+            }
+            if (element === commandPalette) {
+                return commandPaletteOverlay.classList.contains('visible');
+            }
+            return true;
+        }
+        function markOverdriveMaskDirty() {
+            overdriveMaskDirty = true;
+        }
+        function cancelOverdriveMaskTransitionRefresh() {
+            if (overdriveMaskTransitionFrameId !== null) {
+                cancelAnimationFrame(overdriveMaskTransitionFrameId);
+                overdriveMaskTransitionFrameId = null;
+            }
+            overdriveMaskTransitionEndTime = 0;
+        }
+        function markOverdriveMaskDirtyDuringTransition(durationMs) {
+            markOverdriveMaskDirty();
+            if (isCrtMode || !isOverdriveMode || isConstructMode) { return; }
+            const transitionDuration = Math.max(0, durationMs || 0);
+            const refreshBufferMs = 80;
+            overdriveMaskTransitionEndTime = Math.max(overdriveMaskTransitionEndTime, performance.now() + transitionDuration + refreshBufferMs);
+            if (overdriveMaskTransitionFrameId !== null) { return; }
+
+            const refreshDuringTransition = (now) => {
+                overdriveMaskTransitionFrameId = null;
+                markOverdriveMaskDirty();
+                if (now < overdriveMaskTransitionEndTime) {
+                    overdriveMaskTransitionFrameId = requestAnimationFrame(refreshDuringTransition);
+                }
+            };
+
+            overdriveMaskTransitionFrameId = requestAnimationFrame(refreshDuringTransition);
+        }
+        function computeOverdriveMaskRects() {
+            return OVERDRIVE_MASK_ELEMENTS
+                .filter(element => getOverlayMaskVisibility(element) && isElementVisibleForCrt(element))
+                .map(element => element.getBoundingClientRect())
+                .filter(rect => rect.width > 0 && rect.height > 0);
+        }
+        function getOverdriveMaskRects() {
+            if (overdriveMaskDirty) {
+                overdriveMaskRectsCache = computeOverdriveMaskRects();
+                overdriveMaskDirty = false;
+            }
+            return overdriveMaskRectsCache;
+        }
+        function isOverdriveMaskedAtGlyph(x, y, width, height, maskRects) {
+            if (!maskRects || maskRects.length === 0) { return false; }
+            const glyphRect = {
+                left: x,
+                right: x + width,
+                top: y - currentFontSize,
+                bottom: y + Math.max(2, currentFontSize * 0.18)
+            };
+            return maskRects.some(rect =>
+                glyphRect.right > rect.left &&
+                glyphRect.left < rect.right &&
+                glyphRect.bottom > rect.top &&
+                glyphRect.top < rect.bottom
+            );
+        }
+        function getIntersectingOverdriveMaskRects(x, y, width, height, maskRects) {
+            if (!maskRects || maskRects.length === 0) { return []; }
+            const glyphRect = {
+                left: x,
+                right: x + width,
+                top: y - currentFontSize,
+                bottom: y + Math.max(2, currentFontSize * 0.18)
+            };
+            return maskRects.filter(rect =>
+                glyphRect.right > rect.left &&
+                glyphRect.left < rect.right &&
+                glyphRect.bottom > rect.top &&
+                glyphRect.top < rect.bottom
+            );
+        }
+        function clearMaskedRects(targetCtx, maskRects, scale = 1) {
+            if (!targetCtx || !maskRects || maskRects.length === 0) { return; }
+            maskRects.forEach(rect => {
+                targetCtx.clearRect(rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale);
+            });
         }
         function refreshMatrixRenderStyles() {
             const computedStyle = getComputedStyle(bodyElement);
@@ -2010,74 +2684,229 @@ void main() {
                 flashRgb,
                 font: `${currentFontSize}px ${computedStyle.fontFamily}`
             };
-            trailFillStyleCache = Array.from({ length: MAX_TRAIL_LENGTH }, (_, index) => {
-                const opacity = Math.max(0, 1.0 - (index / MAX_TRAIL_LENGTH));
-                return `rgba(${trailColorRgb}, ${opacity})`;
+            const trailCurveProfile = getTailCurveProfile();
+            const activeTrailLength = getActiveTrailLength();
+            const tailFloorAmount = getTailFloorAmount();
+            trailOpacityCache = Array.from({ length: MAX_TRAIL_LENGTH }, (_, index) => {
+                if (index >= activeTrailLength) { return 0; }
+                if (index >= activeTrailLength - 1) { return 0; }
+                const normalizedIndex = index / Math.max(1, activeTrailLength - 1);
+                const shapedOpacity = 1 / Math.pow(1 + (trailCurveProfile.reciprocalScale * normalizedIndex), trailCurveProfile.reciprocalPower);
+                return clampUnit(tailFloorAmount + ((1 - tailFloorAmount) * shapedOpacity));
             });
+            trailFillStyleCache = trailOpacityCache.map(opacity => `rgba(${trailColorRgb}, ${opacity})`);
         }
-        function resolveMatrixGlyphStyle(kind, trailIndex = 0) {
+        function resolveMatrixGlyphStyle(kind, trailIndex = 0, options = {}) {
             if (!matrixRenderStyles) {
                 refreshMatrixRenderStyles();
             }
 
             const overdriveAmount = getOverdriveAmount();
             const overdriveFillAmount = getOverdriveFillAmount(overdriveAmount);
+            const baseTrailOpacity = trailIndex > 0 ? getTrailOpacity(trailIndex) : 1;
+            const isOverdriveAllowed = !options.disableOverdrive && !isConstructMode;
             const isCrtProfile = isCrtMode && !isConstructMode;
-            const isLegacyFringeMode = isCrtProfile && !isOverdriveMode;
+            const isLegacyFringeMode = isCrtProfile && !isOverdriveMode && !options.disableOverdrive;
             if (kind === 'trail') {
                 return {
                     fillStyle: trailFillStyleCache[trailIndex] || `rgba(${matrixRenderStyles.trailColorRgb}, 0)`,
                     shadowColor: 'transparent',
-                    shadowBlur: 0
+                    shadowBlur: 0,
+                    glowPasses: []
+                };
+            }
+
+            if (options.disableOverdrive && !isConstructMode) {
+                return {
+                    fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity),
+                    shadowColor: 'transparent',
+                    shadowBlur: 0,
+                    glowPasses: []
                 };
             }
 
             if (isLegacyFringeMode) {
                 if (kind === 'glitch') {
-                    return { fillStyle: matrixRenderStyles.flashColor, shadowColor: 'transparent', shadowBlur: 0 };
+                    return { fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0, glowPasses: [] };
                 }
-                return { fillStyle: matrixRenderStyles.leadColor, shadowColor: 'transparent', shadowBlur: 0 };
+                return { fillStyle: toRgbaString(matrixRenderStyles.leadRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0, glowPasses: [] };
             }
 
-            if (isOverdriveMode && !isConstructMode && overdriveAmount <= 0) {
-                return {
-                    fillStyle: toRgbaString(getOverdriveOverlayRgb(0)),
-                    shadowColor: 'transparent',
-                    shadowBlur: 0
-                };
-            }
-
-            if (overdriveAmount <= 0) {
+            if (overdriveAmount <= 0 || !isOverdriveAllowed || (kind === 'glitch' && !isGlitchOverdriveEnabled)) {
                 if (kind === 'glitch') {
-                    return { fillStyle: matrixRenderStyles.flashColor, shadowColor: 'transparent', shadowBlur: 0 };
+                    return { fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0, glowPasses: [] };
                 }
-                return { fillStyle: matrixRenderStyles.leadColor, shadowColor: 'transparent', shadowBlur: 0 };
-            }
-
-            if (isCrtProfile) {
-                const fillRgb = getOverdriveOverlayRgb(Math.pow(overdriveFillAmount, 1.18));
-                const glowRgb = mixRgb(matrixRenderStyles.trailRgb, [120, 255, 135], 0.3 + (overdriveAmount * 0.24));
-                const glowAlpha = 0.05 + (overdriveAmount * 0.18);
+                if (!isOverdriveMode) {
+                    return { fillStyle: toRgbaString(matrixRenderStyles.leadRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0, glowPasses: [] };
+                }
                 return {
-                    fillStyle: toRgbaString(fillRgb),
-                    shadowColor: toRgbaString(glowRgb, glowAlpha),
-                    shadowBlur: 2 + (overdriveAmount * 8)
+                    fillStyle: toRgbaString([0, Math.round(255 * baseTrailOpacity), 0], 1),
+                    shadowColor: 'transparent',
+                    shadowBlur: 0,
+                    glowPasses: []
                 };
             }
 
-            const fillRgb = getOverdriveOverlayRgb(overdriveFillAmount);
-            const glowAlpha = 0.18 + (overdriveAmount * 0.5);
-            const glowRgb = mixRgb(matrixRenderStyles.trailRgb, [180, 255, 185], 0.5 + (overdriveAmount * 0.5));
-            return {
-                fillStyle: toRgbaString(fillRgb),
-                shadowColor: toRgbaString(glowRgb, glowAlpha),
-                shadowBlur: 4 + (overdriveAmount * 20)
-            };
+            return resolveAdditiveOverdriveProfile(baseTrailOpacity, overdriveAmount, overdriveFillAmount, isCrtProfile);
         }
         function applyMatrixGlyphStyle(style) {
             ctx.fillStyle = style.fillStyle;
             ctx.shadowColor = style.shadowColor || 'transparent';
             ctx.shadowBlur = style.shadowBlur || 0;
+        }
+        function renderMatrixGlyphWithStyle(char, x, y, style) {
+            const glowPasses = Array.isArray(style.glowPasses) ? style.glowPasses : [];
+            glowPasses.forEach(pass => {
+                ctx.save();
+                ctx.globalCompositeOperation = pass.compositeOperation || 'source-over';
+                ctx.fillStyle = pass.fillStyle;
+                ctx.shadowColor = pass.shadowColor || 'transparent';
+                ctx.shadowBlur = pass.shadowBlur || 0;
+                ctx.fillText(char, x, y);
+                ctx.restore();
+            });
+            applyMatrixGlyphStyle(style);
+            ctx.fillText(char, x, y);
+        }
+        function renderGlyphFillToContext(targetCtx, char, x, y, style) {
+            targetCtx.fillStyle = style.fillStyle;
+            targetCtx.fillText(char, x, y);
+        }
+        function buildMatrixFrameState() {
+            if (!matrixRenderStyles) {
+                refreshMatrixRenderStyles();
+            }
+            const overdriveAmount = getOverdriveAmount();
+            const overdriveFillAmount = getOverdriveFillAmount(overdriveAmount);
+            const useNonCrtFxRenderer = !isCrtMode && !isConstructMode && nonCrtFxReady && nonCrtCompositeAvailable;
+            const useSplitOverdriveLayers = useNonCrtFxRenderer && isOverdriveMode && overdriveAmount > 0;
+            return {
+                overdriveAmount,
+                overdriveFillAmount,
+                useNonCrtFxRenderer,
+                useSplitOverdriveLayers,
+                overdriveMaskRects: useSplitOverdriveLayers ? getOverdriveMaskRects() : [],
+                baseStyleCache: new Map(),
+                highlightStyleCache: new Map(),
+                hasHighlightFill: false,
+                hasFxHighlights: false
+            };
+        }
+        function resolveFrameBaseGlyphStyle(frameState, kind, trailIndex = 0) {
+            const cacheKey = `${kind}:${trailIndex}:${frameState.useSplitOverdriveLayers ? 'split' : 'full'}`;
+            if (frameState.baseStyleCache.has(cacheKey)) {
+                return frameState.baseStyleCache.get(cacheKey);
+            }
+
+            let style;
+            if (kind === 'trail') {
+                style = {
+                    fillStyle: trailFillStyleCache[trailIndex] || `rgba(${matrixRenderStyles.trailColorRgb}, 0)`,
+                    shadowColor: 'transparent',
+                    shadowBlur: 0,
+                    glowPasses: []
+                };
+            } else if (frameState.useSplitOverdriveLayers) {
+                const baseTrailOpacity = trailIndex > 0 ? getTrailOpacity(trailIndex) : 1;
+                style = {
+                    fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity),
+                    shadowColor: 'transparent',
+                    shadowBlur: 0,
+                    glowPasses: []
+                };
+            } else {
+                style = resolveMatrixGlyphStyle(kind, trailIndex);
+            }
+
+            frameState.baseStyleCache.set(cacheKey, style);
+            return style;
+        }
+        function resolveFrameHighlightFillStyle(frameState, kind, trailIndex = 0) {
+            if (!frameState.useSplitOverdriveLayers) { return null; }
+            if (kind === 'glitch' && !isGlitchOverdriveEnabled) { return null; }
+            const cacheKey = `${kind}:${trailIndex}`;
+            if (frameState.highlightStyleCache.has(cacheKey)) {
+                return frameState.highlightStyleCache.get(cacheKey);
+            }
+            const baseTrailOpacity = trailIndex > 0 ? getTrailOpacity(trailIndex) : 1;
+            const additiveStyle = resolveAdditiveOverdriveProfile(baseTrailOpacity, frameState.overdriveAmount, frameState.overdriveFillAmount, false);
+            const style = {
+                fillStyle: additiveStyle.fillStyle,
+                shadowColor: 'transparent',
+                shadowBlur: 0,
+                glowPasses: []
+            };
+            frameState.highlightStyleCache.set(cacheKey, style);
+            return style;
+        }
+        function renderNonCrtFxLayer() {
+            if (!matrixFxGl || !nonCrtFxReady || !nonCrtCompositeAvailable || !nonCrtFxAttributeLocations) { return false; }
+
+            matrixFxGl.viewport(0, 0, matrixFxCanvas.width, matrixFxCanvas.height);
+            matrixFxGl.useProgram(nonCrtFxProgram);
+
+            matrixFxGl.bindBuffer(matrixFxGl.ARRAY_BUFFER, nonCrtFxPositionBuffer);
+            matrixFxGl.enableVertexAttribArray(nonCrtFxAttributeLocations.position);
+            matrixFxGl.vertexAttribPointer(nonCrtFxAttributeLocations.position, 2, matrixFxGl.FLOAT, false, 0, 0);
+
+            matrixFxGl.bindBuffer(matrixFxGl.ARRAY_BUFFER, nonCrtFxTexCoordBuffer);
+            matrixFxGl.enableVertexAttribArray(nonCrtFxAttributeLocations.texCoord);
+            matrixFxGl.vertexAttribPointer(nonCrtFxAttributeLocations.texCoord, 2, matrixFxGl.FLOAT, false, 0, 0);
+
+            matrixFxGl.activeTexture(matrixFxGl.TEXTURE0);
+            matrixFxGl.bindTexture(matrixFxGl.TEXTURE_2D, nonCrtFxTexture);
+            ensureNonCrtFxTextureSize();
+            matrixFxGl.pixelStorei(matrixFxGl.UNPACK_FLIP_Y_WEBGL, false);
+
+            try {
+                matrixFxGl.texSubImage2D(matrixFxGl.TEXTURE_2D, 0, 0, 0, matrixFxGl.RGBA, matrixFxGl.UNSIGNED_BYTE, matrixFxMaskCanvas);
+            } catch (error) {
+                nonCrtCompositeAvailable = false;
+                console.warn('// Non-CRT FX compositor unavailable: texture upload failed. Falling back to CPU glow path.', error);
+                return false;
+            }
+
+            matrixFxGl.uniform1i(nonCrtFxUniforms.fxTexture, 0);
+            matrixFxGl.uniform2f(nonCrtFxUniforms.resolution, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height);
+            matrixFxGl.drawArrays(matrixFxGl.TRIANGLES, 0, 6);
+            return true;
+        }
+        function composeNonCrtFrame(frameState) {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(matrixFillCanvas, 0, 0);
+            if (frameState.hasHighlightFill) {
+                ctx.drawImage(matrixHighlightCanvas, 0, 0);
+            }
+            if (frameState.hasFxHighlights && renderNonCrtFxLayer()) {
+                ctx.save();
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.drawImage(matrixFxCanvas, 0, 0, canvas.width, canvas.height);
+                ctx.restore();
+            }
+        }
+        function drawMatrixGlyph(char, x, y, kind, trailIndex = 0, maskRects = []) {
+            const overdriveIntersectingRects = isOverdriveMode && !isConstructMode && kind !== 'trail'
+                ? getIntersectingOverdriveMaskRects(x, y, currentFontSize * COLUMN_SPACING_FACTOR, currentFontSize, maskRects)
+                : [];
+
+            if (overdriveIntersectingRects.length === 0) {
+                renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle(kind, trailIndex));
+                return;
+            }
+
+            renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle('trail', trailIndex));
+
+            ctx.save();
+            const clipPath = new Path2D();
+            clipPath.rect(0, 0, canvas.width, canvas.height);
+            overdriveIntersectingRects.forEach(rect => {
+                clipPath.rect(rect.left, rect.top, rect.width, rect.height);
+            });
+            ctx.clip(clipPath, 'evenodd');
+            renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle(kind, trailIndex));
+            ctx.restore();
         }
         function renderCrtFrame() {
             if (!isCrtMode || !crtReady || !crtGl || !crtCompositeAvailable || !crtAttributeLocations) { return; }
@@ -2099,6 +2928,12 @@ void main() {
             crtGl.pixelStorei(crtGl.UNPACK_FLIP_Y_WEBGL, false);
             try {
                 crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, composeCrtSourceFrame());
+                crtGl.activeTexture(crtGl.TEXTURE1);
+                crtGl.bindTexture(crtGl.TEXTURE_2D, crtUiTexture);
+                if (crtUiSnapshotDirty) {
+                    repaintCrtUiLayer();
+                    crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, crtUiCanvas);
+                }
             } catch (error) {
                 crtCompositeAvailable = false;
                 bodyElement.classList.add('crt-unavailable');
@@ -2107,8 +2942,10 @@ void main() {
                 return;
             }
 
-            crtGl.uniform1i(crtUniforms.texture, 0);
+            crtGl.uniform1i(crtUniforms.matrixTexture, 0);
+            crtGl.uniform1i(crtUniforms.uiTexture, 1);
             crtGl.uniform2f(crtUniforms.resolution, crtCanvas.width, crtCanvas.height);
+            crtGl.uniform2f(crtUniforms.matrixResolution, crtSourceCanvas.width, crtSourceCanvas.height);
             crtGl.uniform1f(crtUniforms.time, performance.now() / 1000);
             crtGl.uniform1f(crtUniforms.intensity, isCrtMode ? 0.88 : 0.0);
             const leadFringeMax = (currentFontSize * COLUMN_SPACING_FACTOR) / Math.max(1, crtCanvas.width);
@@ -2118,20 +2955,43 @@ void main() {
             crtGl.uniform1f(crtUniforms.vignette, getCrtVignetteAmount());
             crtGl.uniform1f(crtUniforms.constructMode, isConstructMode ? 1.0 : 0.0);
             crtGl.drawArrays(crtGl.TRIANGLES, 0, 6);
+            lastCrtFrameTime = performance.now();
         }
         function drawMatrixRain() {
-            if (!matrixRenderStyles) {
-                refreshMatrixRenderStyles();
+            const frameState = buildMatrixFrameState();
+            const useNonCrtOptimizedRenderer = frameState.useNonCrtFxRenderer;
+            const baseCtx = useNonCrtOptimizedRenderer ? matrixFillCtx : ctx;
+            const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
+            const now = Date.now();
+            const glitchFlipChance = getGlitchFlipChance();
+            const overdriveMaskRects = frameState.useSplitOverdriveLayers ? frameState.overdriveMaskRects : (isOverdriveMode ? getOverdriveMaskRects() : []);
+
+            baseCtx.setTransform(1, 0, 0, 1, 0, 0);
+            baseCtx.fillStyle = matrixRenderStyles.bgColor;
+            baseCtx.shadowColor = 'transparent';
+            baseCtx.shadowBlur = 0;
+            baseCtx.fillRect(0, 0, canvas.width, canvas.height);
+            baseCtx.font = matrixRenderStyles.font;
+
+            if (useNonCrtOptimizedRenderer) {
+                matrixHighlightCtx.setTransform(1, 0, 0, 1, 0, 0);
+                matrixHighlightCtx.shadowColor = 'transparent';
+                matrixHighlightCtx.shadowBlur = 0;
+                matrixHighlightCtx.clearRect(0, 0, matrixHighlightCanvas.width, matrixHighlightCanvas.height);
+                matrixHighlightCtx.font = matrixRenderStyles.font;
+
+                matrixFxMaskCtx.setTransform(1, 0, 0, 1, 0, 0);
+                matrixFxMaskCtx.shadowColor = 'transparent';
+                matrixFxMaskCtx.shadowBlur = 0;
+                matrixFxMaskCtx.clearRect(0, 0, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height);
+                matrixFxMaskCtx.font = `${Math.max(1, currentFontSize * NON_CRT_FX_SCALE)}px ${getComputedStyle(bodyElement).fontFamily}`;
             }
 
-            ctx.fillStyle = matrixRenderStyles.bgColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.font = matrixRenderStyles.font;
-            const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR; const now = Date.now();
             for (let i = 0; i < drops.length; i++) {
                 const drop = drops[i];
                 if (now - drop.lastUpdateTime >= drop.delay) {
                     const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
-                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now }); if (trails[i].length > MAX_TRAIL_LENGTH) { trails[i].pop(); } drop.y++;
+                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now }); if (trails[i].length > getActiveTrailLength()) { trails[i].pop(); } drop.y++;
                     if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) {
                         drop.y = 0;
                         trails[i] = [];
@@ -2142,31 +3002,77 @@ void main() {
                 if (trails[i]) {
                     for (let k = 0; k < trails[i].length; k++) {
                         let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
-                        if (k > 0 && !trailItem.flipTimestamp && Math.random() < FLIP_CHANCE) {
+                        const trailXPos = i * effectiveColumnWidth;
+                        if (k > 0 && !trailItem.flipTimestamp && Math.random() < glitchFlipChance) {
                             let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
                             trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now; trailItem.updateTimestamp = now;
                         }
                         let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
                         let isRecentlyUpdated = k === 0 && trailItem.updateTimestamp && (now - trailItem.updateTimestamp < UPDATED_CHAR_HIGHLIGHT_MS);
                         if (isHighlighting) {
-                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('glitch', k));
+                            if (useNonCrtOptimizedRenderer) {
+                                renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'glitch', k));
+                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'glitch', k);
+                                if (highlightFillStyle) {
+                                    renderGlyphFillToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle);
+                                    matrixFxMaskCtx.fillStyle = highlightFillStyle.fillStyle;
+                                    matrixFxMaskCtx.fillText(trailItem.char, trailXPos * NON_CRT_FX_SCALE, trailYPos * NON_CRT_FX_SCALE);
+                                    frameState.hasHighlightFill = true;
+                                    frameState.hasFxHighlights = true;
+                                }
+                            } else {
+                                drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'glitch', k, overdriveMaskRects);
+                            }
                         } else if (isRecentlyUpdated) {
-                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('leader', k));
+                            if (useNonCrtOptimizedRenderer) {
+                                renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'leader', k));
+                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'leader', k);
+                                if (highlightFillStyle) {
+                                    renderGlyphFillToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle);
+                                    matrixFxMaskCtx.fillStyle = highlightFillStyle.fillStyle;
+                                    matrixFxMaskCtx.fillText(trailItem.char, trailXPos * NON_CRT_FX_SCALE, trailYPos * NON_CRT_FX_SCALE);
+                                    frameState.hasHighlightFill = true;
+                                    frameState.hasFxHighlights = true;
+                                }
+                            } else {
+                                drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'leader', k, overdriveMaskRects);
+                            }
                         } else {
-                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('trail', k));
+                            if (useNonCrtOptimizedRenderer) {
+                                renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'trail', k));
+                            } else {
+                                drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'trail', k);
+                            }
                             if (trailItem.flipTimestamp && !isHighlighting) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
                             if (trailItem.updateTimestamp) { trailItem.updateTimestamp = undefined; }
                         }
-                        const trailXPos = i * effectiveColumnWidth; ctx.fillText(trailItem.char, trailXPos, trailYPos);
                     }
                     if (trails[i][0]) {
                         const leaderXPos = i * effectiveColumnWidth; const leaderYPos = drop.y * currentFontSize;
                         if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) {
-                            applyMatrixGlyphStyle(resolveMatrixGlyphStyle('leader'));
-                            ctx.fillText(trails[i][0].char, leaderXPos, leaderYPos);
+                            if (useNonCrtOptimizedRenderer) {
+                                renderGlyphFillToContext(baseCtx, trails[i][0].char, leaderXPos, leaderYPos, resolveFrameBaseGlyphStyle(frameState, 'leader', 0));
+                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'leader', 0);
+                                if (highlightFillStyle) {
+                                    renderGlyphFillToContext(matrixHighlightCtx, trails[i][0].char, leaderXPos, leaderYPos, highlightFillStyle);
+                                    matrixFxMaskCtx.fillStyle = highlightFillStyle.fillStyle;
+                                    matrixFxMaskCtx.fillText(trails[i][0].char, leaderXPos * NON_CRT_FX_SCALE, leaderYPos * NON_CRT_FX_SCALE);
+                                    frameState.hasHighlightFill = true;
+                                    frameState.hasFxHighlights = true;
+                                }
+                            } else {
+                                drawMatrixGlyph(trails[i][0].char, leaderXPos, leaderYPos, 'leader', 0, overdriveMaskRects);
+                            }
                         }
                     }
                 }
+            }
+            if (useNonCrtOptimizedRenderer) {
+                if (frameState.overdriveMaskRects.length > 0) {
+                    clearMaskedRects(matrixHighlightCtx, frameState.overdriveMaskRects, 1);
+                    clearMaskedRects(matrixFxMaskCtx, frameState.overdriveMaskRects, NON_CRT_FX_SCALE);
+                }
+                composeNonCrtFrame(frameState);
             }
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
@@ -2183,7 +3089,9 @@ void main() {
                 if (deltaTime >= ANIMATION_FRAME_DELAY) {
                     try { drawMatrixRain(); lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY); }
                     catch(error) { console.error("Error during drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
-                    renderCrtFrame();
+                    if (!isCrtMode || (currentTime - lastCrtFrameTime) >= CRT_FRAME_DELAY) {
+                        renderCrtFrame();
+                    }
                 }
             }
             if (canvas.width > 0 && canvas.height > 0) { rainAnimationId = requestAnimationFrame(animateRain); } else { console.warn("// Canvas dimensions not ready."); }
@@ -2220,10 +3128,14 @@ void main() {
             if (currentBrightnessPercent !== 100) { params.push('brightness=' + currentBrightnessPercent); }
             if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
             if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
+            if (currentTailCurvePercent !== 10) { params.push('tailCurve=' + currentTailCurvePercent); }
+            if (currentTailFloorPercent !== 1) { params.push('tailFloor=' + currentTailFloorPercent); }
+            if (currentGlitchFrequencyPercent !== 50) { params.push('glitchFrequency=' + currentGlitchFrequencyPercent); }
             if (isExtractionMode) { params.push('extract=true'); }
             if (!isCrtMode) { params.push('crt=false'); }
             if (!isOverdriveMode) { params.push('overdrive=false'); }
             if (currentOverdriveStrengthPercent !== 100) { params.push('overdriveStrength=' + currentOverdriveStrengthPercent); }
+            if (!isGlitchOverdriveEnabled) { params.push('glitchOverdrive=false'); }
             if (currentCrtFishbowlPercent !== 25) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
             if (currentCrtVignettePercent !== 40) { params.push('crtVignette=' + currentCrtVignettePercent); }
             if (!isOverdriveMode && currentCrtLeadFringePercent !== 5) { params.push('crtLeadFringe=' + currentCrtLeadFringePercent); }
@@ -2262,9 +3174,14 @@ void main() {
             currentBrightnessPercent = 100;
             currentRainFPS = 10;
             currentFontSize = 24;
+            currentTailLength = getViewportTailLength();
+            currentTailCurvePercent = 10;
+            currentTailFloorPercent = 1;
+            currentGlitchFrequencyPercent = 50;
             isExtractionMode = false;
             isCrtMode = true;
             isOverdriveMode = true;
+            isGlitchOverdriveEnabled = true;
             currentCrtFishbowlPercent = 25;
             currentCrtVignettePercent = 40;
             currentCrtLeadFringePercent = 5;
@@ -2306,6 +3223,28 @@ void main() {
                 }
             }
             updateFontSizeDisplay(currentFontSize);
+            updateTailLengthDisplay();
+            if (urlParams.has('tailCurve')) {
+                const tailCurveParam = parseInt(urlParams.get('tailCurve'), 10);
+                if (!isNaN(tailCurveParam) && tailCurveParam >= 0 && tailCurveParam <= 100) {
+                    currentTailCurvePercent = tailCurveParam;
+                }
+            }
+            updateTailCurveDisplay(currentTailCurvePercent);
+            if (urlParams.has('tailFloor')) {
+                const tailFloorParam = parseInt(urlParams.get('tailFloor'), 10);
+                if (!isNaN(tailFloorParam) && tailFloorParam >= 0 && tailFloorParam <= 30) {
+                    currentTailFloorPercent = tailFloorParam;
+                }
+            }
+            updateTailFloorDisplay(currentTailFloorPercent);
+            if (urlParams.has('glitchFrequency')) {
+                const glitchFrequencyParam = parseInt(urlParams.get('glitchFrequency'), 10);
+                if (!isNaN(glitchFrequencyParam) && glitchFrequencyParam >= 0 && glitchFrequencyParam <= 100) {
+                    currentGlitchFrequencyPercent = glitchFrequencyParam;
+                }
+            }
+            updateGlitchFrequencyDisplay(currentGlitchFrequencyPercent);
             if (urlParams.has('extract')) {
                 isExtractionMode = urlParams.get('extract') === 'true';
             }
@@ -2323,6 +3262,9 @@ void main() {
                 if (!isNaN(overdriveStrengthParam) && overdriveStrengthParam >= 0 && overdriveStrengthParam <= 100) {
                     currentOverdriveStrengthPercent = Math.round(overdriveStrengthParam);
                 }
+            }
+            if (urlParams.has('glitchOverdrive')) {
+                isGlitchOverdriveEnabled = urlParams.get('glitchOverdrive') !== 'false';
             }
             if (urlParams.has('crtLeadFringe')) {
                 const fringeParam = parseFloat(urlParams.get('crtLeadFringe'));
@@ -2344,6 +3286,7 @@ void main() {
             }
             updateOverdriveButton();
             updateOverdriveStrengthDisplay(currentOverdriveStrengthPercent);
+            updateGlitchOverdriveButton();
             updateCrtFishbowlDisplay(currentCrtFishbowlPercent);
             updateCrtVignetteDisplay(currentCrtVignettePercent);
             updateCrtLeadFringeDisplay(currentCrtLeadFringePercent);
@@ -2409,6 +3352,20 @@ void main() {
         function handleFontSizeChange(size) {
             updateFontSizeDisplay(size); if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId); setupCanvas(); startMatrixRain();
         }
+        function updateTailLengthDisplay() {
+            currentTailLength = getViewportTailLength();
+            if (tailLengthSlider) {
+                tailLengthSlider.min = String(MIN_TRAIL_LENGTH);
+                tailLengthSlider.max = String(currentTailLength);
+                tailLengthSlider.value = String(currentTailLength);
+                tailLengthSlider.disabled = true;
+            }
+            if (tailLengthValue) tailLengthValue.textContent = `${currentTailLength}`;
+            trails = trails.map(trail => Array.isArray(trail) ? trail.slice(0, currentTailLength) : trail);
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
         function updateExtractionButton() {
             const isPressed = isExtractionMode;
             extractionModeBtn.setAttribute('aria-pressed', isPressed);
@@ -2425,6 +3382,10 @@ void main() {
             overdriveModeLed.classList.toggle('active', isPressed);
             syncEffectSubSettingsVisibility();
             matrixRenderStyles = null;
+            markOverdriveMaskDirty();
+            if (!isPressed || isConstructMode) {
+                cancelOverdriveMaskTransitionRefresh();
+            }
             markCrtSnapshotDirty();
             renderCrtFrame();
         }
@@ -2432,6 +3393,38 @@ void main() {
             currentOverdriveStrengthPercent = Math.max(0, Math.min(100, Math.round(percent)));
             if (overdriveStrengthSlider) overdriveStrengthSlider.value = currentOverdriveStrengthPercent;
             if (overdriveStrengthValue) overdriveStrengthValue.textContent = `${currentOverdriveStrengthPercent}%`;
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateTailCurveDisplay(percent) {
+            currentTailCurvePercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (tailCurveSlider) tailCurveSlider.value = currentTailCurvePercent;
+            if (tailCurveValue) tailCurveValue.textContent = `${currentTailCurvePercent}%`;
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateTailFloorDisplay(percent) {
+            currentTailFloorPercent = Math.max(0, Math.min(30, Math.round(percent)));
+            if (tailFloorSlider) tailFloorSlider.value = currentTailFloorPercent;
+            if (tailFloorValue) tailFloorValue.textContent = `${currentTailFloorPercent}%`;
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateGlitchFrequencyDisplay(percent) {
+            currentGlitchFrequencyPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (glitchFrequencySlider) glitchFrequencySlider.value = currentGlitchFrequencyPercent;
+            if (glitchFrequencyValue) glitchFrequencyValue.textContent = `${currentGlitchFrequencyPercent}%`;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateGlitchOverdriveButton() {
+            glitchOverdriveBtn.setAttribute('aria-pressed', String(isGlitchOverdriveEnabled));
+            glitchOverdriveBtn.textContent = isGlitchOverdriveEnabled ? 'Glitch Overdrive Enabled' : 'Glitch Overdrive Disabled';
+            glitchOverdriveBtn.classList.toggle('active', isGlitchOverdriveEnabled);
+            glitchOverdriveLed.classList.toggle('active', isGlitchOverdriveEnabled);
             matrixRenderStyles = null;
             markCrtSnapshotDirty();
             renderCrtFrame();
@@ -2468,6 +3461,10 @@ void main() {
             const isPressed = isCrtMode;
             if (isPressed) {
                 setupCrtRenderer();
+                cancelOverdriveMaskTransitionRefresh();
+            } else {
+                cancelCrtTransitionRefresh();
+                markOverdriveMaskDirty();
             }
             crtModeBtn.setAttribute('aria-pressed', isPressed);
             crtModeBtn.textContent = isPressed ? '[T] CRT Engaged' : '[T] Engage CRT';
@@ -2476,7 +3473,11 @@ void main() {
             bodyElement.classList.toggle('crt-mode', isPressed);
             bodyElement.classList.toggle('crt-unavailable', isPressed && (!crtReady || !crtCompositeAvailable));
             syncEffectSubSettingsVisibility();
-            refreshCrtControlLayout();
+            if (isPressed) {
+                refreshCrtControlLayout();
+            } else {
+                updateCrtSafeArea();
+            }
         }
         function updateCrtFishbowlDisplay(percent) {
             currentCrtFishbowlPercent = Math.max(0, Math.min(100, percent));
@@ -2499,6 +3500,8 @@ void main() {
             document.querySelectorAll('#nameList .value-row').forEach(row => {
                 row.classList.toggle('hidden', !isExtractionMode);
             });
+            markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(220);
         }
         function togglePanelSection(button, forceExpanded) {
             const contentId = button.getAttribute('aria-controls');
@@ -2531,6 +3534,10 @@ void main() {
             // Re-apply brightness with the correct color overlay
             updateBrightness(currentBrightnessPercent);
             matrixRenderStyles = null;
+            markOverdriveMaskDirty();
+            if (isConstructMode) {
+                cancelOverdriveMaskTransitionRefresh();
+            }
             // Redraw canvas with new colors
             if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
             startMatrixRain();
@@ -2553,13 +3560,14 @@ void main() {
                 progressSegments.appendChild(segment);
             });
             progressBar.replaceChildren(progressSegments);
-            markCrtSnapshotDirty();
 
             if (totalCount === 0 || isInMatrixMode) { progressBarContainer.classList.add('hidden'); }
             else {
                 progressBarContainer.classList.remove('hidden');
             }
             updateBodyPadding();
+            markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(220);
         }
 
         // --- Body Padding Update ---
@@ -2724,7 +3732,18 @@ void main() {
         }
         function revealNameGradually(name) {
             let i = 0; if (typeIntervalId) clearInterval(typeIntervalId); selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.add('typing');
-            typeIntervalId = setInterval(() => { if (i < name.length) { selectedNameDisplay.textContent += name.charAt(i); i++; } else { clearInterval(typeIntervalId); typeIntervalId = null; finalizeSelection(name); } }, TYPING_INTERVAL_MS);
+            markCrtSnapshotDirty();
+            typeIntervalId = setInterval(() => {
+                if (i < name.length) {
+                    selectedNameDisplay.textContent += name.charAt(i);
+                    i++;
+                    markCrtSnapshotDirty();
+                } else {
+                    clearInterval(typeIntervalId);
+                    typeIntervalId = null;
+                    finalizeSelection(name);
+                }
+            }, TYPING_INTERVAL_MS);
         }
         function finalizeSelection(selectedName) {
             selectedNameDisplay.classList.remove('typing');
@@ -2815,12 +3834,16 @@ void main() {
         function updateUndoButtonState() {
             if (undoBtn) {
                 undoBtn.disabled = isPicking || selectionHistory.length === 0;
+                markCrtSnapshotDirty();
+                markCrtSnapshotDirtyDuringTransition(220);
             }
         }
         function resetDisplayStyle(displayName = '|', isQuote = false) {
             if (typeIntervalId) clearInterval(typeIntervalId); typeIntervalId = null; selectedNameDisplay.textContent = displayName; selectedNameDisplay.classList.remove('quote', 'typing');
             if (isQuote) { selectedNameDisplay.classList.add('quote'); } else if (displayName === '|') { selectedNameDisplay.classList.add('typing'); }
             clickTriggerArea.style.pointerEvents = 'auto'; selectedNameDisplayWrapper.style.pointerEvents = 'auto';
+            markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(220);
         }
         function showTemporaryMessage(message, type = "info") {
             if (type === "warn") { console.warn(message); } else if (type === "error") { console.error(message); } else { console.log(message); }
@@ -2872,6 +3895,8 @@ void main() {
             menuToggleBtn.innerHTML = isVisible ? '✕' : '☰';
             menuToggleBtn.classList.toggle('active', isVisible);
             menuToggleBtn.setAttribute('aria-expanded', isVisible);
+            markOverdriveMaskDirty();
+            markOverdriveMaskDirtyDuringTransition(420);
             markCrtSnapshotDirty();
             markCrtSnapshotDirtyDuringTransition(420);
         }
@@ -2910,7 +3935,10 @@ void main() {
             if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => { console.warn(`FS request failed: ${err.message}`); }); }
             bodyElement.classList.add('matrix-mode-active');
             enterMatrixBtn.textContent = '[M] Exit'; renderProgressBar();
+            markOverdriveMaskDirty();
+            markOverdriveMaskDirtyDuringTransition(360);
             markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(360);
         }
         function exitMatrixMode() {
             if (!isInMatrixMode) return; isInMatrixMode = false; console.log("// Exiting Matrix Mode");
@@ -2919,7 +3947,10 @@ void main() {
             enterMatrixBtn.textContent = '[M] Matrix'; renderProgressBar();
             menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active');
             menuToggleBtn.setAttribute('aria-expanded', 'false');
+            markOverdriveMaskDirty();
+            markOverdriveMaskDirtyDuringTransition(360);
             markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(360);
         }
 
         function handleFullscreenChange() {
@@ -3006,10 +4037,76 @@ void main() {
             modal.endCrtDrag = endDrag;
             modal.resetPosition = () => {
                 xOffset = 0;
+                currentX = 0;
+                initialX = 0;
                 yOffset = 0;
+                currentY = 0;
+                initialY = 0;
                 modal.style.transform = `translate3d(0, 0, 0)`;
                 markCrtSnapshotDirty();
             };
+            modal.centerInOverlay = () => {
+                const overlay = modal.parentElement;
+                if (!(overlay instanceof Element)) { return; }
+                const overlayRect = overlay.getBoundingClientRect();
+                const modalRect = modal.getBoundingClientRect();
+                if (overlayRect.width <= 0 || overlayRect.height <= 0 || modalRect.width <= 0 || modalRect.height <= 0) { return; }
+                const targetCenterX = window.innerWidth / 2;
+                const targetCenterY = window.innerHeight / 2;
+                const deltaX = targetCenterX - (modalRect.left + (modalRect.width / 2));
+                const deltaY = targetCenterY - (modalRect.top + (modalRect.height / 2));
+                if (Math.abs(deltaX) < 0.5 && Math.abs(deltaY) < 0.5) { return; }
+                xOffset += deltaX;
+                currentX = xOffset;
+                initialX = xOffset;
+                yOffset += deltaY;
+                currentY = yOffset;
+                initialY = yOffset;
+                setTranslate(xOffset, yOffset, modal);
+                markCrtSnapshotDirty();
+            };
+        }
+
+        function ensureModalCenteredForUser(modalOverlay, modalContent) {
+            if (!modalOverlay?.classList.contains('visible') || !modalContent?.centerInOverlay) { return; }
+            modalContent.centerInOverlay();
+            requestAnimationFrame(() => {
+                if (!modalOverlay.classList.contains('visible')) { return; }
+                modalContent.centerInOverlay();
+                requestAnimationFrame(() => {
+                    if (!modalOverlay.classList.contains('visible')) { return; }
+                    modalContent.centerInOverlay();
+                    markOverdriveMaskDirty();
+                    markCrtSnapshotDirty();
+                    if (isCrtMode) {
+                        renderCrtFrame();
+                    }
+                });
+            });
+        }
+        function clearPendingModalOpen() {
+            if (pendingModalOpenTimeoutId !== null) {
+                clearTimeout(pendingModalOpenTimeoutId);
+                pendingModalOpenTimeoutId = null;
+            }
+        }
+        function closeManagementPanelImmediately() {
+            if (!managementPanel.classList.contains('visible')) { return; }
+            clearPendingModalOpen();
+            managementPanel.style.transition = 'none';
+            managementPanel.classList.remove('visible');
+            menuToggleBtn.innerHTML = '☰';
+            menuToggleBtn.classList.remove('active');
+            menuToggleBtn.setAttribute('aria-expanded', 'false');
+            managementPanel.getBoundingClientRect();
+            requestAnimationFrame(() => {
+                managementPanel.style.transition = '';
+            });
+            markOverdriveMaskDirty();
+            markCrtSnapshotDirty();
+            if (isCrtMode) {
+                renderCrtFrame();
+            }
         }
         
         function renderCommands(filter = '') {
@@ -3051,6 +4148,7 @@ void main() {
                 commandPaletteList.appendChild(li);
             });
              updateCommandSelection();
+             markCrtSnapshotDirty();
         }
         
         function updateCommandSelection() {
@@ -3063,6 +4161,7 @@ void main() {
                      item.scrollIntoView({ block: 'nearest' });
                  }
             });
+            markCrtSnapshotDirty();
         }
         
         function executeCommand(index) {
@@ -3103,28 +4202,46 @@ void main() {
         function toggleModal(modalOverlay, forceOpen, openerElement) {
             const isVisible = modalOverlay.classList.contains('visible');
             const shouldOpen = forceOpen === true || (forceOpen === undefined && !isVisible);
+            const modalContent = modalOverlay.querySelector('.modal-content');
 
             if (shouldOpen) {
                 elementToFocusOnModalClose = openerElement || document.activeElement;
                 modalOverlay.classList.add('visible');
+                if (modalContent?.resetPosition) {
+                    modalContent.resetPosition();
+                }
+                modalOverlay.querySelectorAll('.modal-scroll-content, #commandPaletteList').forEach(container => {
+                    container.scrollTop = 0;
+                });
+                modalOverlay.getBoundingClientRect();
+                modalContent?.getBoundingClientRect();
+                ensureModalCenteredForUser(modalOverlay, modalContent);
                 const input = modalOverlay.querySelector('input[type="text"]');
                 if (input) {
                     setTimeout(() => input.focus(), 50); // Delay focus slightly
                 }
             } else {
                 modalOverlay.classList.remove('visible');
-                if (modalOverlay.querySelector('.modal-content').resetPosition) {
-                    modalOverlay.querySelector('.modal-content').resetPosition();
+                if (modalContent?.resetPosition) {
+                    modalContent.resetPosition();
                 }
                 if (elementToFocusOnModalClose) {
                     elementToFocusOnModalClose.focus();
                     elementToFocusOnModalClose = null;
                 }
             }
+            markOverdriveMaskDirty();
+            markOverdriveMaskDirtyDuringTransition(420);
+            markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(420);
         }
 
         function toggleCommandPalette(forceOpen) {
-            if (forceOpen === true || !commandPaletteOverlay.classList.contains('visible')) {
+            const shouldOpen = forceOpen === true || !commandPaletteOverlay.classList.contains('visible');
+            if (shouldOpen) {
+                if (managementPanel.classList.contains('visible')) {
+                    closeManagementPanelImmediately();
+                }
                 commandPaletteInput.value = '';
                 commandPaletteSelectedIndex = 0;
                 renderCommands();
@@ -3133,6 +4250,10 @@ void main() {
         }
 
         function toggleHelpModal(forceOpen) {
+            const shouldOpen = forceOpen === true || !helpModalOverlay.classList.contains('visible');
+            if (shouldOpen && managementPanel.classList.contains('visible')) {
+                closeManagementPanelImmediately();
+            }
             toggleModal(helpModalOverlay, forceOpen, helpBtn);
         }
 
@@ -3539,6 +4660,18 @@ void main() {
             handleFontSizeChange(parseInt(event.target.value));
             scheduleURLUpdate();
         });
+        tailCurveSlider.addEventListener('input', (event) => {
+            updateTailCurveDisplay(parseInt(event.target.value, 10));
+            scheduleURLUpdate();
+        });
+        tailFloorSlider.addEventListener('input', (event) => {
+            updateTailFloorDisplay(parseInt(event.target.value, 10));
+            scheduleURLUpdate();
+        });
+        glitchFrequencySlider.addEventListener('input', (event) => {
+            updateGlitchFrequencyDisplay(parseInt(event.target.value, 10));
+            scheduleURLUpdate();
+        });
         crtFishbowlSlider.addEventListener('input', (event) => {
             updateCrtFishbowlDisplay(parseInt(event.target.value));
             scheduleURLUpdate();
@@ -3563,6 +4696,9 @@ void main() {
         brightnessSlider.addEventListener('change', updateURL);
         speedSlider.addEventListener('change', updateURL);
         fontSizeSlider.addEventListener('change', updateURL);
+        tailCurveSlider.addEventListener('change', updateURL);
+        tailFloorSlider.addEventListener('change', updateURL);
+        glitchFrequencySlider.addEventListener('change', updateURL);
         crtFishbowlSlider.addEventListener('change', updateURL);
         crtVignetteSlider.addEventListener('change', updateURL);
         crtLeadFringeSlider.addEventListener('change', updateURL);
@@ -3597,6 +4733,12 @@ void main() {
             isOverdriveMode = !isOverdriveMode;
             updateOverdriveButton();
             showTemporaryMessage(`// Overdrive ${isOverdriveMode ? 'Engaged' : 'Disengaged'}.`);
+            updateURL();
+        });
+        glitchOverdriveBtn.addEventListener('click', () => {
+            isGlitchOverdriveEnabled = !isGlitchOverdriveEnabled;
+            updateGlitchOverdriveButton();
+            showTemporaryMessage(`// Glitch Overdrive ${isGlitchOverdriveEnabled ? 'Enabled' : 'Disabled'}.`);
             updateURL();
         });
 
@@ -3700,6 +4842,7 @@ void main() {
             const crtSnapshotObserver = new MutationObserver((mutations) => {
                 if (mutations.some(mutation => mutation.target !== crtCanvas)) {
                     markCrtSnapshotDirty();
+                    markOverdriveMaskDirty();
                 }
             });
             crtSnapshotObserver.observe(bodyElement, { attributes: true, childList: true, subtree: true, characterData: true });
