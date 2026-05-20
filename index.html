@@ -362,13 +362,15 @@
         }
         .construct-mode #menuToggleBtn,
         .construct-mode #undoBtn { text-shadow: none; }
-        #menuToggleBtn:hover {
+        #menuToggleBtn:hover,
+        #menuToggleBtn.crt-pressed {
             background-color: var(--primary-color-dark);
             color: var(--bg-color);
             box-shadow: 0 0 10px var(--primary-color);
             text-shadow: none;
         }
-        .construct-mode #menuToggleBtn:hover {
+        .construct-mode #menuToggleBtn:hover,
+        .construct-mode #menuToggleBtn.crt-pressed {
             background-color: var(--primary-color);
             color: var(--construct-bg);
             box-shadow: none;
@@ -392,14 +394,16 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        #undoBtn:hover:not(:disabled) {
+        #undoBtn:hover:not(:disabled),
+        #undoBtn.crt-pressed:not(:disabled) {
             background-color: var(--primary-color-dark);
             color: var(--bg-color);
             box-shadow: 0 0 10px var(--primary-color);
             text-shadow: none;
             transform: translateY(-1px);
         }
-        .construct-mode #undoBtn:hover:not(:disabled) {
+        .construct-mode #undoBtn:hover:not(:disabled),
+        .construct-mode #undoBtn.crt-pressed:not(:disabled) {
             background-color: var(--primary-color);
             color: var(--construct-bg);
             box-shadow: none;
@@ -493,7 +497,8 @@
             box-shadow: none;
             border-color: var(--primary-color);
         }
-        #managementPanel button:active:not(:disabled) {
+        #managementPanel button:active:not(:disabled),
+        #managementPanel button.crt-pressed:not(:disabled) {
             transform: translateY(0px);
             background-color: var(--primary-color);
             color: #000000;
@@ -877,12 +882,53 @@
         }
 
         /* Command Palette Specific */
+        #commandPalette .modal-body {
+            padding: 0 1.5rem 1.5rem;
+            gap: 0;
+        }
+        .command-palette-search {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            padding: 1.5rem 0 1rem;
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(var(--primary-color-rgb), 0.12) 0%,
+                    rgba(0, 0, 0, 0.96) 46%,
+                    rgba(0, 0, 0, 0.92) 100%
+                );
+        }
+        .command-palette-search::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            height: 1rem;
+            pointer-events: none;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.82), rgba(0, 0, 0, 0));
+        }
+        .construct-mode .command-palette-search {
+            background:
+                linear-gradient(
+                    180deg,
+                    rgba(var(--construct-accent-rgb), 0.08) 0%,
+                    rgba(var(--construct-bg-rgb), 0.98) 52%,
+                    rgba(var(--construct-bg-rgb), 0.94) 100%
+                );
+        }
+        .construct-mode .command-palette-search::after {
+            background: linear-gradient(180deg, rgba(var(--construct-bg-rgb), 0.88), rgba(var(--construct-bg-rgb), 0));
+        }
         .modal-scroll-content #commandPaletteInput {
              display: block; width: 100%; padding: 0.85rem 0.9rem;
              background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark);
              color: var(--font-color); font-family: var(--matrix-font);
              font-size: 1.1rem; border-radius: 2px;
              caret-color: var(--primary-color);
+             position: relative;
+             z-index: 1;
         }
         #commandPaletteInput:focus {
              outline: none; border-color: var(--primary-color); box-shadow: 0 0 8px var(--primary-color);
@@ -891,8 +937,6 @@
             background-color: var(--construct-bg-darker); border-color: #ccc; color: var(--construct-text);
         }
         #commandPaletteList {
-            max-height: 40vh;
-            overflow-y: auto;
             list-style: none;
             margin: 0;
             padding: 0;
@@ -907,19 +951,19 @@
         .command-shortcut { flex-shrink: 0; opacity: 0.85; }
         .command-item:not(:last-child) { border-bottom: 1px dashed var(--primary-color-dark); }
         .construct-mode .command-item:not(:last-child) { border-bottom-color: var(--construct-bg-darker); }
-        .command-item.selected, .command-item:hover {
+        .command-item.selected, .command-item:hover, .command-item.crt-pressed {
             background-color: var(--primary-color); color: #000000;
         }
-        .construct-mode .command-item.selected, .construct-mode .command-item:hover {
+        .construct-mode .command-item.selected, .construct-mode .command-item:hover, .construct-mode .command-item.crt-pressed {
             background-color: var(--primary-color); color: var(--construct-bg);
         }
-        .command-item.selected kbd, .command-item:hover kbd {
+        .command-item.selected kbd, .command-item:hover kbd, .command-item.crt-pressed kbd {
             background-color: transparent;
             color: #000000;
             border-color: #000000;
             box-shadow: none;
         }
-        .construct-mode .command-item.selected kbd, .construct-mode .command-item:hover kbd {
+        .construct-mode .command-item.selected kbd, .construct-mode .command-item:hover kbd, .construct-mode .command-item.crt-pressed kbd {
             background-color: transparent;
             color: var(--construct-bg);
             border-color: var(--construct-bg);
@@ -1288,8 +1332,10 @@
             <h2 id="commandPaletteHeader">// Command Palette</h2>
             <div class="modal-scroll-content">
                 <div class="modal-body">
-                    <label for="commandPaletteInput" class="sr-only">Type a command</label>
-                    <input type="text" id="commandPaletteInput" placeholder="// Type a command..." autocomplete="off">
+                    <div class="command-palette-search">
+                        <label for="commandPaletteInput" class="sr-only">Type a command</label>
+                        <input type="text" id="commandPaletteInput" placeholder="// Type a command..." autocomplete="off">
+                    </div>
                     <ul id="commandPaletteList" role="listbox"></ul>
                 </div>
             </div>
@@ -1782,6 +1828,7 @@ void main() {
             activeRange: null,
             activeModal: null,
             activeRosterItem: null,
+            pressedTarget: null,
             scrollTarget: null,
             scrollStartX: 0,
             scrollStartY: 0,
@@ -2078,6 +2125,54 @@ void main() {
         function markCrtSnapshotDirty() {
             crtUiSnapshotDirty = true;
         }
+        function parseCssTimeList(value) {
+            return String(value || '')
+                .split(',')
+                .map((part) => {
+                    const normalized = part.trim();
+                    if (!normalized) { return 0; }
+                    if (normalized.endsWith('ms')) { return parseFloat(normalized) || 0; }
+                    if (normalized.endsWith('s')) { return (parseFloat(normalized) || 0) * 1000; }
+                    return parseFloat(normalized) || 0;
+                });
+        }
+        function parseAnimationIterationList(value) {
+            return String(value || '')
+                .split(',')
+                .map((part) => {
+                    const normalized = part.trim().toLowerCase();
+                    if (!normalized || normalized === 'infinite') { return 1; }
+                    const parsed = parseFloat(normalized);
+                    return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
+                });
+        }
+        function getComputedMotionDurationMs(element) {
+            if (!(element instanceof Element)) { return 0; }
+            const style = getComputedStyle(element);
+            const transitionDurations = parseCssTimeList(style.transitionDuration);
+            const transitionDelays = parseCssTimeList(style.transitionDelay);
+            const animationDurations = parseCssTimeList(style.animationDuration);
+            const animationDelays = parseCssTimeList(style.animationDelay);
+            const animationIterations = parseAnimationIterationList(style.animationIterationCount);
+
+            const transitionMs = transitionDurations.reduce((maxDuration, duration, index) => {
+                const delay = transitionDelays[index % Math.max(transitionDelays.length, 1)] || 0;
+                return Math.max(maxDuration, duration + delay);
+            }, 0);
+            const animationMs = animationDurations.reduce((maxDuration, duration, index) => {
+                const delay = animationDelays[index % Math.max(animationDelays.length, 1)] || 0;
+                const iterations = animationIterations[index % Math.max(animationIterations.length, 1)] || 1;
+                return Math.max(maxDuration, (duration * iterations) + delay);
+            }, 0);
+            return Math.max(transitionMs, animationMs);
+        }
+        function markCrtSnapshotDirtyForMotion(element, fallbackMs = 0) {
+            markCrtSnapshotDirty();
+            const motionDurationMs = Math.max(fallbackMs, getComputedMotionDurationMs(element));
+            if (motionDurationMs > 0) {
+                markCrtSnapshotDirtyDuringTransition(motionDurationMs);
+            }
+        }
         function cancelCrtTransitionRefresh() {
             if (crtTransitionRefreshFrameId !== null) {
                 cancelAnimationFrame(crtTransitionRefreshFrameId);
@@ -2204,7 +2299,7 @@ void main() {
         }
         function shouldEmphasizeCrtInvertedText(element) {
             if (isConstructMode || !(element instanceof Element)) { return false; }
-            return !!element.closest('.command-item.selected, .command-item:hover, #managementPanel button.active, #managementPanel button:hover, #managementPanel button:active');
+            return !!element.closest('.command-item.selected, .command-item:hover, .command-item.crt-pressed, #managementPanel button.active, #managementPanel button:hover, #managementPanel button:active, #managementPanel button.crt-pressed, #menuToggleBtn.crt-pressed, #undoBtn.crt-pressed');
         }
         function drawCrtText(text, rect, maxWidth, style, emphasizeInvertedText = false) {
             if (!emphasizeInvertedText) {
@@ -2471,6 +2566,10 @@ void main() {
         function clampUnit(value) {
             return Math.max(0, Math.min(1, value));
         }
+        function smoothStep01(value) {
+            const t = clampUnit(value);
+            return t * t * (3 - (2 * t));
+        }
         function parseRgbTriplet(rgbString) {
             return rgbString.split(',').map(part => Math.max(0, Math.min(255, parseInt(part.trim(), 10) || 0))).slice(0, 3);
         }
@@ -2577,6 +2676,14 @@ void main() {
         }
         function getTrailOpacity(trailIndex) {
             return trailOpacityCache[trailIndex] ?? 0;
+        }
+        function getNonCrtHighlightEnvelope(elapsedMs, durationMs) {
+            if (durationMs <= 0) { return 0; }
+            const fadeInMs = Math.max(90, durationMs * 0.18);
+            const fadeOutMs = Math.max(180, durationMs * 0.42);
+            const fadeIn = smoothStep01(elapsedMs / fadeInMs);
+            const fadeOut = smoothStep01((durationMs - elapsedMs) / fadeOutMs);
+            return clampUnit(fadeIn * fadeOut);
         }
         function getOverlayMaskVisibility(element) {
             if (!element) { return false; }
@@ -2749,24 +2856,36 @@ void main() {
 
             return resolveAdditiveOverdriveProfile(baseTrailOpacity, overdriveAmount, overdriveFillAmount, isCrtProfile);
         }
-        function applyMatrixGlyphStyle(style) {
-            ctx.fillStyle = style.fillStyle;
-            ctx.shadowColor = style.shadowColor || 'transparent';
-            ctx.shadowBlur = style.shadowBlur || 0;
+        function applyMatrixGlyphStyleToContext(targetCtx, style) {
+            targetCtx.fillStyle = style.fillStyle;
+            targetCtx.shadowColor = style.shadowColor || 'transparent';
+            targetCtx.shadowBlur = style.shadowBlur || 0;
         }
-        function renderMatrixGlyphWithStyle(char, x, y, style) {
+        function applyMatrixGlyphStyle(style) {
+            applyMatrixGlyphStyleToContext(ctx, style);
+        }
+        function renderMatrixGlyphWithStyleToContext(targetCtx, char, x, y, style, alphaMultiplier = 1) {
+            const targetAlpha = clampUnit(alphaMultiplier);
+            if (targetAlpha <= 0) { return; }
             const glowPasses = Array.isArray(style.glowPasses) ? style.glowPasses : [];
             glowPasses.forEach(pass => {
-                ctx.save();
-                ctx.globalCompositeOperation = pass.compositeOperation || 'source-over';
-                ctx.fillStyle = pass.fillStyle;
-                ctx.shadowColor = pass.shadowColor || 'transparent';
-                ctx.shadowBlur = pass.shadowBlur || 0;
-                ctx.fillText(char, x, y);
-                ctx.restore();
+                targetCtx.save();
+                targetCtx.globalAlpha = targetAlpha;
+                targetCtx.globalCompositeOperation = pass.compositeOperation || 'source-over';
+                targetCtx.fillStyle = pass.fillStyle;
+                targetCtx.shadowColor = pass.shadowColor || 'transparent';
+                targetCtx.shadowBlur = pass.shadowBlur || 0;
+                targetCtx.fillText(char, x, y);
+                targetCtx.restore();
             });
-            applyMatrixGlyphStyle(style);
-            ctx.fillText(char, x, y);
+            targetCtx.save();
+            targetCtx.globalAlpha = targetAlpha;
+            applyMatrixGlyphStyleToContext(targetCtx, style);
+            targetCtx.fillText(char, x, y);
+            targetCtx.restore();
+        }
+        function renderMatrixGlyphWithStyle(char, x, y, style) {
+            renderMatrixGlyphWithStyleToContext(ctx, char, x, y, style);
         }
         function renderGlyphFillToContext(targetCtx, char, x, y, style) {
             targetCtx.fillStyle = style.fillStyle;
@@ -2828,14 +2947,7 @@ void main() {
             if (frameState.highlightStyleCache.has(cacheKey)) {
                 return frameState.highlightStyleCache.get(cacheKey);
             }
-            const baseTrailOpacity = trailIndex > 0 ? getTrailOpacity(trailIndex) : 1;
-            const additiveStyle = resolveAdditiveOverdriveProfile(baseTrailOpacity, frameState.overdriveAmount, frameState.overdriveFillAmount, false);
-            const style = {
-                fillStyle: additiveStyle.fillStyle,
-                shadowColor: 'transparent',
-                shadowBlur: 0,
-                glowPasses: []
-            };
+            const style = resolveMatrixGlyphStyle(kind, trailIndex);
             frameState.highlightStyleCache.set(cacheKey, style);
             return style;
         }
@@ -3013,12 +3125,10 @@ void main() {
                             if (useNonCrtOptimizedRenderer) {
                                 renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'glitch', k));
                                 const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'glitch', k);
+                                const highlightAlpha = getNonCrtHighlightEnvelope(now - trailItem.flipTimestamp, FLIP_DURATION_MS);
                                 if (highlightFillStyle) {
-                                    renderGlyphFillToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle);
-                                    matrixFxMaskCtx.fillStyle = highlightFillStyle.fillStyle;
-                                    matrixFxMaskCtx.fillText(trailItem.char, trailXPos * NON_CRT_FX_SCALE, trailYPos * NON_CRT_FX_SCALE);
+                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, highlightAlpha);
                                     frameState.hasHighlightFill = true;
-                                    frameState.hasFxHighlights = true;
                                 }
                             } else {
                                 drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'glitch', k, overdriveMaskRects);
@@ -3027,12 +3137,10 @@ void main() {
                             if (useNonCrtOptimizedRenderer) {
                                 renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'leader', k));
                                 const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'leader', k);
+                                const highlightAlpha = getNonCrtHighlightEnvelope(now - trailItem.updateTimestamp, UPDATED_CHAR_HIGHLIGHT_MS);
                                 if (highlightFillStyle) {
-                                    renderGlyphFillToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle);
-                                    matrixFxMaskCtx.fillStyle = highlightFillStyle.fillStyle;
-                                    matrixFxMaskCtx.fillText(trailItem.char, trailXPos * NON_CRT_FX_SCALE, trailYPos * NON_CRT_FX_SCALE);
+                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, highlightAlpha);
                                     frameState.hasHighlightFill = true;
-                                    frameState.hasFxHighlights = true;
                                 }
                             } else {
                                 drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'leader', k, overdriveMaskRects);
@@ -3053,12 +3161,10 @@ void main() {
                             if (useNonCrtOptimizedRenderer) {
                                 renderGlyphFillToContext(baseCtx, trails[i][0].char, leaderXPos, leaderYPos, resolveFrameBaseGlyphStyle(frameState, 'leader', 0));
                                 const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'leader', 0);
+                                const highlightAlpha = trails[i][0].updateTimestamp ? getNonCrtHighlightEnvelope(now - trails[i][0].updateTimestamp, UPDATED_CHAR_HIGHLIGHT_MS) : 0;
                                 if (highlightFillStyle) {
-                                    renderGlyphFillToContext(matrixHighlightCtx, trails[i][0].char, leaderXPos, leaderYPos, highlightFillStyle);
-                                    matrixFxMaskCtx.fillStyle = highlightFillStyle.fillStyle;
-                                    matrixFxMaskCtx.fillText(trails[i][0].char, leaderXPos * NON_CRT_FX_SCALE, leaderYPos * NON_CRT_FX_SCALE);
+                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trails[i][0].char, leaderXPos, leaderYPos, highlightFillStyle, highlightAlpha);
                                     frameState.hasHighlightFill = true;
-                                    frameState.hasFxHighlights = true;
                                 }
                             } else {
                                 drawMatrixGlyph(trails[i][0].char, leaderXPos, leaderYPos, 'leader', 0, overdriveMaskRects);
@@ -3070,7 +3176,6 @@ void main() {
             if (useNonCrtOptimizedRenderer) {
                 if (frameState.overdriveMaskRects.length > 0) {
                     clearMaskedRects(matrixHighlightCtx, frameState.overdriveMaskRects, 1);
-                    clearMaskedRects(matrixFxMaskCtx, frameState.overdriveMaskRects, NON_CRT_FX_SCALE);
                 }
                 composeNonCrtFrame(frameState);
             }
@@ -4370,6 +4475,29 @@ void main() {
             if (!(target instanceof Element)) { return target; }
             return target.closest(`${CRT_INTERACTIVE_SELECTOR}, #clickTriggerArea`) || target;
         }
+        function getCrtPressableTarget(target) {
+            if (!(target instanceof Element)) { return null; }
+            return target.closest('#menuToggleBtn, #undoBtn, #managementPanel button, .command-item');
+        }
+        function clearCrtPressedTarget() {
+            const pressedTarget = crtEventState.pressedTarget;
+            if (!(pressedTarget instanceof Element)) {
+                crtEventState.pressedTarget = null;
+                return;
+            }
+            pressedTarget.classList.remove('crt-pressed');
+            crtEventState.pressedTarget = null;
+            markCrtSnapshotDirtyForMotion(pressedTarget, 220);
+        }
+        function setCrtPressedTarget(target) {
+            const pressableTarget = getCrtPressableTarget(target);
+            if (pressableTarget === crtEventState.pressedTarget) { return; }
+            clearCrtPressedTarget();
+            if (!(pressableTarget instanceof Element)) { return; }
+            crtEventState.pressedTarget = pressableTarget;
+            pressableTarget.classList.add('crt-pressed');
+            markCrtSnapshotDirtyForMotion(pressableTarget, 220);
+        }
         function isScrollableElement(element) {
             if (!(element instanceof Element)) { return false; }
             const style = window.getComputedStyle(element);
@@ -4476,7 +4604,8 @@ void main() {
             focusCrtTarget(clickable);
             dispatchCrtMouseEvent('mouseup', clickable, point, sourceEvent);
             dispatchCrtMouseEvent('click', clickable, point, sourceEvent);
-            markCrtSnapshotDirty();
+            clearCrtPressedTarget();
+            markCrtSnapshotDirtyForMotion(clickable, 220);
         }
         function handleCrtWheel(event) {
             if (!isCrtRoutingActive()) { return; }
@@ -4521,6 +4650,7 @@ void main() {
                 return;
             }
             focusCrtTarget(target);
+            setCrtPressedTarget(target);
             dispatchCrtMouseEvent('mousedown', target, point, event);
         }
         function handleCrtPointerMove(event) {
@@ -4540,20 +4670,26 @@ void main() {
                     crtEventState.scrollLastX = point.x;
                     crtEventState.scrollLastY = point.y;
                 }
+                if (crtEventState.didScroll) {
+                    clearCrtPressedTarget();
+                }
                 return;
             }
             if (crtEventState.activeRange) {
                 event.preventDefault();
+                clearCrtPressedTarget();
                 setRangeValueFromPoint(crtEventState.activeRange, point);
                 return;
             }
             if (crtEventState.activeModal) {
                 event.preventDefault();
+                clearCrtPressedTarget();
                 crtEventState.activeModal.dragCrtTo(point.x, point.y);
                 return;
             }
             if (crtEventState.activeRosterItem) {
                 event.preventDefault();
+                clearCrtPressedTarget();
                 updateCrtRosterDrag(point);
                 return;
             }
@@ -4584,6 +4720,7 @@ void main() {
             } else {
                 clickCrtTarget(crtEventState.target || getElementAtSourcePoint(point), point, event);
             }
+            clearCrtPressedTarget();
             crtEventState.pointerId = null;
             crtEventState.target = null;
             crtEventState.didScroll = false;
@@ -4596,7 +4733,8 @@ void main() {
             if (crtEventState.activeRosterItem) {
                 document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
             }
-            crtEventState = { pointerId: null, target: null, activeRange: null, activeModal: null, activeRosterItem: null, scrollTarget: null, scrollStartX: 0, scrollStartY: 0, scrollLastX: 0, scrollLastY: 0, didScroll: false, lastCursor: crtEventState.lastCursor };
+            clearCrtPressedTarget();
+            crtEventState = { pointerId: null, target: null, activeRange: null, activeModal: null, activeRosterItem: null, pressedTarget: null, scrollTarget: null, scrollStartX: 0, scrollStartY: 0, scrollLastX: 0, scrollLastY: 0, didScroll: false, lastCursor: crtEventState.lastCursor };
             draggedItemName = null;
             markCrtSnapshotDirty();
         }
@@ -4751,6 +4889,14 @@ void main() {
              renderCommands(commandPaletteInput.value);
              markCrtSnapshotDirty();
         });
+        bodyElement.addEventListener('transitionrun', (event) => {
+            if (!(event.target instanceof Element)) { return; }
+            markCrtSnapshotDirtyForMotion(event.target);
+        }, true);
+        bodyElement.addEventListener('animationstart', (event) => {
+            if (!(event.target instanceof Element)) { return; }
+            markCrtSnapshotDirtyForMotion(event.target);
+        }, true);
 
         // PERFORMANCE: Pause animation when tab is not visible
         document.addEventListener('visibilitychange', () => {
@@ -4840,9 +4986,16 @@ void main() {
         // --- Initial Load ---
         document.addEventListener('DOMContentLoaded', () => { 
             const crtSnapshotObserver = new MutationObserver((mutations) => {
-                if (mutations.some(mutation => mutation.target !== crtCanvas)) {
+                const motionTargets = mutations
+                    .map((mutation) => mutation.target)
+                    .filter((target) => target instanceof Element && target !== crtCanvas);
+                if (motionTargets.length > 0) {
                     markCrtSnapshotDirty();
                     markOverdriveMaskDirty();
+                    const longestMotionMs = motionTargets.reduce((maxDuration, target) => Math.max(maxDuration, getComputedMotionDurationMs(target)), 0);
+                    if (longestMotionMs > 0) {
+                        markCrtSnapshotDirtyDuringTransition(longestMotionMs);
+                    }
                 }
             });
             crtSnapshotObserver.observe(bodyElement, { attributes: true, childList: true, subtree: true, characterData: true });
