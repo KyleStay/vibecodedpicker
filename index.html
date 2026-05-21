@@ -318,14 +318,13 @@
             align-items: center;
             justify-content: center;
             transform: translateY(0.06em);
-            transition: font-size 0.3s ease-in-out;
+            transition: color 0.3s ease-in-out, text-shadow 0.3s ease-in-out;
         }
         .construct-mode #selectedNameDisplay { text-shadow: 1px 1px 0px var(--primary-color-dark); }
         #selectedNameDisplay.typing {
             animation: blink-pipe .75s step-end infinite;
         }
         #selectedNameDisplay.quote {
-            font-size: 1.5rem;
             font-weight: 400;
             color: rgba(var(--primary-color-rgb), 0.7);
             animation: none;
@@ -1042,7 +1041,6 @@
                 padding: 0.75rem 1rem 0.85rem;
             }
             #selectedNameDisplay { font-size: 2.25rem; }
-            #selectedNameDisplay.quote { font-size: 1.25rem; }
             #menuToggleBtn { font-size: 1.5rem; padding: 0.2rem 0.5rem; }
             #undoBtn { font-size: 0.8rem; max-width: calc(100vw - 5.5rem); padding: 0.35rem 0.5rem; }
             #managementPanel { padding: 1rem; } /* Reduce padding on mobile */
@@ -1183,6 +1181,10 @@
                     <span class="text-xl leading-none" aria-hidden="true">[+]</span>
                     Add
                 </button>
+                <div class="control-group">
+                    <button id="extractionModeBtn" aria-pressed="false">[E] Engage Extraction</button>
+                    <div id="extractionModeLed" class="led-indicator" aria-hidden="true"></div>
+                </div>
                 <div class="list-container">
                     <h3 id="rosterHeader">// Operative Roster (Drag to Reorder):</h3>
                     <ul id="nameList" aria-labelledby="rosterHeader">
@@ -1298,10 +1300,6 @@
                                 <input type="range" id="crtLeadFringeSlider" min="0" max="100" step="1" value="5">
                             </div>
                         </div>
-                    </div>
-                    <div class="control-group">
-                        <button id="extractionModeBtn" aria-pressed="false">[E] Engage Extraction</button>
-                        <div id="extractionModeLed" class="led-indicator" aria-hidden="true"></div>
                     </div>
                 </div>
             </div>
@@ -1822,6 +1820,7 @@ void main() {
         let trailOpacityCache = [];
         let urlUpdateTimerId = null;
         let resizeFrameId = null;
+        let crtPressedClearTimeoutId = null;
         let crtEventState = {
             pointerId: null,
             target: null,
@@ -1829,6 +1828,7 @@ void main() {
             activeModal: null,
             activeRosterItem: null,
             pressedTarget: null,
+            pressedStartedAt: 0,
             scrollTarget: null,
             scrollStartX: 0,
             scrollStartY: 0,
@@ -1864,6 +1864,7 @@ void main() {
         const CRT_SAFE_AREA_MARGIN_PX = 8;
         const CRT_TOUCH_SCROLL_THRESHOLD_PX = 6;
         const CRT_HIT_SLOP_PX = 28;
+        const CRT_MIN_PRESSED_VISIBILITY_MS = 90;
         const URL_UPDATE_DEBOUNCE_MS = 150;
         const OVERDRIVE_CURVE_EXPONENT = Math.log(0.2) / Math.log(0.5);
         const CRT_INTERACTIVE_SELECTOR = 'button, input, textarea, label, .command-item, #selectedNameDisplayWrapper';
@@ -4479,24 +4480,59 @@ void main() {
             if (!(target instanceof Element)) { return null; }
             return target.closest('#menuToggleBtn, #undoBtn, #managementPanel button, .command-item');
         }
-        function clearCrtPressedTarget() {
+        function cancelPendingCrtPressedClear() {
+            if (crtPressedClearTimeoutId === null) { return; }
+            clearTimeout(crtPressedClearTimeoutId);
+            crtPressedClearTimeoutId = null;
+        }
+        function flushCrtSnapshotNow() {
+            if (!isCrtMode || !crtReady || !crtCompositeAvailable) { return; }
+            renderCrtFrame();
+        }
+        function releaseCrtPressedTarget() {
             const pressedTarget = crtEventState.pressedTarget;
             if (!(pressedTarget instanceof Element)) {
                 crtEventState.pressedTarget = null;
+                crtEventState.pressedStartedAt = 0;
                 return;
             }
+            cancelPendingCrtPressedClear();
             pressedTarget.classList.remove('crt-pressed');
             crtEventState.pressedTarget = null;
+            crtEventState.pressedStartedAt = 0;
             markCrtSnapshotDirtyForMotion(pressedTarget, 220);
+            flushCrtSnapshotNow();
+        }
+        function clearCrtPressedTarget(immediate = false) {
+            const pressedTarget = crtEventState.pressedTarget;
+            if (!(pressedTarget instanceof Element)) {
+                crtEventState.pressedTarget = null;
+                crtEventState.pressedStartedAt = 0;
+                cancelPendingCrtPressedClear();
+                return;
+            }
+            const elapsedMs = performance.now() - (crtEventState.pressedStartedAt || 0);
+            const remainingMs = immediate ? 0 : Math.max(0, CRT_MIN_PRESSED_VISIBILITY_MS - elapsedMs);
+            if (remainingMs <= 0) {
+                releaseCrtPressedTarget();
+                return;
+            }
+            cancelPendingCrtPressedClear();
+            crtPressedClearTimeoutId = window.setTimeout(() => {
+                crtPressedClearTimeoutId = null;
+                releaseCrtPressedTarget();
+            }, remainingMs);
         }
         function setCrtPressedTarget(target) {
             const pressableTarget = getCrtPressableTarget(target);
             if (pressableTarget === crtEventState.pressedTarget) { return; }
-            clearCrtPressedTarget();
+            clearCrtPressedTarget(true);
             if (!(pressableTarget instanceof Element)) { return; }
             crtEventState.pressedTarget = pressableTarget;
+            crtEventState.pressedStartedAt = performance.now();
             pressableTarget.classList.add('crt-pressed');
             markCrtSnapshotDirtyForMotion(pressableTarget, 220);
+            flushCrtSnapshotNow();
         }
         function isScrollableElement(element) {
             if (!(element instanceof Element)) { return false; }
@@ -4671,25 +4707,25 @@ void main() {
                     crtEventState.scrollLastY = point.y;
                 }
                 if (crtEventState.didScroll) {
-                    clearCrtPressedTarget();
+                    clearCrtPressedTarget(true);
                 }
                 return;
             }
             if (crtEventState.activeRange) {
                 event.preventDefault();
-                clearCrtPressedTarget();
+                clearCrtPressedTarget(true);
                 setRangeValueFromPoint(crtEventState.activeRange, point);
                 return;
             }
             if (crtEventState.activeModal) {
                 event.preventDefault();
-                clearCrtPressedTarget();
+                clearCrtPressedTarget(true);
                 crtEventState.activeModal.dragCrtTo(point.x, point.y);
                 return;
             }
             if (crtEventState.activeRosterItem) {
                 event.preventDefault();
-                clearCrtPressedTarget();
+                clearCrtPressedTarget(true);
                 updateCrtRosterDrag(point);
                 return;
             }
@@ -4733,8 +4769,8 @@ void main() {
             if (crtEventState.activeRosterItem) {
                 document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
             }
-            clearCrtPressedTarget();
-            crtEventState = { pointerId: null, target: null, activeRange: null, activeModal: null, activeRosterItem: null, pressedTarget: null, scrollTarget: null, scrollStartX: 0, scrollStartY: 0, scrollLastX: 0, scrollLastY: 0, didScroll: false, lastCursor: crtEventState.lastCursor };
+            clearCrtPressedTarget(true);
+            crtEventState = { pointerId: null, target: null, activeRange: null, activeModal: null, activeRosterItem: null, pressedTarget: null, pressedStartedAt: 0, scrollTarget: null, scrollStartX: 0, scrollStartY: 0, scrollLastX: 0, scrollLastY: 0, didScroll: false, lastCursor: crtEventState.lastCursor };
             draggedItemName = null;
             markCrtSnapshotDirty();
         }
@@ -4894,6 +4930,10 @@ void main() {
             markCrtSnapshotDirtyForMotion(event.target);
         }, true);
         bodyElement.addEventListener('animationstart', (event) => {
+            if (!(event.target instanceof Element)) { return; }
+            markCrtSnapshotDirtyForMotion(event.target);
+        }, true);
+        bodyElement.addEventListener('animationiteration', (event) => {
             if (!(event.target instanceof Element)) { return; }
             markCrtSnapshotDirtyForMotion(event.target);
         }, true);
