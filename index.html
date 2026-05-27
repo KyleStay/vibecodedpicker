@@ -324,6 +324,9 @@
         #selectedNameDisplay.typing {
             animation: blink-pipe .75s step-end infinite;
         }
+        body.e2e-mode #selectedNameDisplay.typing {
+            animation: none;
+        }
         #selectedNameDisplay.quote {
             font-weight: 400;
             color: rgba(var(--primary-color-rgb), 0.7);
@@ -603,13 +606,40 @@
         /* Input field styling */
         #managementPanel input[type="text"] {
             background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark); color: var(--font-color); font-family: var(--matrix-font);
-            caret-color: var(--primary-color); width: 100%; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem;
+            caret-color: transparent; width: 100%; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem;
         }
         #managementPanel input[type="text"]::placeholder { color: rgba(var(--primary-color-rgb), 0.4); }
         #managementPanel input[type="text"]:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 5px var(--primary-color); }
         .construct-mode #managementPanel input[type="text"] { background-color: var(--construct-bg-darker); border-color: #cccccc; color: var(--construct-text); }
         .construct-mode #managementPanel input[type="text"]::placeholder { color: var(--construct-text-light); }
         .construct-mode #managementPanel input[type="text"]:focus { box-shadow: 0 0 5px var(--primary-color); }
+        #managedTextCaret {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 2px;
+            min-height: 1rem;
+            border-radius: 1px;
+            background-color: var(--primary-color);
+            box-shadow: 0 0 8px rgba(var(--primary-color-rgb), 0.85), 0 0 14px rgba(var(--primary-color-rgb), 0.45);
+            pointer-events: none;
+            z-index: 90;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateZ(0);
+        }
+        #managedTextCaret[data-active="true"] {
+            visibility: visible;
+        }
+        #managedTextCaret[data-visible="true"] {
+            opacity: 1;
+        }
+        body.e2e-mode #managedTextCaret[data-active="true"][data-visible="true"] {
+            opacity: 1;
+        }
+        .construct-mode #managedTextCaret {
+            box-shadow: 0 0 0 1px rgba(var(--primary-color-rgb), 0.18), 0 0 7px rgba(var(--primary-color-rgb), 0.45);
+        }
         /* Label styling */
         #managementPanel label { display: block; font-size: 0.875rem; color: rgba(var(--primary-color-rgb), 0.7); margin-bottom: 0.25rem; }
         .construct-mode #managementPanel label { color: var(--construct-text-light); }
@@ -735,6 +765,14 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            cursor: text;
+        }
+        #managementPanel .name-item .name-edit-input {
+            flex: 1 1 auto;
+            min-width: 0;
+            font-size: 0.95rem;
+            padding: 0.2rem 0.4rem;
+            margin-bottom: 0;
         }
         #managementPanel .name-item .value-row {
             margin-top: 0.5rem;
@@ -757,6 +795,33 @@
         .construct-mode #managementPanel .name-item.dragging { background-color: var(--construct-bg-darker); }
         #managementPanel .name-item.drag-over { border-top: 2px solid var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.1); }
         .construct-mode #managementPanel .name-item.drag-over { border-top-color: var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.2); }
+        #managementPanel .drag-handle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1rem;
+            height: 1rem;
+            flex: 0 0 auto;
+            margin-right: 0.35rem;
+            cursor: grab;
+            touch-action: none;
+            user-select: none;
+            border-radius: 2px;
+            background-image:
+                linear-gradient(rgba(var(--primary-color-rgb), 0.8), rgba(var(--primary-color-rgb), 0.8)),
+                linear-gradient(rgba(var(--primary-color-rgb), 0.8), rgba(var(--primary-color-rgb), 0.8)),
+                linear-gradient(rgba(var(--primary-color-rgb), 0.8), rgba(var(--primary-color-rgb), 0.8));
+            background-repeat: no-repeat;
+            background-size: 100% 2px;
+            background-position:
+                center calc(50% - 0.22rem),
+                center center,
+                center calc(50% + 0.22rem);
+        }
+        #managementPanel .drag-handle:active,
+        #managementPanel .name-item.dragging .drag-handle {
+            cursor: grabbing;
+        }
 
         /* Text & Titles inside panel */
         #managementPanel h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 0.75rem; margin-top: 0; letter-spacing: 0.04em; text-transform: uppercase; }
@@ -1203,6 +1268,35 @@
                 <button id="themeToggleBtn" class="font-medium">
                     [C] Construct Mode
                 </button>
+                <div class="control-group">
+                    <button id="crtModeBtn" aria-pressed="false">[T] Engage CRT</button>
+                    <div id="crtModeLed" class="led-indicator" aria-hidden="true"></div>
+                </div>
+                <div id="crtSubSettings" class="hidden">
+                    <div class="mb-3">
+                        <label for="crtFishbowlSlider" class="flex justify-between items-center">
+                            <span>// Fisheye:</span>
+                            <span id="crtFishbowlValue" class="font-semibold text-sm">25%</span>
+                        </label>
+                        <input type="range" id="crtFishbowlSlider" min="0" max="100" step="1" value="25">
+                    </div>
+                    <div class="mb-3">
+                        <label for="crtVignetteSlider" class="flex justify-between items-center">
+                            <span>// Vignette:</span>
+                            <span id="crtVignetteValue" class="font-semibold text-sm">40%</span>
+                        </label>
+                        <input type="range" id="crtVignetteSlider" min="0" max="100" step="1" value="40">
+                    </div>
+                    <div id="crtFringeSettings" class="hidden">
+                        <div class="mb-3">
+                            <label for="crtLeadFringeSlider" class="flex justify-between items-center">
+                                <span>// Lead Fringe:</span>
+                                <span id="crtLeadFringeValue" class="font-semibold text-sm">5%</span>
+                            </label>
+                            <input type="range" id="crtLeadFringeSlider" min="0" max="100" step="1" value="5">
+                        </div>
+                    </div>
+                </div>
                 <div class="mb-3">
                     <label for="brightnessSlider" class="flex justify-between items-center">
                         <span id="brightnessLabel">// Intensity:</span>
@@ -1261,44 +1355,29 @@
                     </div>
                     <div id="overdriveSubSettings">
                         <div class="mb-3">
-                            <label for="overdriveStrengthSlider" class="flex justify-between items-center">
-                                <span>// Overdrive Strength:</span>
-                                <span id="overdriveStrengthValue" class="font-semibold text-sm">100%</span>
+                            <label for="overdriveDriveSlider" class="flex justify-between items-center">
+                                <span>// Beam Drive:</span>
+                                <span id="overdriveDriveValue" class="font-semibold text-sm">58%</span>
                             </label>
-                            <input type="range" id="overdriveStrengthSlider" min="0" max="100" step="1" value="100">
+                            <input type="range" id="overdriveDriveSlider" min="0" max="200" step="1" value="58">
+                        </div>
+                        <div class="mb-3">
+                            <label for="overdrivePersistenceSlider" class="flex justify-between items-center">
+                                <span>// Phosphor Persistence:</span>
+                                <span id="overdrivePersistenceValue" class="font-semibold text-sm">260ms</span>
+                            </label>
+                            <input type="range" id="overdrivePersistenceSlider" min="80" max="2400" step="10" value="260">
+                        </div>
+                        <div class="mb-3">
+                            <label for="overdriveBloomSlider" class="flex justify-between items-center">
+                                <span>// Bloom Spread:</span>
+                                <span id="overdriveBloomValue" class="font-semibold text-sm">36%</span>
+                            </label>
+                            <input type="range" id="overdriveBloomSlider" min="0" max="200" step="1" value="36">
                         </div>
                         <div class="control-group">
                             <button id="glitchOverdriveBtn" aria-pressed="true">Glitch Overdrive Enabled</button>
                             <div id="glitchOverdriveLed" class="led-indicator" aria-hidden="true"></div>
-                        </div>
-                    </div>
-                    <div class="control-group">
-                        <button id="crtModeBtn" aria-pressed="false">[T] Engage CRT</button>
-                        <div id="crtModeLed" class="led-indicator" aria-hidden="true"></div>
-                    </div>
-                    <div id="crtSubSettings" class="hidden">
-                        <div class="mb-3">
-                            <label for="crtFishbowlSlider" class="flex justify-between items-center">
-                                <span>// Fisheye:</span>
-                                <span id="crtFishbowlValue" class="font-semibold text-sm">25%</span>
-                            </label>
-                            <input type="range" id="crtFishbowlSlider" min="0" max="100" step="1" value="25">
-                        </div>
-                        <div class="mb-3">
-                            <label for="crtVignetteSlider" class="flex justify-between items-center">
-                                <span>// Vignette:</span>
-                                <span id="crtVignetteValue" class="font-semibold text-sm">40%</span>
-                            </label>
-                            <input type="range" id="crtVignetteSlider" min="0" max="100" step="1" value="40">
-                        </div>
-                        <div id="crtFringeSettings" class="hidden">
-                            <div class="mb-3">
-                                <label for="crtLeadFringeSlider" class="flex justify-between items-center">
-                                    <span>// Lead Fringe:</span>
-                                    <span id="crtLeadFringeValue" class="font-semibold text-sm">5%</span>
-                                </label>
-                                <input type="range" id="crtLeadFringeSlider" min="0" max="100" step="1" value="5">
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1413,7 +1492,7 @@
                         <li>
                             <div>
                                 <span>Toggle Matrix Overdrive</span>
-                                <p class="text-sm opacity-70 mt-1">Pushes leader and glitch-highlight glyphs toward a brighter green-white glow that scales back with brightness.</p>
+                                <p class="text-sm opacity-70 mt-1">Simulates driven green phosphor: highlighted glyphs brighten instantly, bloom softly, and decay with persistence. The same beam drive, persistence, and bloom controls use a tighter glow profile outside CRT mode.</p>
                             </div>
                             <span><kbd>O</kbd></span>
                         </li>
@@ -1460,14 +1539,19 @@ varying vec2 vTexCoord;
 
 uniform sampler2D u_matrixTex;
 uniform sampler2D u_uiTex;
+uniform sampler2D u_fxTex;
 uniform vec2 u_resolution;
 uniform vec2 u_matrixResolution;
+uniform vec2 u_fxResolution;
 uniform float u_time;
 uniform float u_intensity;
 uniform float u_leadFringe;
+uniform float u_overdriveMode;
 uniform float u_fishbowl;
 uniform float u_vignette;
 uniform float u_constructMode;
+uniform float u_overdriveBloom;
+uniform float u_overdriveGain;
 
 vec2 curveRemapUV(vec2 uv) {
   uv = uv * 2.0 - 1.0;
@@ -1487,6 +1571,10 @@ vec4 sampleMatrixColor(vec2 sampleUV) {
 
 vec4 sampleUiColor(vec2 sampleUV) {
   return texture2D(u_uiTex, sampleUV);
+}
+
+vec3 sampleFxColor(vec2 sampleUV) {
+  return texture2D(u_fxTex, sampleUV).rgb;
 }
 
 vec3 sampleCombinedColor(vec2 sampleUV) {
@@ -1511,20 +1599,6 @@ float matrixLeadAmountAt(vec2 sampleUV) {
   return sampleBrightness * sampleWhiteCore * matrixEffectVisibilityAt(sampleUV);
 }
 
-float greenHaloSourceAt(vec2 sampleUV) {
-  vec3 sampleColor = sampleMatrixColor(sampleUV).rgb;
-  float spill = min(sampleColor.r, sampleColor.b);
-  float greenCore = smoothstep(0.24, 0.96, sampleColor.g);
-  float spillSuppression = 1.0 - smoothstep(0.02, 0.38, spill);
-  return greenCore * spillSuppression * matrixEffectVisibilityAt(sampleUV);
-}
-
-float whiteBloomSourceAt(vec2 sampleUV) {
-  vec3 sampleColor = sampleMatrixColor(sampleUV).rgb;
-  float spill = min(sampleColor.r, sampleColor.b);
-  return smoothstep(0.03, 0.62, spill) * matrixEffectVisibilityAt(sampleUV);
-}
-
 void main() {
   vec2 uv = vTexCoord;
   vec2 remappedUV = curveRemapUV(uv);
@@ -1537,7 +1611,7 @@ void main() {
   }
 
   float crtIntensity = mix(u_intensity, u_intensity * 0.42, u_constructMode);
-  float chroma = 0.0018 * crtIntensity;
+  float chroma = 0.0018 * crtIntensity * (1.0 - u_overdriveMode);
   vec4 baseColor;
   baseColor.r = sampleCombinedColor(remappedUV + vec2(chroma, 0.0)).r;
   baseColor.g = sampleCombinedColor(remappedUV).g;
@@ -1563,15 +1637,13 @@ void main() {
   float vignette = max(0.0, 1.0 - ((1.0 - vignetteMask) * vignetteStrength));
   float noise = (random(gl_FragCoord.xy) - 0.5) * 0.035 * crtIntensity;
 
-  vec3 terminalTint = vec3(0.25, 1.15, 1.35);
-  float sourceWhiteness = min(rawColor.r, min(rawColor.g, rawColor.b));
-  float neutralTintMix = smoothstep(0.18, 0.82, sourceWhiteness);
-  vec3 effectiveTerminalTint = mix(terminalTint, vec3(1.0), neutralTintMix);
-  vec3 matrixTrailColor = baseColor.rgb * effectiveTerminalTint * (1.4 + 1.2 * u_intensity);
+  vec3 matrixTrailColor = baseColor.rgb * (1.4 + 1.2 * u_intensity);
   vec3 constructTrailColor = mix(baseColor.rgb, vec3(luminance), 0.12) * (0.98 + 0.08 * crtIntensity);
   vec3 trailColor = mix(matrixTrailColor, constructTrailColor, u_constructMode);
   vec3 constructLeadColor = vec3(0.015, 0.015, 0.015);
   vec3 color = mix(trailColor, constructLeadColor, constructLeadMask * u_constructMode);
+  float bloomMask = matrixEffectVisibilityAt(remappedUV) * (1.0 - u_constructMode);
+  vec3 phosphorBloom = sampleFxColor(remappedUV) * bloomMask;
   float leadFringe = u_leadFringe * (1.0 - u_constructMode);
   float redLeadMask = matrixLeadAmountAt(remappedUV + vec2(leadFringe, 0.0));
   float blueLeadMask = matrixLeadAmountAt(remappedUV - vec2(leadFringe, 0.0));
@@ -1583,24 +1655,9 @@ void main() {
   float leadStrength = 1.6 + 1.4 * u_intensity;
   vec3 rgbLeadColor = clamp(vec3(redFringeMask, centeredGreenMask, blueFringeMask) * leadStrength, 0.0, 1.0);
   color = mix(color, rgbLeadColor, fringeMask);
+  color += phosphorBloom;
   color *= scanline * grille * vignette;
 
-  vec2 glowTexel = 1.0 / max(u_matrixResolution, vec2(1.0));
-  float greenHalo = greenHaloSourceAt(remappedUV) * 0.42;
-  greenHalo += greenHaloSourceAt(remappedUV + vec2(glowTexel.x * 2.2, 0.0)) * 0.145;
-  greenHalo += greenHaloSourceAt(remappedUV - vec2(glowTexel.x * 2.2, 0.0)) * 0.145;
-  greenHalo += greenHaloSourceAt(remappedUV + vec2(0.0, glowTexel.y * 2.2)) * 0.145;
-  greenHalo += greenHaloSourceAt(remappedUV - vec2(0.0, glowTexel.y * 2.2)) * 0.145;
-
-  float whiteBloom = whiteBloomSourceAt(remappedUV) * 0.5;
-  whiteBloom += whiteBloomSourceAt(remappedUV + vec2(glowTexel.x * 1.1, 0.0)) * 0.125;
-  whiteBloom += whiteBloomSourceAt(remappedUV - vec2(glowTexel.x * 1.1, 0.0)) * 0.125;
-  whiteBloom += whiteBloomSourceAt(remappedUV + vec2(0.0, glowTexel.y * 1.1)) * 0.125;
-  whiteBloom += whiteBloomSourceAt(remappedUV - vec2(0.0, glowTexel.y * 1.1)) * 0.125;
-
-  vec3 greenGlowColor = vec3(0.06, 1.0, 0.08) * greenHalo * (0.12 + (0.34 * crtIntensity)) * vignette;
-  vec3 whiteBloomColor = vec3(1.0) * whiteBloom * (0.05 + (0.18 * crtIntensity)) * vignette;
-  color += greenGlowColor + whiteBloomColor;
   color += noise;
 
   gl_FragColor = vec4(color, 1.0);
@@ -1616,44 +1673,15 @@ varying vec2 vTexCoord;
 
 uniform sampler2D u_fxTex;
 uniform vec2 u_resolution;
+uniform float u_overdriveBloom;
+uniform float u_overdriveGain;
 
 vec3 sampleFxColor(vec2 sampleUV) {
   return texture2D(u_fxTex, sampleUV).rgb;
 }
 
-float greenHaloSourceAt(vec2 sampleUV) {
-  vec3 sampleColor = sampleFxColor(sampleUV);
-  float spill = min(sampleColor.r, sampleColor.b);
-  float greenCore = smoothstep(0.24, 0.96, sampleColor.g);
-  float spillSuppression = 1.0 - smoothstep(0.02, 0.38, spill);
-  return greenCore * spillSuppression;
-}
-
-float whiteBloomSourceAt(vec2 sampleUV) {
-  vec3 sampleColor = sampleFxColor(sampleUV);
-  float spill = min(sampleColor.r, sampleColor.b);
-  return smoothstep(0.03, 0.62, spill);
-}
-
 void main() {
-  vec2 uv = vTexCoord;
-  vec2 texel = 1.0 / max(u_resolution, vec2(1.0));
-
-  float greenHalo = greenHaloSourceAt(uv) * 0.42;
-  greenHalo += greenHaloSourceAt(uv + vec2(texel.x * 2.2, 0.0)) * 0.145;
-  greenHalo += greenHaloSourceAt(uv - vec2(texel.x * 2.2, 0.0)) * 0.145;
-  greenHalo += greenHaloSourceAt(uv + vec2(0.0, texel.y * 2.2)) * 0.145;
-  greenHalo += greenHaloSourceAt(uv - vec2(0.0, texel.y * 2.2)) * 0.145;
-
-  float whiteBloom = whiteBloomSourceAt(uv) * 0.5;
-  whiteBloom += whiteBloomSourceAt(uv + vec2(texel.x * 1.1, 0.0)) * 0.125;
-  whiteBloom += whiteBloomSourceAt(uv - vec2(texel.x * 1.1, 0.0)) * 0.125;
-  whiteBloom += whiteBloomSourceAt(uv + vec2(0.0, texel.y * 1.1)) * 0.125;
-  whiteBloom += whiteBloomSourceAt(uv - vec2(0.0, texel.y * 1.1)) * 0.125;
-
-  vec3 greenGlowColor = vec3(0.06, 1.0, 0.08) * greenHalo * 0.34;
-  vec3 whiteBloomColor = vec3(1.0) * whiteBloom * 0.24;
-  gl_FragColor = vec4(greenGlowColor + whiteBloomColor, 1.0);
+  gl_FragColor = vec4(sampleFxColor(vTexCoord), 1.0);
 }
     </script>
 
@@ -1695,6 +1723,14 @@ void main() {
         const progressBar = document.getElementById('progressBar');
         const mainDisplayContainer = document.getElementById('mainDisplayContainer');
         const bodyElement = document.body;
+        const managedTextCaret = document.createElement('div');
+        managedTextCaret.id = 'managedTextCaret';
+        managedTextCaret.dataset.active = 'false';
+        managedTextCaret.dataset.visible = 'false';
+        managedTextCaret.setAttribute('aria-hidden', 'true');
+        bodyElement.appendChild(managedTextCaret);
+        const managedTextCaretMeasureCanvas = document.createElement('canvas');
+        const managedTextCaretMeasureCtx = managedTextCaretMeasureCanvas.getContext('2d');
 
         // Setting Elements
         const brightnessOverlay = document.getElementById('brightnessOverlay');
@@ -1720,8 +1756,12 @@ void main() {
         const overdriveModeBtn = document.getElementById('overdriveModeBtn');
         const overdriveModeLed = document.getElementById('overdriveModeLed');
         const overdriveSubSettings = document.getElementById('overdriveSubSettings');
-        const overdriveStrengthSlider = document.getElementById('overdriveStrengthSlider');
-        const overdriveStrengthValue = document.getElementById('overdriveStrengthValue');
+        const overdriveDriveSlider = document.getElementById('overdriveDriveSlider');
+        const overdriveDriveValue = document.getElementById('overdriveDriveValue');
+        const overdrivePersistenceSlider = document.getElementById('overdrivePersistenceSlider');
+        const overdrivePersistenceValue = document.getElementById('overdrivePersistenceValue');
+        const overdriveBloomSlider = document.getElementById('overdriveBloomSlider');
+        const overdriveBloomValue = document.getElementById('overdriveBloomValue');
         const glitchOverdriveBtn = document.getElementById('glitchOverdriveBtn');
         const glitchOverdriveLed = document.getElementById('glitchOverdriveLed');
         const crtSubSettings = document.getElementById('crtSubSettings');
@@ -1757,6 +1797,12 @@ void main() {
         let isPicking = false;
         let typeIntervalId = null;
         let draggedItemName = null;
+        let pointerDraggedItem = null;
+        let pointerDragTargetItem = null;
+        let pointerDragPointerId = null;
+        let pointerDragStartX = 0;
+        let pointerDragStartY = 0;
+        let pointerDragHasStarted = false;
         let currentBrightnessPercent = 100;
         let currentRainFPS = 10;
         let currentFontSize = 24;
@@ -1774,7 +1820,9 @@ void main() {
         let currentCrtFishbowlPercent = 25;
         let currentCrtVignettePercent = 40;
         let currentCrtLeadFringePercent = 5;
-        let currentOverdriveStrengthPercent = 100;
+        let currentOverdriveDrivePercent = 58;
+        let currentOverdrivePersistenceMs = 260;
+        let currentOverdriveBloomPercent = 36;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
@@ -1783,6 +1831,7 @@ void main() {
         let crtProgram = null;
         let crtTexture = null;
         let crtUiTexture = null;
+        let crtFxTexture = null;
         let crtPositionBuffer = null;
         let crtTexCoordBuffer = null;
         let crtUniforms = null;
@@ -1791,6 +1840,8 @@ void main() {
         let crtTextureHeight = 0;
         let crtUiTextureWidth = 0;
         let crtUiTextureHeight = 0;
+        let crtFxTextureWidth = 0;
+        let crtFxTextureHeight = 0;
         let crtReady = false;
         let crtWarningShown = false;
         let crtCompositeAvailable = true;
@@ -1810,6 +1861,13 @@ void main() {
         let nonCrtFxReady = false;
         let nonCrtFxWarningShown = false;
         let nonCrtCompositeAvailable = true;
+        let framePerformanceMetrics = {
+            rainUpdateMs: 0,
+            cpuMatrixDrawMs: 0,
+            compositeMs: 0,
+            renderer: 'cpu',
+            cpuOverdriveTextOps: 0
+        };
         let overdriveMaskRectsCache = [];
         let overdriveMaskDirty = true;
         let overdriveMaskTransitionFrameId = null;
@@ -1847,6 +1905,40 @@ void main() {
         const DEFAULT_GLITCH_FLIP_CHANCE = 0.0025;
         const FLIP_DURATION_MS = 500;
         const UPDATED_CHAR_HIGHLIGHT_MS = 500;
+        const DEFAULT_OVERDRIVE_DRIVE_PERCENT = 58;
+        const DEFAULT_OVERDRIVE_PERSISTENCE_MS = 260;
+        const DEFAULT_OVERDRIVE_BLOOM_PERCENT = 36;
+        const MAX_OVERDRIVE_DRIVE_PERCENT = 200;
+        const MAX_OVERDRIVE_PERSISTENCE_MS = 2400;
+        const MAX_OVERDRIVE_BLOOM_PERCENT = 200;
+        const NON_CRT_OVERDRIVE_DRIVE_SCALE = 0.72;
+        const NON_CRT_OVERDRIVE_EXTRA_DRIVE_SCALE = 0.46;
+        const NON_CRT_OVERDRIVE_PERSISTENCE_SCALE = 0.58;
+        const NON_CRT_OVERDRIVE_BLOOM_SCALE = 0.42;
+        const CRT_OVERDRIVE_VISUAL_PROFILE = {
+            fillLiftScale: 2.35,
+            glowAlphaScale: 0.2,
+            bloomAlphaBase: 0.82,
+            bloomAlphaScale: 0.95,
+            baseGlowBlur: 2.6,
+            bloomBlurScale: 7.8,
+            energyBlurScale: 8.5,
+            glowFillScale: 0.34,
+            excitationBase: 0.45,
+            excitationBloomScale: 0.4
+        };
+        const NON_CRT_OVERDRIVE_VISUAL_PROFILE = {
+            fillLiftScale: 1.55,
+            glowAlphaScale: 0.16,
+            bloomAlphaBase: 0.66,
+            bloomAlphaScale: 0.52,
+            baseGlowBlur: 2.8,
+            bloomBlurScale: 6.2,
+            energyBlurScale: 5.4,
+            glowFillScale: 0.22,
+            excitationBase: 0.32,
+            excitationBloomScale: 0.18
+        };
         const MIN_TRAIL_LENGTH = 20;
         const MAX_TRAIL_LENGTH = 400;
         const TARGET_ANIMATION_FPS = 60;
@@ -1867,15 +1959,108 @@ void main() {
         const CRT_MIN_PRESSED_VISIBILITY_MS = 90;
         const URL_UPDATE_DEBOUNCE_MS = 150;
         const OVERDRIVE_CURVE_EXPONENT = Math.log(0.2) / Math.log(0.5);
-        const CRT_INTERACTIVE_SELECTOR = 'button, input, textarea, label, .command-item, #selectedNameDisplayWrapper';
+        const CRT_INTERACTIVE_SELECTOR = 'button, input, textarea, label, .command-item, .drag-handle, .name-span, #selectedNameDisplayWrapper';
         const OVERDRIVE_MASK_ELEMENTS = [mainDisplayContainer, managementPanel, helpModal, commandPalette, menuToggleBtn, undoBtn];
+        const E2E_URL_PARAMS = new URLSearchParams(window.location.search);
+        const E2E_DEFAULT_SEED = 1;
+        const E2E_SCENE_OVERDRIVE_DEMO = 'overdrive-demo';
+        const MANAGED_TEXT_INPUT_SELECTOR = '#managementPanel input[type="text"]';
+        const e2eState = {
+            enabled: E2E_URL_PARAMS.get('e2e') === '1',
+            seed: E2E_DEFAULT_SEED,
+            randomState: E2E_DEFAULT_SEED,
+            scene: null,
+            forceCpuOverdrive: false,
+            rainPaused: false,
+            ready: false
+        };
+        let activeManagedTextInput = null;
+        let managedTextCaretBlinkIntervalId = null;
+        let managedTextCaretBlinkVisible = true;
+
+        if (e2eState.enabled) {
+            const requestedSeed = parseInt(E2E_URL_PARAMS.get('e2eSeed') || String(E2E_DEFAULT_SEED), 10);
+            e2eState.seed = Number.isFinite(requestedSeed) ? (requestedSeed >>> 0) || E2E_DEFAULT_SEED : E2E_DEFAULT_SEED;
+            e2eState.randomState = e2eState.seed;
+            e2eState.scene = E2E_URL_PARAMS.get('e2eScene') || null;
+            e2eState.forceCpuOverdrive = E2E_URL_PARAMS.get('e2eForceCpuOverdrive') === '1';
+            e2eState.rainPaused = true;
+        }
+
+        function resetE2eRandom(seed = e2eState.seed) {
+            e2eState.seed = (seed >>> 0) || E2E_DEFAULT_SEED;
+            e2eState.randomState = e2eState.seed;
+        }
+        function getRandomValue() {
+            if (!e2eState.enabled) { return Math.random(); }
+            e2eState.randomState = (1664525 * e2eState.randomState + 1013904223) >>> 0;
+            return e2eState.randomState / 4294967296;
+        }
+        function getShaderTimeSeconds() {
+            return e2eState.enabled ? 0 : performance.now() / 1000;
+        }
+        function isE2eVisualSceneActive() {
+            return e2eState.enabled && e2eState.scene === E2E_SCENE_OVERDRIVE_DEMO;
+        }
+        function renderCurrentMatrixFrame() {
+            drawMatrixRain();
+            renderCrtFrame();
+        }
+        function pauseMatrixRainForE2e() {
+            e2eState.rainPaused = true;
+            if (rainAnimationId !== null) {
+                cancelAnimationFrame(rainAnimationId);
+                rainAnimationId = null;
+            }
+            renderCurrentMatrixFrame();
+        }
+        function resumeMatrixRainForE2e() {
+            e2eState.rainPaused = false;
+            if (rainAnimationId === null) {
+                startMatrixRain();
+            }
+        }
+        function setE2eScene(sceneName) {
+            e2eState.scene = sceneName || null;
+            renderCurrentMatrixFrame();
+        }
+        function setE2eForceCpuOverdrive(forceCpuOverdrive) {
+            e2eState.forceCpuOverdrive = !!forceCpuOverdrive;
+            renderCurrentMatrixFrame();
+        }
+        function exposeE2eApi() {
+            if (!e2eState.enabled) { return; }
+            window.__VIBE_TEST__ = {
+                get ready() {
+                    return e2eState.ready;
+                },
+                pauseRain() {
+                    pauseMatrixRainForE2e();
+                },
+                resumeRain() {
+                    resumeMatrixRainForE2e();
+                },
+                setScene(sceneName) {
+                    setE2eScene(sceneName);
+                },
+                setForceCpuOverdrive(forceCpuOverdrive) {
+                    setE2eForceCpuOverdrive(forceCpuOverdrive);
+                },
+                renderFrame() {
+                    renderCurrentMatrixFrame();
+                },
+                getPerformanceMetrics() {
+                    return { ...framePerformanceMetrics };
+                }
+            };
+        }
 
         // --- Matrix Rain Setup ---
         let columns;
         function calculateColumnDelay(baseFps) {
             const minMultiplier = 1.0 - MAX_FPS_PERCENT_OFFSET;
             const maxMultiplier = 1.0 + MAX_FPS_PERCENT_OFFSET;
-            const randomMultiplier = Math.random() * (maxMultiplier - minMultiplier) + minMultiplier;
+            const randomMultiplier = getRandomValue() * (maxMultiplier - minMultiplier) + minMultiplier;
             const columnFps = baseFps * randomMultiplier;
             const finalColumnFps = Math.max(0.05, columnFps);
             return 1000 / finalColumnFps;
@@ -1896,7 +2081,7 @@ void main() {
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
             drops = []; trails = [];
             for (let i = 0; i < columns; i++) {
-                drops[i] = { y: Math.floor(Math.random() * canvas.height / currentFontSize), delay: calculateColumnDelay(currentRainFPS), lastUpdateTime: 0 };
+                drops[i] = { y: Math.floor(getRandomValue() * canvas.height / currentFontSize), delay: calculateColumnDelay(currentRainFPS), lastUpdateTime: 0 };
                 trails[i] = [];
             }
             matrixRenderStyles = null;
@@ -1979,17 +2164,29 @@ void main() {
                 crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MIN_FILTER, crtGl.LINEAR);
                 crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MAG_FILTER, crtGl.LINEAR);
 
+                crtFxTexture = crtGl.createTexture();
+                crtGl.bindTexture(crtGl.TEXTURE_2D, crtFxTexture);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_S, crtGl.CLAMP_TO_EDGE);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_T, crtGl.CLAMP_TO_EDGE);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MIN_FILTER, crtGl.LINEAR);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MAG_FILTER, crtGl.LINEAR);
+
                 crtUniforms = {
                     matrixTexture: crtGl.getUniformLocation(crtProgram, 'u_matrixTex'),
                     uiTexture: crtGl.getUniformLocation(crtProgram, 'u_uiTex'),
+                    fxTexture: crtGl.getUniformLocation(crtProgram, 'u_fxTex'),
                     resolution: crtGl.getUniformLocation(crtProgram, 'u_resolution'),
                     matrixResolution: crtGl.getUniformLocation(crtProgram, 'u_matrixResolution'),
+                    fxResolution: crtGl.getUniformLocation(crtProgram, 'u_fxResolution'),
                     time: crtGl.getUniformLocation(crtProgram, 'u_time'),
                     intensity: crtGl.getUniformLocation(crtProgram, 'u_intensity'),
                     leadFringe: crtGl.getUniformLocation(crtProgram, 'u_leadFringe'),
+                    overdriveMode: crtGl.getUniformLocation(crtProgram, 'u_overdriveMode'),
                     fishbowl: crtGl.getUniformLocation(crtProgram, 'u_fishbowl'),
                     vignette: crtGl.getUniformLocation(crtProgram, 'u_vignette'),
-                    constructMode: crtGl.getUniformLocation(crtProgram, 'u_constructMode')
+                    constructMode: crtGl.getUniformLocation(crtProgram, 'u_constructMode'),
+                    overdriveBloom: crtGl.getUniformLocation(crtProgram, 'u_overdriveBloom'),
+                    overdriveGain: crtGl.getUniformLocation(crtProgram, 'u_overdriveGain')
                 };
 
                 crtReady = true;
@@ -2056,7 +2253,9 @@ void main() {
                 matrixFxGl.texParameteri(matrixFxGl.TEXTURE_2D, matrixFxGl.TEXTURE_MAG_FILTER, matrixFxGl.LINEAR);
                 nonCrtFxUniforms = {
                     fxTexture: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_fxTex'),
-                    resolution: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_resolution')
+                    resolution: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_resolution'),
+                    overdriveBloom: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_overdriveBloom'),
+                    overdriveGain: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_overdriveGain')
                 };
 
                 nonCrtFxReady = true;
@@ -2087,6 +2286,13 @@ void main() {
                 crtUiTextureWidth = crtUiCanvas.width;
                 crtUiTextureHeight = crtUiCanvas.height;
                 crtUiSnapshotDirty = true;
+            }
+            if (crtFxTexture && matrixFxMaskCanvas.width > 0 && matrixFxMaskCanvas.height > 0 && (crtFxTextureWidth !== matrixFxMaskCanvas.width || crtFxTextureHeight !== matrixFxMaskCanvas.height)) {
+                crtGl.activeTexture(crtGl.TEXTURE2);
+                crtGl.bindTexture(crtGl.TEXTURE_2D, crtFxTexture);
+                crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, null);
+                crtFxTextureWidth = matrixFxMaskCanvas.width;
+                crtFxTextureHeight = matrixFxMaskCanvas.height;
             }
         }
         function ensureNonCrtFxTextureSize() {
@@ -2438,6 +2644,23 @@ void main() {
             crtPaintCtx.fillRect(rect.left, rect.top, borderWidth, rect.height);
             crtPaintCtx.fillRect(rect.right - borderWidth, rect.top, borderWidth, rect.height);
         }
+        function drawDragHandleForCrt(element, style, rect) {
+            const computedBodyStyle = getComputedStyle(bodyElement);
+            const primaryColor = computedBodyStyle.getPropertyValue('--primary-color').trim() || style.color || 'rgba(57, 255, 20, 1)';
+            const barWidth = Math.max(10, rect.width);
+            const barHeight = Math.max(2, Math.round(rect.height * 0.125));
+            const x = rect.left + (rect.width - barWidth) / 2;
+            const offsets = [-0.22, 0, 0.22];
+
+            crtPaintCtx.save();
+            crtPaintCtx.fillStyle = primaryColor;
+            crtPaintCtx.globalAlpha = 0.9;
+            offsets.forEach((offset) => {
+                const y = rect.top + rect.height / 2 + (offset * rect.height) - (barHeight / 2);
+                crtPaintCtx.fillRect(x, y, barWidth, barHeight);
+            });
+            crtPaintCtx.restore();
+        }
         function paintElementForCrt(element) {
             if (!isElementVisibleForCrt(element)) { return; }
             const style = getComputedStyle(element);
@@ -2445,6 +2668,11 @@ void main() {
 
             if (element === progressBar) {
                 drawProgressBarForCrt(element, style, rect);
+                return;
+            }
+
+            if (element.classList.contains('drag-handle')) {
+                drawDragHandleForCrt(element, style, rect);
                 return;
             }
 
@@ -2581,12 +2809,20 @@ void main() {
             const t = clampUnit(amount);
             return rgbA.map((value, index) => value + ((rgbB[index] - value) * t));
         }
+        function getEffectiveOverdriveDriveRatio(isCrtProfile = isCrtMode && !isConstructMode) {
+            const normalizedDrive = Math.max(0, currentOverdriveDrivePercent / 100);
+            if (isCrtProfile) { return normalizedDrive; }
+            if (normalizedDrive <= 1) { return normalizedDrive * NON_CRT_OVERDRIVE_DRIVE_SCALE; }
+            return NON_CRT_OVERDRIVE_DRIVE_SCALE + ((normalizedDrive - 1) * NON_CRT_OVERDRIVE_EXTRA_DRIVE_SCALE);
+        }
         function getOverdriveAmount() {
             if (!isOverdriveMode || isConstructMode) { return 0; }
-            const normalizedStrength = clampUnit(currentOverdriveStrengthPercent / 100);
-            const strength = Math.pow(normalizedStrength, OVERDRIVE_CURVE_EXPONENT);
+            const normalizedDrive = getEffectiveOverdriveDriveRatio();
+            const strength = normalizedDrive <= 1
+                ? Math.pow(normalizedDrive, OVERDRIVE_CURVE_EXPONENT)
+                : 1 + (Math.pow(normalizedDrive - 1, 1.15) * 1.65);
             const brightnessFactor = currentBrightnessPercent / 100;
-            return clampUnit(strength * brightnessFactor);
+            return Math.max(0, strength * brightnessFactor);
         }
         function getViewportTailLength() {
             const visibleRows = Math.floor(canvas.height / Math.max(1, currentFontSize));
@@ -2616,75 +2852,79 @@ void main() {
             const normalizedFrequency = clampUnit(currentGlitchFrequencyPercent / 100);
             return DEFAULT_GLITCH_FLIP_CHANCE * Math.pow(normalizedFrequency / 0.5, 2.0);
         }
-        function getOverdriveFillAmount(overdriveAmount) {
-            if (overdriveAmount <= 0) { return 0; }
-            if (overdriveAmount <= 0.2) {
-                return clampUnit(0.367 * Math.pow(overdriveAmount / 0.2, 1.35));
-            }
-            if (overdriveAmount < 1) {
-                return clampUnit(0.367 + ((1 - 0.367) * Math.pow((overdriveAmount - 0.2) / 0.8, 0.9)));
-            }
-            return 1;
+        function getPhosphorPersistenceMs(isCrtProfile = isCrtMode && !isConstructMode) {
+            const persistenceScale = isCrtProfile ? 1 : NON_CRT_OVERDRIVE_PERSISTENCE_SCALE;
+            return Math.max(80, Math.round(currentOverdrivePersistenceMs * persistenceScale));
         }
-        function resolveAdditiveOverdriveProfile(baseTrailOpacity, overdriveAmount, overdriveFillAmount, isCrtProfile) {
-            const baseGreen = 255 * clampUnit(baseTrailOpacity);
-            const addedEnergy = 255 * clampUnit(overdriveFillAmount);
-            const green = Math.min(255, baseGreen + addedEnergy);
-            const spill = Math.max(0, (baseGreen + addedEnergy) - 255);
-            const fillRgb = [spill, green, spill];
-            if (isCrtProfile) {
-                return {
-                    fillStyle: toRgbaString(fillRgb, 1),
-                    shadowColor: 'transparent',
-                    shadowBlur: 0,
-                    glowPasses: []
-                };
-            }
-            const greenHeadroom = Math.max(0, 255 - baseGreen);
-            const greenGlowStrength = greenHeadroom > 0 ? clampUnit(Math.min(addedEnergy, greenHeadroom) / greenHeadroom) : 0;
-            const whiteBloomStrength = clampUnit(spill / 255);
-            const glowVisibility = clampUnit(baseTrailOpacity + (overdriveAmount * 0.5));
-            const greenGlowAlpha = greenGlowStrength * glowVisibility * (isCrtProfile ? 0.16 : 0.34);
-            const whiteBloomAlpha = whiteBloomStrength * glowVisibility * (isCrtProfile ? 0.12 : 0.24);
-            const greenGlowBlur = (isCrtProfile ? 3 : 7) + (overdriveAmount * (isCrtProfile ? 7 : 16));
-            const whiteBloomBlur = (isCrtProfile ? 1.5 : 3) + (whiteBloomStrength * (isCrtProfile ? 4.5 : 9));
+        function getPhosphorBloomAmount(isCrtProfile = isCrtMode && !isConstructMode) {
+            const bloomScale = isCrtProfile ? 1 : NON_CRT_OVERDRIVE_BLOOM_SCALE;
+            return Math.max(0, (currentOverdriveBloomPercent / 100) * bloomScale);
+        }
+        function getOverdriveFxUniformState() {
+            const isCrtProfile = isCrtMode && !isConstructMode;
+            const bloomAmount = getPhosphorBloomAmount(isCrtProfile);
+            const driveAmount = getEffectiveOverdriveDriveRatio(isCrtProfile);
+            return {
+                bloomUniform: clampUnit(Math.min(1, bloomAmount / 1.8)),
+                gainUniform: 0.7 + (Math.min(2.4, driveAmount) * 0.55)
+            };
+        }
+        function getPhosphorExcitation(elapsedMs, persistenceMs, eventStrength = 1) {
+            const normalizedStrength = clampUnit(eventStrength);
+            if (!Number.isFinite(elapsedMs) || elapsedMs < 0) { return normalizedStrength; }
+            return clampUnit(normalizedStrength * Math.exp(-elapsedMs / Math.max(1, persistenceMs)));
+        }
+        function resolveCrtOverdriveProfile(baseTrailOpacity, overdriveAmount, phosphorExcitation, isCrtProfile) {
+            const normalizedTrailOpacity = clampUnit(baseTrailOpacity);
+            const normalizedExcitation = clampUnit(phosphorExcitation);
+            const beamEnergy = Math.max(0, overdriveAmount * normalizedExcitation);
+            const bloomAmount = getPhosphorBloomAmount(isCrtProfile);
+            const profile = isCrtProfile ? CRT_OVERDRIVE_VISUAL_PROFILE : NON_CRT_OVERDRIVE_VISUAL_PROFILE;
+            const fillLift = 1 - Math.exp(-beamEnergy * profile.fillLiftScale);
+            const emittedGreen = Math.round(255 * clampUnit(normalizedTrailOpacity + ((1 - normalizedTrailOpacity) * fillLift)));
+            const phosphorVisibility = clampUnit(0.18 + normalizedTrailOpacity + (Math.min(beamEnergy, 3.5) * 0.22));
+            const glowEnergy = beamEnergy * clampUnit((emittedGreen / 255) * 1.05);
+            const glowAlpha = Math.min(1, glowEnergy * phosphorVisibility * profile.glowAlphaScale * (profile.bloomAlphaBase + (bloomAmount * profile.bloomAlphaScale)));
+            const glowBlur = profile.baseGlowBlur + (bloomAmount * profile.bloomBlurScale) + (Math.min(glowEnergy, 3.2) * profile.energyBlurScale);
+            const glowFillAlpha = Math.min(1, glowEnergy * profile.glowFillScale);
+            const excitationAlpha = Math.min(1, (1 - Math.exp(-beamEnergy * 0.9)) * (profile.excitationBase + (Math.min(bloomAmount, 1.8) * profile.excitationBloomScale)));
             const glowPasses = [];
 
-            if (greenGlowAlpha > 0.002) {
+            if (glowAlpha > 0.002) {
                 glowPasses.push({
-                    fillStyle: toRgbaString([0, 255, 0], 0.015),
-                    shadowColor: toRgbaString([0, 255, 0], greenGlowAlpha),
-                    shadowBlur: greenGlowBlur,
-                    compositeOperation: 'lighter'
-                });
-            }
-
-            if (whiteBloomAlpha > 0.002) {
-                glowPasses.push({
-                    fillStyle: toRgbaString([255, 255, 255], 0.012),
-                    shadowColor: toRgbaString([255, 255, 255], whiteBloomAlpha),
-                    shadowBlur: whiteBloomBlur,
+                    fillStyle: toRgbaString([0, 255, 0], glowFillAlpha),
+                    shadowColor: toRgbaString([0, 255, 0], glowAlpha),
+                    shadowBlur: glowBlur,
                     compositeOperation: 'lighter'
                 });
             }
 
             return {
-                fillStyle: toRgbaString(fillRgb, 1),
+                fillStyle: toRgbaString([0, emittedGreen, 0], 1),
                 shadowColor: 'transparent',
                 shadowBlur: 0,
-                glowPasses
+                glowPasses,
+                excitationAlpha
             };
         }
         function getTrailOpacity(trailIndex) {
             return trailOpacityCache[trailIndex] ?? 0;
         }
-        function getNonCrtHighlightEnvelope(elapsedMs, durationMs) {
-            if (durationMs <= 0) { return 0; }
-            const fadeInMs = Math.max(90, durationMs * 0.18);
-            const fadeOutMs = Math.max(180, durationMs * 0.42);
-            const fadeIn = smoothStep01(elapsedMs / fadeInMs);
-            const fadeOut = smoothStep01((durationMs - elapsedMs) / fadeOutMs);
-            return clampUnit(fadeIn * fadeOut);
+        function getOverdriveExcitationState(elapsedMs, baseDurationMs, options = {}) {
+            const eventStrength = clampUnit(options.eventStrength ?? 1);
+            const persistenceMs = getPhosphorPersistenceMs();
+            if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
+                return { fillActive: true, glowActive: true, phosphorExcitation: eventStrength, glowDurationMs: persistenceMs };
+            }
+            const glowDurationMs = Math.max(baseDurationMs, persistenceMs * 3);
+            const phosphorExcitation = elapsedMs < glowDurationMs ? getPhosphorExcitation(elapsedMs, persistenceMs, eventStrength) : 0;
+            const active = phosphorExcitation > 0.015;
+            return {
+                fillActive: active,
+                glowActive: active,
+                phosphorExcitation,
+                glowDurationMs
+            };
         }
         function getOverlayMaskVisibility(element) {
             if (!element) { return false; }
@@ -2776,6 +3016,9 @@ void main() {
                 targetCtx.clearRect(rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale);
             });
         }
+        function shouldRenderMaskedFallbackFill(x, y, width, height, maskRects) {
+            return isOverdriveMaskedAtGlyph(x, y, width, height, maskRects);
+        }
         function refreshMatrixRenderStyles() {
             const computedStyle = getComputedStyle(bodyElement);
             const trailColorRgb = isConstructMode ? computedStyle.getPropertyValue('--construct-text-rgb').trim() : computedStyle.getPropertyValue('--matrix-green-rgb').trim();
@@ -2810,11 +3053,11 @@ void main() {
             }
 
             const overdriveAmount = getOverdriveAmount();
-            const overdriveFillAmount = getOverdriveFillAmount(overdriveAmount);
             const baseTrailOpacity = trailIndex > 0 ? getTrailOpacity(trailIndex) : 1;
             const isOverdriveAllowed = !options.disableOverdrive && !isConstructMode;
             const isCrtProfile = isCrtMode && !isConstructMode;
             const isLegacyFringeMode = isCrtProfile && !isOverdriveMode && !options.disableOverdrive;
+            const phosphorExcitation = options.phosphorExcitation ?? 1;
             if (kind === 'trail') {
                 return {
                     fillStyle: trailFillStyleCache[trailIndex] || `rgba(${matrixRenderStyles.trailColorRgb}, 0)`,
@@ -2855,7 +3098,7 @@ void main() {
                 };
             }
 
-            return resolveAdditiveOverdriveProfile(baseTrailOpacity, overdriveAmount, overdriveFillAmount, isCrtProfile);
+            return resolveCrtOverdriveProfile(baseTrailOpacity, overdriveAmount, phosphorExcitation, isCrtProfile);
         }
         function applyMatrixGlyphStyleToContext(targetCtx, style) {
             targetCtx.fillStyle = style.fillStyle;
@@ -2865,47 +3108,153 @@ void main() {
         function applyMatrixGlyphStyle(style) {
             applyMatrixGlyphStyleToContext(ctx, style);
         }
-        function renderMatrixGlyphWithStyleToContext(targetCtx, char, x, y, style, alphaMultiplier = 1) {
-            const targetAlpha = clampUnit(alphaMultiplier);
+        function renderMatrixGlyphWithStyleToContext(targetCtx, char, x, y, style, alphaOptions = 1) {
+            const options = typeof alphaOptions === 'number' ? { alphaMultiplier: alphaOptions } : (alphaOptions || {});
+            const targetAlpha = clampUnit(options.alphaMultiplier ?? 1);
+            const fillAlphaMultiplier = clampUnit(options.fillAlphaMultiplier ?? 1);
+            const glowAlphaMultiplier = clampUnit(options.glowAlphaMultiplier ?? 1);
+            const countAsOverdriveOperation = options.countAsOverdriveOperation === true;
+            const targetFillAlpha = clampUnit(targetAlpha * fillAlphaMultiplier);
+            const targetGlowAlpha = clampUnit(targetAlpha * glowAlphaMultiplier);
             if (targetAlpha <= 0) { return; }
             const glowPasses = Array.isArray(style.glowPasses) ? style.glowPasses : [];
-            glowPasses.forEach(pass => {
+            if (targetGlowAlpha > 0) {
+                if (countAsOverdriveOperation) {
+                    framePerformanceMetrics.cpuOverdriveTextOps += glowPasses.length * 3;
+                }
+                glowPasses.forEach(pass => {
+                    targetCtx.save();
+                    targetCtx.globalAlpha = targetGlowAlpha;
+                    targetCtx.globalCompositeOperation = pass.compositeOperation || 'source-over';
+                    targetCtx.fillStyle = pass.fillStyle;
+                    targetCtx.shadowColor = pass.shadowColor || 'transparent';
+                    targetCtx.shadowBlur = pass.shadowBlur || 0;
+                    targetCtx.fillText(char, x, y);
+                    targetCtx.restore();
+                });
+            }
+            if (targetFillAlpha > 0) {
+                if (countAsOverdriveOperation) {
+                    framePerformanceMetrics.cpuOverdriveTextOps += 1;
+                }
                 targetCtx.save();
-                targetCtx.globalAlpha = targetAlpha;
-                targetCtx.globalCompositeOperation = pass.compositeOperation || 'source-over';
-                targetCtx.fillStyle = pass.fillStyle;
-                targetCtx.shadowColor = pass.shadowColor || 'transparent';
-                targetCtx.shadowBlur = pass.shadowBlur || 0;
+                targetCtx.globalAlpha = targetFillAlpha;
+                applyMatrixGlyphStyleToContext(targetCtx, style);
                 targetCtx.fillText(char, x, y);
                 targetCtx.restore();
-            });
-            targetCtx.save();
-            targetCtx.globalAlpha = targetAlpha;
-            applyMatrixGlyphStyleToContext(targetCtx, style);
-            targetCtx.fillText(char, x, y);
-            targetCtx.restore();
+            }
         }
         function renderMatrixGlyphWithStyle(char, x, y, style) {
             renderMatrixGlyphWithStyleToContext(ctx, char, x, y, style);
         }
-        function renderGlyphFillToContext(targetCtx, char, x, y, style) {
+        function renderGlyphFillToContext(targetCtx, char, x, y, style, options = {}) {
+            if (options.countAsOverdriveOperation === true) {
+                framePerformanceMetrics.cpuOverdriveTextOps += 1;
+            }
             targetCtx.fillStyle = style.fillStyle;
             targetCtx.fillText(char, x, y);
+        }
+        function createScaledFxGlowStyle(style, scale) {
+            return {
+                fillStyle: style.fillStyle,
+                shadowColor: 'transparent',
+                shadowBlur: 0,
+                glowPasses: (Array.isArray(style.glowPasses) ? style.glowPasses : []).map((pass) => ({
+                    ...pass,
+                    shadowBlur: (pass.shadowBlur || 0) * scale
+                }))
+            };
+        }
+        function renderExcitationMaskToContext(targetCtx, char, x, y, style, alphaMultiplier = 1, options = {}) {
+            const targetAlpha = clampUnit(alphaMultiplier);
+            if (targetAlpha <= 0) { return false; }
+            const glowPasses = Array.isArray(style.glowPasses) ? style.glowPasses : [];
+            if (glowPasses.length === 0) { return false; }
+            const scale = Math.max(0.01, options.scale || 1);
+            const scaledStyle = createScaledFxGlowStyle(style, scale);
+            renderMatrixGlyphWithStyleToContext(targetCtx, char, x * scale, y * scale, scaledStyle, {
+                fillAlphaMultiplier: 0,
+                glowAlphaMultiplier: targetAlpha,
+                countAsOverdriveOperation: options.countAsOverdriveOperation === true
+            });
+            return true;
+        }
+        function composeCpuMatrixFrame(frameState) {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(matrixFillCanvas, 0, 0);
+            if (frameState.hasHighlightFill) {
+                ctx.drawImage(matrixHighlightCanvas, 0, 0);
+            }
+        }
+        function drawE2eOverdriveDemoScene(baseCtx, frameState) {
+            const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
+            const centerX = canvas.width * 0.5;
+            const centerY = canvas.height * 0.46;
+            const sceneGlyphs = [
+                { char: 'L', x: centerX, y: centerY, kind: 'leader', trailIndex: 0, elapsedMs: 160, baseDurationMs: UPDATED_CHAR_HIGHLIGHT_MS },
+                { char: 'R', x: centerX - (effectiveColumnWidth * 2.4), y: centerY + (currentFontSize * 1.5), kind: 'leader', trailIndex: 4, elapsedMs: 340, baseDurationMs: UPDATED_CHAR_HIGHLIGHT_MS },
+                { char: 'G', x: centerX + (effectiveColumnWidth * 2.4), y: centerY + (currentFontSize * 1.5), kind: 'glitch', trailIndex: 5, elapsedMs: 410, baseDurationMs: FLIP_DURATION_MS },
+                { char: 'T', x: centerX - (effectiveColumnWidth * 4.1), y: centerY + (currentFontSize * 3.8), kind: 'trail', trailIndex: 10 },
+                { char: 'Y', x: centerX + (effectiveColumnWidth * 4.1), y: centerY - (currentFontSize * 2.1), kind: 'trail', trailIndex: 14 },
+                { char: '0', x: centerX, y: centerY + (currentFontSize * 4.6), kind: 'trail', trailIndex: 18 }
+            ];
+
+            if (frameState.useGpuOverdriveLayers) {
+                sceneGlyphs.forEach((glyph) => {
+                    if (glyph.kind === 'trail') {
+                        renderGlyphFillToContext(baseCtx, glyph.char, glyph.x, glyph.y, resolveFrameBaseGlyphStyle(frameState, 'trail', glyph.trailIndex));
+                        return;
+                    }
+                    const excitationState = getOverdriveExcitationState(glyph.elapsedMs, glyph.baseDurationMs);
+                    if (shouldRenderMaskedFallbackFill(glyph.x, glyph.y, effectiveColumnWidth, currentFontSize, frameState.overdriveMaskRects)) {
+                        renderGlyphFillToContext(baseCtx, glyph.char, glyph.x, glyph.y, resolveFrameBaseGlyphStyle(frameState, glyph.kind, glyph.trailIndex));
+                    }
+                    const highlightStyle = resolveFrameHighlightFillStyle(frameState, glyph.kind, glyph.trailIndex, {
+                        phosphorExcitation: excitationState.phosphorExcitation
+                    });
+                    if (highlightStyle && (excitationState.fillActive || excitationState.glowActive)) {
+                        renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, glyph.char, glyph.x, glyph.y, highlightStyle, {
+                            fillAlphaMultiplier: excitationState.fillActive ? 1 : 0,
+                            glowAlphaMultiplier: 0,
+                            countAsOverdriveOperation: true
+                        });
+                        frameState.hasHighlightFill = true;
+                        frameState.hasFxHighlights = renderExcitationMaskToContext(matrixFxMaskCtx, glyph.char, glyph.x, glyph.y, highlightStyle, 1, {
+                            countAsOverdriveOperation: true,
+                            scale: NON_CRT_FX_SCALE
+                        }) || frameState.hasFxHighlights;
+                    }
+                });
+            } else {
+                const maskRects = isOverdriveMode ? getOverdriveMaskRects() : [];
+                sceneGlyphs.forEach((glyph) => {
+                    if (glyph.kind === 'trail') {
+                        drawMatrixGlyph(glyph.char, glyph.x, glyph.y, glyph.kind, glyph.trailIndex, maskRects);
+                        return;
+                    }
+                    const excitationState = getOverdriveExcitationState(glyph.elapsedMs, glyph.baseDurationMs);
+                    drawMatrixHighlightGlyph(glyph.char, glyph.x, glyph.y, glyph.kind, glyph.trailIndex, maskRects, excitationState);
+                });
+            }
         }
         function buildMatrixFrameState() {
             if (!matrixRenderStyles) {
                 refreshMatrixRenderStyles();
             }
             const overdriveAmount = getOverdriveAmount();
-            const overdriveFillAmount = getOverdriveFillAmount(overdriveAmount);
-            const useNonCrtFxRenderer = !isCrtMode && !isConstructMode && nonCrtFxReady && nonCrtCompositeAvailable;
-            const useSplitOverdriveLayers = useNonCrtFxRenderer && isOverdriveMode && overdriveAmount > 0;
+            const allowGpuOverdriveLayers = !e2eState.forceCpuOverdrive;
+            const useNonCrtFxRenderer = allowGpuOverdriveLayers && !isCrtMode && !isConstructMode && nonCrtFxReady && nonCrtCompositeAvailable;
+            const useCrtFxRenderer = allowGpuOverdriveLayers && isCrtMode && !isConstructMode && crtReady && crtCompositeAvailable;
+            const useGpuOverdriveLayers = isOverdriveMode && overdriveAmount > 0 && (useNonCrtFxRenderer || useCrtFxRenderer);
             return {
                 overdriveAmount,
-                overdriveFillAmount,
                 useNonCrtFxRenderer,
-                useSplitOverdriveLayers,
-                overdriveMaskRects: useSplitOverdriveLayers ? getOverdriveMaskRects() : [],
+                useCrtFxRenderer,
+                useGpuOverdriveLayers,
+                useSplitOverdriveLayers: useGpuOverdriveLayers,
+                overdriveMaskRects: useGpuOverdriveLayers ? getOverdriveMaskRects() : [],
                 baseStyleCache: new Map(),
                 highlightStyleCache: new Map(),
                 hasHighlightFill: false,
@@ -2941,19 +3290,21 @@ void main() {
             frameState.baseStyleCache.set(cacheKey, style);
             return style;
         }
-        function resolveFrameHighlightFillStyle(frameState, kind, trailIndex = 0) {
+        function resolveFrameHighlightFillStyle(frameState, kind, trailIndex = 0, options = {}) {
             if (!frameState.useSplitOverdriveLayers) { return null; }
             if (kind === 'glitch' && !isGlitchOverdriveEnabled) { return null; }
-            const cacheKey = `${kind}:${trailIndex}`;
+            const phosphorExcitation = clampUnit(options.phosphorExcitation ?? 1);
+            const cacheKey = `${kind}:${trailIndex}:${phosphorExcitation.toFixed(4)}`;
             if (frameState.highlightStyleCache.has(cacheKey)) {
                 return frameState.highlightStyleCache.get(cacheKey);
             }
-            const style = resolveMatrixGlyphStyle(kind, trailIndex);
+            const style = resolveMatrixGlyphStyle(kind, trailIndex, { phosphorExcitation });
             frameState.highlightStyleCache.set(cacheKey, style);
             return style;
         }
         function renderNonCrtFxLayer() {
             if (!matrixFxGl || !nonCrtFxReady || !nonCrtCompositeAvailable || !nonCrtFxAttributeLocations) { return false; }
+            const fxUniformState = getOverdriveFxUniformState();
 
             matrixFxGl.viewport(0, 0, matrixFxCanvas.width, matrixFxCanvas.height);
             matrixFxGl.useProgram(nonCrtFxProgram);
@@ -2981,6 +3332,8 @@ void main() {
 
             matrixFxGl.uniform1i(nonCrtFxUniforms.fxTexture, 0);
             matrixFxGl.uniform2f(nonCrtFxUniforms.resolution, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height);
+            matrixFxGl.uniform1f(nonCrtFxUniforms.overdriveBloom, fxUniformState.bloomUniform);
+            matrixFxGl.uniform1f(nonCrtFxUniforms.overdriveGain, fxUniformState.gainUniform);
             matrixFxGl.drawArrays(matrixFxGl.TRIANGLES, 0, 6);
             return true;
         }
@@ -2999,13 +3352,35 @@ void main() {
                 ctx.restore();
             }
         }
-        function drawMatrixGlyph(char, x, y, kind, trailIndex = 0, maskRects = []) {
+        function drawMatrixGlyph(char, x, y, kind, trailIndex = 0, maskRects = [], options = {}) {
+            if (kind !== 'trail') {
+                drawMatrixHighlightGlyph(char, x, y, kind, trailIndex, maskRects, options);
+                return;
+            }
+            renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle(kind, trailIndex, options));
+        }
+        function drawMatrixHighlightGlyph(char, x, y, kind, trailIndex = 0, maskRects = [], timingState = {}) {
+            const fillActive = timingState.fillActive !== false;
+            const glowActive = timingState.glowActive !== false;
+            const phosphorExcitation = clampUnit(timingState.phosphorExcitation ?? 1);
+            if (!fillActive && (!glowActive || phosphorExcitation <= 0)) {
+                renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle('trail', trailIndex));
+                return;
+            }
+
             const overdriveIntersectingRects = isOverdriveMode && !isConstructMode && kind !== 'trail'
                 ? getIntersectingOverdriveMaskRects(x, y, currentFontSize * COLUMN_SPACING_FACTOR, currentFontSize, maskRects)
                 : [];
+            const highlightStyle = resolveMatrixGlyphStyle(kind, trailIndex, { phosphorExcitation });
 
             if (overdriveIntersectingRects.length === 0) {
-                renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle(kind, trailIndex));
+                if (!fillActive) {
+                    renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle('trail', trailIndex));
+                }
+                renderMatrixGlyphWithStyleToContext(ctx, char, x, y, highlightStyle, {
+                    fillAlphaMultiplier: fillActive ? 1 : 0,
+                    countAsOverdriveOperation: true
+                });
                 return;
             }
 
@@ -3018,11 +3393,16 @@ void main() {
                 clipPath.rect(rect.left, rect.top, rect.width, rect.height);
             });
             ctx.clip(clipPath, 'evenodd');
-            renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle(kind, trailIndex));
+            renderMatrixGlyphWithStyleToContext(ctx, char, x, y, highlightStyle, {
+                fillAlphaMultiplier: fillActive ? 1 : 0,
+                countAsOverdriveOperation: true
+            });
             ctx.restore();
         }
         function renderCrtFrame() {
             if (!isCrtMode || !crtReady || !crtGl || !crtCompositeAvailable || !crtAttributeLocations) { return; }
+            const compositeStart = performance.now();
+            const fxUniformState = getOverdriveFxUniformState();
 
             crtGl.viewport(0, 0, crtCanvas.width, crtCanvas.height);
             crtGl.useProgram(crtProgram);
@@ -3047,6 +3427,9 @@ void main() {
                     repaintCrtUiLayer();
                     crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, crtUiCanvas);
                 }
+                crtGl.activeTexture(crtGl.TEXTURE2);
+                crtGl.bindTexture(crtGl.TEXTURE_2D, crtFxTexture);
+                crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, matrixFxMaskCanvas);
             } catch (error) {
                 crtCompositeAvailable = false;
                 bodyElement.classList.add('crt-unavailable');
@@ -3057,23 +3440,31 @@ void main() {
 
             crtGl.uniform1i(crtUniforms.matrixTexture, 0);
             crtGl.uniform1i(crtUniforms.uiTexture, 1);
+            crtGl.uniform1i(crtUniforms.fxTexture, 2);
             crtGl.uniform2f(crtUniforms.resolution, crtCanvas.width, crtCanvas.height);
             crtGl.uniform2f(crtUniforms.matrixResolution, crtSourceCanvas.width, crtSourceCanvas.height);
-            crtGl.uniform1f(crtUniforms.time, performance.now() / 1000);
+            crtGl.uniform2f(crtUniforms.fxResolution, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height);
+            crtGl.uniform1f(crtUniforms.time, getShaderTimeSeconds());
             crtGl.uniform1f(crtUniforms.intensity, isCrtMode ? 0.88 : 0.0);
             const leadFringeMax = (currentFontSize * COLUMN_SPACING_FACTOR) / Math.max(1, crtCanvas.width);
             const activeLeadFringePercent = isCrtMode && !isOverdriveMode ? currentCrtLeadFringePercent : 0;
             crtGl.uniform1f(crtUniforms.leadFringe, (activeLeadFringePercent / 100) * leadFringeMax);
+            crtGl.uniform1f(crtUniforms.overdriveMode, isOverdriveMode && !isConstructMode ? 1.0 : 0.0);
             crtGl.uniform1f(crtUniforms.fishbowl, getCrtFishbowlAmount());
             crtGl.uniform1f(crtUniforms.vignette, getCrtVignetteAmount());
             crtGl.uniform1f(crtUniforms.constructMode, isConstructMode ? 1.0 : 0.0);
+            crtGl.uniform1f(crtUniforms.overdriveBloom, fxUniformState.bloomUniform);
+            crtGl.uniform1f(crtUniforms.overdriveGain, fxUniformState.gainUniform);
             crtGl.drawArrays(crtGl.TRIANGLES, 0, 6);
             lastCrtFrameTime = performance.now();
+            framePerformanceMetrics.compositeMs = performance.now() - compositeStart;
         }
         function drawMatrixRain() {
+            const frameStart = performance.now();
             const frameState = buildMatrixFrameState();
-            const useNonCrtOptimizedRenderer = frameState.useNonCrtFxRenderer;
-            const baseCtx = useNonCrtOptimizedRenderer ? matrixFillCtx : ctx;
+            framePerformanceMetrics.cpuOverdriveTextOps = 0;
+            const useGpuOverdriveLayers = frameState.useGpuOverdriveLayers;
+            const baseCtx = useGpuOverdriveLayers ? matrixFillCtx : ctx;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             const now = Date.now();
             const glitchFlipChance = getGlitchFlipChance();
@@ -3086,7 +3477,7 @@ void main() {
             baseCtx.fillRect(0, 0, canvas.width, canvas.height);
             baseCtx.font = matrixRenderStyles.font;
 
-            if (useNonCrtOptimizedRenderer) {
+            if (useGpuOverdriveLayers) {
                 matrixHighlightCtx.setTransform(1, 0, 0, 1, 0, 0);
                 matrixHighlightCtx.shadowColor = 'transparent';
                 matrixHighlightCtx.shadowBlur = 0;
@@ -3100,12 +3491,38 @@ void main() {
                 matrixFxMaskCtx.font = `${Math.max(1, currentFontSize * NON_CRT_FX_SCALE)}px ${getComputedStyle(bodyElement).fontFamily}`;
             }
 
+            if (isE2eVisualSceneActive()) {
+                drawE2eOverdriveDemoScene(baseCtx, frameState);
+                framePerformanceMetrics.cpuMatrixDrawMs = performance.now() - frameStart;
+                if (frameState.useCrtFxRenderer) {
+                    if (frameState.overdriveMaskRects.length > 0) {
+                        clearMaskedRects(matrixHighlightCtx, frameState.overdriveMaskRects, 1);
+                        clearMaskedRects(matrixFxMaskCtx, frameState.overdriveMaskRects, NON_CRT_FX_SCALE);
+                    }
+                    composeCpuMatrixFrame(frameState);
+                }
+                if (frameState.useNonCrtFxRenderer) {
+                    const compositeStart = performance.now();
+                    if (frameState.overdriveMaskRects.length > 0) {
+                        clearMaskedRects(matrixHighlightCtx, frameState.overdriveMaskRects, 1);
+                        clearMaskedRects(matrixFxMaskCtx, frameState.overdriveMaskRects, NON_CRT_FX_SCALE);
+                    }
+                    composeNonCrtFrame(frameState);
+                    framePerformanceMetrics.compositeMs = performance.now() - compositeStart;
+                }
+                framePerformanceMetrics.rainUpdateMs = performance.now() - frameStart;
+                framePerformanceMetrics.renderer = frameState.useNonCrtFxRenderer ? 'gpu-noncrt' : (frameState.useCrtFxRenderer ? 'gpu-crt' : 'cpu');
+                ctx.shadowColor = 'transparent';
+                ctx.shadowBlur = 0;
+                return;
+            }
+
             for (let i = 0; i < drops.length; i++) {
                 const drop = drops[i];
                 if (now - drop.lastUpdateTime >= drop.delay) {
-                    const newLeaderChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
+                    const newLeaderChar = MATRIX_CHARS[Math.floor(getRandomValue() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
                     trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now }); if (trails[i].length > getActiveTrailLength()) { trails[i].pop(); } drop.y++;
-                    if (drop.y * currentFontSize > canvas.height && Math.random() > 0.975) {
+                    if (drop.y * currentFontSize > canvas.height && getRandomValue() > 0.975) {
                         drop.y = 0;
                         trails[i] = [];
                         drop.delay = calculateColumnDelay(currentRainFPS); // Randomize speed on reset
@@ -3116,74 +3533,131 @@ void main() {
                     for (let k = 0; k < trails[i].length; k++) {
                         let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
                         const trailXPos = i * effectiveColumnWidth;
-                        if (k > 0 && !trailItem.flipTimestamp && Math.random() < glitchFlipChance) {
-                            let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(Math.random() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
+                        if (k > 0 && !trailItem.flipTimestamp && getRandomValue() < glitchFlipChance) {
+                            let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(getRandomValue() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
                             trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now; trailItem.updateTimestamp = now;
                         }
-                        let isHighlighting = trailItem.flipped && trailItem.flipTimestamp && (now - trailItem.flipTimestamp < FLIP_DURATION_MS);
-                        let isRecentlyUpdated = k === 0 && trailItem.updateTimestamp && (now - trailItem.updateTimestamp < UPDATED_CHAR_HIGHLIGHT_MS);
+                        const glitchElapsedMs = trailItem.flipTimestamp ? (now - trailItem.flipTimestamp) : null;
+                        const recentElapsedMs = trailItem.updateTimestamp ? (now - trailItem.updateTimestamp) : null;
+                        const glitchExcitationState = trailItem.flipTimestamp ? getOverdriveExcitationState(glitchElapsedMs, FLIP_DURATION_MS) : null;
+                        const recentExcitationState = (k === 0 && trailItem.updateTimestamp) ? getOverdriveExcitationState(recentElapsedMs, UPDATED_CHAR_HIGHLIGHT_MS) : null;
+                        const isHighlighting = !!(glitchExcitationState && (glitchExcitationState.fillActive || glitchExcitationState.glowActive));
+                        const isRecentlyUpdated = !!(recentExcitationState && (recentExcitationState.fillActive || recentExcitationState.glowActive));
                         if (isHighlighting) {
-                            if (useNonCrtOptimizedRenderer) {
-                                renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'glitch', k));
-                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'glitch', k);
-                                const highlightAlpha = getNonCrtHighlightEnvelope(now - trailItem.flipTimestamp, FLIP_DURATION_MS);
+                            if (useGpuOverdriveLayers) {
+                                if (shouldRenderMaskedFallbackFill(trailXPos, trailYPos, effectiveColumnWidth, currentFontSize, frameState.overdriveMaskRects)) {
+                                    renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'glitch', k));
+                                }
+                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'glitch', k, {
+                                    phosphorExcitation: glitchExcitationState.phosphorExcitation
+                                });
                                 if (highlightFillStyle) {
-                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, highlightAlpha);
+                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, {
+                                        fillAlphaMultiplier: glitchExcitationState.fillActive ? 1 : 0,
+                                        glowAlphaMultiplier: 0,
+                                        countAsOverdriveOperation: true
+                                    });
                                     frameState.hasHighlightFill = true;
+                                    frameState.hasFxHighlights = renderExcitationMaskToContext(matrixFxMaskCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, 1, {
+                                        countAsOverdriveOperation: true,
+                                        scale: NON_CRT_FX_SCALE
+                                    }) || frameState.hasFxHighlights;
                                 }
                             } else {
-                                drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'glitch', k, overdriveMaskRects);
+                                drawMatrixHighlightGlyph(trailItem.char, trailXPos, trailYPos, 'glitch', k, overdriveMaskRects, glitchExcitationState);
                             }
                         } else if (isRecentlyUpdated) {
-                            if (useNonCrtOptimizedRenderer) {
-                                renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'leader', k));
-                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'leader', k);
-                                const highlightAlpha = getNonCrtHighlightEnvelope(now - trailItem.updateTimestamp, UPDATED_CHAR_HIGHLIGHT_MS);
+                            if (useGpuOverdriveLayers) {
+                                if (shouldRenderMaskedFallbackFill(trailXPos, trailYPos, effectiveColumnWidth, currentFontSize, frameState.overdriveMaskRects)) {
+                                    renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'leader', k));
+                                }
+                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'leader', k, {
+                                    phosphorExcitation: recentExcitationState.phosphorExcitation
+                                });
                                 if (highlightFillStyle) {
-                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, highlightAlpha);
+                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, {
+                                        fillAlphaMultiplier: recentExcitationState.fillActive ? 1 : 0,
+                                        glowAlphaMultiplier: 0,
+                                        countAsOverdriveOperation: true
+                                    });
                                     frameState.hasHighlightFill = true;
+                                    frameState.hasFxHighlights = renderExcitationMaskToContext(matrixFxMaskCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, 1, {
+                                        countAsOverdriveOperation: true,
+                                        scale: NON_CRT_FX_SCALE
+                                    }) || frameState.hasFxHighlights;
                                 }
                             } else {
-                                drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'leader', k, overdriveMaskRects);
+                                drawMatrixHighlightGlyph(trailItem.char, trailXPos, trailYPos, 'leader', k, overdriveMaskRects, recentExcitationState);
                             }
                         } else {
-                            if (useNonCrtOptimizedRenderer) {
+                            if (useGpuOverdriveLayers) {
                                 renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'trail', k));
                             } else {
                                 drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'trail', k);
                             }
-                            if (trailItem.flipTimestamp && !isHighlighting) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
-                            if (trailItem.updateTimestamp) { trailItem.updateTimestamp = undefined; }
+                            if (trailItem.flipTimestamp && (!glitchExcitationState || !glitchExcitationState.glowActive)) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
+                            if (trailItem.updateTimestamp && (!recentExcitationState || !recentExcitationState.glowActive)) { trailItem.updateTimestamp = undefined; }
                         }
                     }
                     if (trails[i][0]) {
                         const leaderXPos = i * effectiveColumnWidth; const leaderYPos = drop.y * currentFontSize;
                         if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) {
-                            if (useNonCrtOptimizedRenderer) {
-                                renderGlyphFillToContext(baseCtx, trails[i][0].char, leaderXPos, leaderYPos, resolveFrameBaseGlyphStyle(frameState, 'leader', 0));
-                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'leader', 0);
-                                const highlightAlpha = trails[i][0].updateTimestamp ? getNonCrtHighlightEnvelope(now - trails[i][0].updateTimestamp, UPDATED_CHAR_HIGHLIGHT_MS) : 0;
+                            if (useGpuOverdriveLayers) {
+                                if (shouldRenderMaskedFallbackFill(leaderXPos, leaderYPos, effectiveColumnWidth, currentFontSize, frameState.overdriveMaskRects)) {
+                                    renderGlyphFillToContext(baseCtx, trails[i][0].char, leaderXPos, leaderYPos, resolveFrameBaseGlyphStyle(frameState, 'leader', 0));
+                                }
+                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'leader', 0, {
+                                    phosphorExcitation: 1
+                                });
                                 if (highlightFillStyle) {
-                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trails[i][0].char, leaderXPos, leaderYPos, highlightFillStyle, highlightAlpha);
+                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trails[i][0].char, leaderXPos, leaderYPos, highlightFillStyle, {
+                                        fillAlphaMultiplier: 1,
+                                        glowAlphaMultiplier: 0,
+                                        countAsOverdriveOperation: true
+                                    });
                                     frameState.hasHighlightFill = true;
+                                    frameState.hasFxHighlights = renderExcitationMaskToContext(matrixFxMaskCtx, trails[i][0].char, leaderXPos, leaderYPos, highlightFillStyle, 1, {
+                                        countAsOverdriveOperation: true,
+                                        scale: NON_CRT_FX_SCALE
+                                    }) || frameState.hasFxHighlights;
                                 }
                             } else {
-                                drawMatrixGlyph(trails[i][0].char, leaderXPos, leaderYPos, 'leader', 0, overdriveMaskRects);
+                                drawMatrixHighlightGlyph(trails[i][0].char, leaderXPos, leaderYPos, 'leader', 0, overdriveMaskRects, {
+                                    fillActive: true,
+                                    glowActive: true,
+                                    phosphorExcitation: 1
+                                });
                             }
                         }
                     }
                 }
             }
-            if (useNonCrtOptimizedRenderer) {
+            framePerformanceMetrics.cpuMatrixDrawMs = performance.now() - frameStart;
+            if (frameState.useCrtFxRenderer) {
                 if (frameState.overdriveMaskRects.length > 0) {
                     clearMaskedRects(matrixHighlightCtx, frameState.overdriveMaskRects, 1);
+                    clearMaskedRects(matrixFxMaskCtx, frameState.overdriveMaskRects, NON_CRT_FX_SCALE);
+                }
+                composeCpuMatrixFrame(frameState);
+            }
+            if (frameState.useNonCrtFxRenderer) {
+                if (frameState.overdriveMaskRects.length > 0) {
+                    clearMaskedRects(matrixHighlightCtx, frameState.overdriveMaskRects, 1);
+                    clearMaskedRects(matrixFxMaskCtx, frameState.overdriveMaskRects, NON_CRT_FX_SCALE);
                 }
                 composeNonCrtFrame(frameState);
+                framePerformanceMetrics.compositeMs = performance.now() - frameStart - framePerformanceMetrics.cpuMatrixDrawMs;
             }
+            framePerformanceMetrics.rainUpdateMs = performance.now() - frameStart;
+            framePerformanceMetrics.renderer = frameState.useNonCrtFxRenderer ? 'gpu-noncrt' : (frameState.useCrtFxRenderer ? 'gpu-crt' : 'cpu');
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
         }
         function startMatrixRain() {
+            if (e2eState.enabled && e2eState.rainPaused) {
+                renderCurrentMatrixFrame();
+                return;
+            }
             if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); } let lastFrameTime = 0;
             function animateRain(currentTime) {
                 if (isAnimationPaused) {
@@ -3229,6 +3703,11 @@ void main() {
             const encodedTitle = currentTitle ? encodeURIComponent(currentTitle) : '';
 
             let params = [];
+            if (e2eState.enabled) {
+                params.push('e2e=1');
+                if (e2eState.seed !== E2E_DEFAULT_SEED) { params.push('e2eSeed=' + e2eState.seed); }
+                if (e2eState.scene) { params.push('e2eScene=' + encodeURIComponent(e2eState.scene)); }
+            }
             if (encodedNames) { params.push('names=' + encodedNames); }
             if (encodedTitle) { params.push('title=' + encodedTitle); }
             if (currentBrightnessPercent !== 100) { params.push('brightness=' + currentBrightnessPercent); }
@@ -3240,7 +3719,9 @@ void main() {
             if (isExtractionMode) { params.push('extract=true'); }
             if (!isCrtMode) { params.push('crt=false'); }
             if (!isOverdriveMode) { params.push('overdrive=false'); }
-            if (currentOverdriveStrengthPercent !== 100) { params.push('overdriveStrength=' + currentOverdriveStrengthPercent); }
+            if (currentOverdriveDrivePercent !== DEFAULT_OVERDRIVE_DRIVE_PERCENT) { params.push('overdriveDrive=' + currentOverdriveDrivePercent); }
+            if (currentOverdrivePersistenceMs !== DEFAULT_OVERDRIVE_PERSISTENCE_MS) { params.push('overdrivePersistence=' + currentOverdrivePersistenceMs); }
+            if (currentOverdriveBloomPercent !== DEFAULT_OVERDRIVE_BLOOM_PERCENT) { params.push('overdriveBloom=' + currentOverdriveBloomPercent); }
             if (!isGlitchOverdriveEnabled) { params.push('glitchOverdrive=false'); }
             if (currentCrtFishbowlPercent !== 25) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
             if (currentCrtVignettePercent !== 40) { params.push('crtVignette=' + currentCrtVignettePercent); }
@@ -3276,6 +3757,15 @@ void main() {
             let initialNames = [];
             let pageTitle = DEFAULT_TITLE;
             let schemaTitle = '';
+            if (e2eState.enabled) {
+                resetE2eRandom();
+                e2eState.scene = urlParams.get('e2eScene') || e2eState.scene;
+                e2eState.rainPaused = true;
+                e2eState.ready = false;
+            } else {
+                e2eState.rainPaused = false;
+            }
+            bodyElement.classList.toggle('e2e-mode', e2eState.enabled);
             // Reset settings to default before loading from URL
             currentBrightnessPercent = 100;
             currentRainFPS = 10;
@@ -3291,7 +3781,9 @@ void main() {
             currentCrtFishbowlPercent = 25;
             currentCrtVignettePercent = 40;
             currentCrtLeadFringePercent = 5;
-            currentOverdriveStrengthPercent = 100;
+            currentOverdriveDrivePercent = DEFAULT_OVERDRIVE_DRIVE_PERCENT;
+            currentOverdrivePersistenceMs = DEFAULT_OVERDRIVE_PERSISTENCE_MS;
+            currentOverdriveBloomPercent = DEFAULT_OVERDRIVE_BLOOM_PERCENT;
             isConstructMode = false;
             selectionHistory = [];
             pendingNextOperatives = [];
@@ -3363,10 +3855,45 @@ void main() {
             if (urlParams.has('overdrive')) {
                 isOverdriveMode = urlParams.get('overdrive') !== 'false';
             }
-            if (urlParams.has('overdriveStrength')) {
-                const overdriveStrengthParam = parseFloat(urlParams.get('overdriveStrength'));
-                if (!isNaN(overdriveStrengthParam) && overdriveStrengthParam >= 0 && overdriveStrengthParam <= 100) {
-                    currentOverdriveStrengthPercent = Math.round(overdriveStrengthParam);
+            const hasOverdriveDriveParam = urlParams.has('overdriveDrive');
+            const hasOverdrivePersistenceParam = urlParams.has('overdrivePersistence');
+            const hasOverdriveBloomParam = urlParams.has('overdriveBloom');
+            let legacyOverdriveStrengthParam = null;
+            let legacyOverdriveGlowParam = null;
+            let legacyOverdriveGlowDurationParam = null;
+
+            if (hasOverdriveDriveParam) {
+                const overdriveDriveParam = parseFloat(urlParams.get('overdriveDrive'));
+                if (!isNaN(overdriveDriveParam) && overdriveDriveParam >= 0 && overdriveDriveParam <= MAX_OVERDRIVE_DRIVE_PERCENT) {
+                    currentOverdriveDrivePercent = Math.round(overdriveDriveParam);
+                }
+            } else if (urlParams.has('overdriveStrength')) {
+                legacyOverdriveStrengthParam = parseFloat(urlParams.get('overdriveStrength'));
+                if (!isNaN(legacyOverdriveStrengthParam) && legacyOverdriveStrengthParam >= 0 && legacyOverdriveStrengthParam <= 100) {
+                    currentOverdriveDrivePercent = Math.round(legacyOverdriveStrengthParam);
+                }
+            }
+            if (hasOverdrivePersistenceParam) {
+                const overdrivePersistenceParam = parseInt(urlParams.get('overdrivePersistence'), 10);
+                if (!isNaN(overdrivePersistenceParam) && overdrivePersistenceParam >= 80 && overdrivePersistenceParam <= MAX_OVERDRIVE_PERSISTENCE_MS) {
+                    currentOverdrivePersistenceMs = overdrivePersistenceParam;
+                }
+            } else if (urlParams.has('overdriveGlowDuration')) {
+                legacyOverdriveGlowDurationParam = parseInt(urlParams.get('overdriveGlowDuration'), 10);
+                if (!isNaN(legacyOverdriveGlowDurationParam) && legacyOverdriveGlowDurationParam >= 150 && legacyOverdriveGlowDurationParam <= 1500) {
+                    const legacyDurationRatio = clampUnit((legacyOverdriveGlowDurationParam - 150) / (1500 - 150));
+                    currentOverdrivePersistenceMs = 80 + Math.round((MAX_OVERDRIVE_PERSISTENCE_MS - 80) * legacyDurationRatio);
+                }
+            }
+            if (hasOverdriveBloomParam) {
+                const overdriveBloomParam = parseInt(urlParams.get('overdriveBloom'), 10);
+                if (!isNaN(overdriveBloomParam) && overdriveBloomParam >= 0 && overdriveBloomParam <= MAX_OVERDRIVE_BLOOM_PERCENT) {
+                    currentOverdriveBloomPercent = overdriveBloomParam;
+                }
+            } else if (urlParams.has('overdriveGlow')) {
+                legacyOverdriveGlowParam = parseFloat(urlParams.get('overdriveGlow'));
+                if (!isNaN(legacyOverdriveGlowParam) && legacyOverdriveGlowParam >= 0 && legacyOverdriveGlowParam <= 300) {
+                    currentOverdriveBloomPercent = Math.round((legacyOverdriveGlowParam / 300) * MAX_OVERDRIVE_BLOOM_PERCENT);
                 }
             }
             if (urlParams.has('glitchOverdrive')) {
@@ -3391,7 +3918,9 @@ void main() {
                 }
             }
             updateOverdriveButton();
-            updateOverdriveStrengthDisplay(currentOverdriveStrengthPercent);
+            updateOverdriveDriveDisplay(currentOverdriveDrivePercent);
+            updateOverdrivePersistenceDisplay(currentOverdrivePersistenceMs);
+            updateOverdriveBloomDisplay(currentOverdriveBloomPercent);
             updateGlitchOverdriveButton();
             updateCrtFishbowlDisplay(currentCrtFishbowlPercent);
             updateCrtVignetteDisplay(currentCrtVignettePercent);
@@ -3434,6 +3963,10 @@ void main() {
             isInMatrixMode = false;
             bodyElement.classList.remove('matrix-mode-active');
             updateBodyPadding();
+            if (e2eState.enabled) {
+                e2eState.ready = true;
+                exposeE2eApi();
+            }
             console.log("// System Initialized.");
         }
 
@@ -3495,10 +4028,26 @@ void main() {
             markCrtSnapshotDirty();
             renderCrtFrame();
         }
-        function updateOverdriveStrengthDisplay(percent) {
-            currentOverdriveStrengthPercent = Math.max(0, Math.min(100, Math.round(percent)));
-            if (overdriveStrengthSlider) overdriveStrengthSlider.value = currentOverdriveStrengthPercent;
-            if (overdriveStrengthValue) overdriveStrengthValue.textContent = `${currentOverdriveStrengthPercent}%`;
+        function updateOverdriveDriveDisplay(percent) {
+            currentOverdriveDrivePercent = Math.max(0, Math.min(MAX_OVERDRIVE_DRIVE_PERCENT, Math.round(percent)));
+            if (overdriveDriveSlider) overdriveDriveSlider.value = currentOverdriveDrivePercent;
+            if (overdriveDriveValue) overdriveDriveValue.textContent = `${currentOverdriveDrivePercent}%`;
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateOverdrivePersistenceDisplay(durationMs) {
+            currentOverdrivePersistenceMs = Math.max(80, Math.min(MAX_OVERDRIVE_PERSISTENCE_MS, Math.round(durationMs / 10) * 10));
+            if (overdrivePersistenceSlider) overdrivePersistenceSlider.value = currentOverdrivePersistenceMs;
+            if (overdrivePersistenceValue) overdrivePersistenceValue.textContent = `${currentOverdrivePersistenceMs}ms`;
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateOverdriveBloomDisplay(percent) {
+            currentOverdriveBloomPercent = Math.max(0, Math.min(MAX_OVERDRIVE_BLOOM_PERCENT, Math.round(percent)));
+            if (overdriveBloomSlider) overdriveBloomSlider.value = currentOverdriveBloomPercent;
+            if (overdriveBloomValue) overdriveBloomValue.textContent = `${currentOverdriveBloomPercent}%`;
             matrixRenderStyles = null;
             markCrtSnapshotDirty();
             renderCrtFrame();
@@ -3682,22 +4231,157 @@ void main() {
             else { bodyElement.style.paddingBottom = '0'; }
         }
 
+        function isManagedTextInput(element) {
+            return element instanceof HTMLInputElement
+                && element.type === 'text'
+                && !!element.closest('#managementPanel');
+        }
+        function resetManagedTextCaretBlink() {
+            managedTextCaretBlinkVisible = true;
+            managedTextCaret.dataset.visible = activeManagedTextInput ? 'true' : 'false';
+            if (isCrtMode) {
+                markCrtSnapshotDirty();
+            }
+        }
+        function stopManagedTextCaretBlink() {
+            if (managedTextCaretBlinkIntervalId !== null) {
+                clearInterval(managedTextCaretBlinkIntervalId);
+                managedTextCaretBlinkIntervalId = null;
+            }
+        }
+        function ensureManagedTextCaretBlink() {
+            stopManagedTextCaretBlink();
+            if (!activeManagedTextInput || e2eState.enabled) {
+                managedTextCaret.dataset.visible = activeManagedTextInput ? 'true' : 'false';
+                return;
+            }
+            managedTextCaretBlinkIntervalId = window.setInterval(() => {
+                if (!activeManagedTextInput) {
+                    stopManagedTextCaretBlink();
+                    managedTextCaret.dataset.visible = 'false';
+                    return;
+                }
+                managedTextCaretBlinkVisible = !managedTextCaretBlinkVisible;
+                managedTextCaret.dataset.visible = managedTextCaretBlinkVisible ? 'true' : 'false';
+                if (isCrtMode) {
+                    markCrtSnapshotDirty();
+                }
+            }, 530);
+        }
+        function hideManagedTextCaret() {
+            activeManagedTextInput = null;
+            stopManagedTextCaretBlink();
+            managedTextCaret.dataset.active = 'false';
+            managedTextCaret.dataset.visible = 'false';
+            managedTextCaret.style.left = '0px';
+            managedTextCaret.style.top = '0px';
+            if (isCrtMode) {
+                markCrtSnapshotDirty();
+            }
+        }
+        function getManagedTextCaretX(input, style, rect) {
+            const selectionIndex = Math.max(0, Math.min(
+                input.selectionEnd ?? input.value.length,
+                input.value.length
+            ));
+            const textBeforeCaret = input.value.slice(0, selectionIndex);
+            const font = style.font && style.font !== ''
+                ? style.font
+                : `${style.fontStyle} ${style.fontVariant} ${style.fontWeight} ${style.fontSize} / ${style.lineHeight} ${style.fontFamily}`;
+            managedTextCaretMeasureCtx.font = font;
+            const letterSpacing = parseFloat(style.letterSpacing || '0') || 0;
+            const textWidth = managedTextCaretMeasureCtx.measureText(textBeforeCaret).width
+                + Math.max(0, textBeforeCaret.length - 1) * letterSpacing;
+            const paddingLeft = parseFloat(style.paddingLeft || '0') || 0;
+            const paddingRight = parseFloat(style.paddingRight || '0') || 0;
+            const borderLeftWidth = parseFloat(style.borderLeftWidth || '0') || 0;
+            const borderRightWidth = parseFloat(style.borderRightWidth || '0') || 0;
+            const minX = rect.left + borderLeftWidth + paddingLeft;
+            const maxX = rect.right - borderRightWidth - paddingRight - 2;
+            return Math.max(minX, Math.min(maxX, minX + textWidth - input.scrollLeft));
+        }
+        function syncManagedTextCaret(forceVisible = false) {
+            const focusedInput = document.activeElement;
+            if (!isManagedTextInput(focusedInput) || !focusedInput.isConnected || focusedInput.disabled || focusedInput.classList.contains('hidden')) {
+                hideManagedTextCaret();
+                return;
+            }
+            activeManagedTextInput = focusedInput;
+            const style = window.getComputedStyle(focusedInput);
+            const rect = focusedInput.getBoundingClientRect();
+            if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0) {
+                hideManagedTextCaret();
+                return;
+            }
+            const fontSize = parseFloat(style.fontSize || '16') || 16;
+            const borderTopWidth = parseFloat(style.borderTopWidth || '0') || 0;
+            const borderBottomWidth = parseFloat(style.borderBottomWidth || '0') || 0;
+            let lineHeight = parseFloat(style.lineHeight || '');
+            if (!Number.isFinite(lineHeight)) {
+                lineHeight = fontSize * 1.2;
+            }
+            const caretHeight = Math.max(12, Math.min(lineHeight, rect.height - borderTopWidth - borderBottomWidth - 4));
+            const caretX = getManagedTextCaretX(focusedInput, style, rect);
+            const caretY = rect.top + Math.max(borderTopWidth + 2, (rect.height - caretHeight) / 2);
+            managedTextCaret.style.left = `${caretX}px`;
+            managedTextCaret.style.top = `${caretY}px`;
+            managedTextCaret.style.height = `${caretHeight}px`;
+            managedTextCaret.dataset.active = 'true';
+            if (forceVisible) {
+                resetManagedTextCaretBlink();
+            } else {
+                managedTextCaret.dataset.visible = managedTextCaretBlinkVisible ? 'true' : 'false';
+            }
+            if (isCrtMode) {
+                markCrtSnapshotDirty();
+            }
+        }
+        function handleManagedTextCaretFocusChange() {
+            if (isManagedTextInput(document.activeElement)) {
+                syncManagedTextCaret(true);
+                ensureManagedTextCaretBlink();
+            } else {
+                hideManagedTextCaret();
+            }
+        }
+        function handleManagedTextCaretInteraction() {
+            if (!isManagedTextInput(document.activeElement)) { return; }
+            syncManagedTextCaret(true);
+            ensureManagedTextCaretBlink();
+        }
+
         // --- List Rendering & Drag/Drop Event Handling ---
         
         // PERFORMANCE: Create a single operative list item instead of re-rendering the whole list
         function createOperativeListItem(operative) {
              const li = document.createElement('li');
             li.className = 'name-item';
-            li.draggable = !operative.selected;
+            li.draggable = false;
             li.dataset.name = operative.name;
 
             const nameRow = document.createElement('div');
             nameRow.className = 'name-row';
 
+            const dragHandle = document.createElement('span');
+            dragHandle.className = 'drag-handle';
+            dragHandle.setAttribute('aria-label', `Drag to reorder ${operative.name}`);
+            dragHandle.title = `Drag to reorder ${operative.name}`;
+            nameRow.appendChild(dragHandle);
+
             const nameSpan = document.createElement('span');
             nameSpan.textContent = operative.name;
             nameSpan.className = 'name-span flex-grow mr-2 overflow-hidden text-ellipsis whitespace-nowrap';
+            nameSpan.setAttribute('role', 'button');
+            nameSpan.setAttribute('tabindex', '0');
+            nameSpan.setAttribute('aria-label', `Rename ${operative.name}`);
             nameRow.appendChild(nameSpan);
+
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.value = operative.name;
+            nameInput.className = 'name-edit-input flex-grow mr-2 hidden';
+            nameInput.setAttribute('aria-label', `Edit name for ${operative.name}`);
+            nameRow.appendChild(nameInput);
 
             const removeBtn = document.createElement('button');
             removeBtn.textContent = 'X';
@@ -3712,6 +4396,7 @@ void main() {
             valueRow.classList.toggle('hidden', !isExtractionMode);
             const valueInput = document.createElement('input');
             valueInput.type = 'text';
+            valueInput.draggable = false;
             valueInput.placeholder = '// Extraction Alias...';
             valueInput.value = operative.value || '';
             valueInput.setAttribute('aria-label', `Extraction alias for ${operative.name}`);
@@ -3727,17 +4412,23 @@ void main() {
             li.appendChild(valueRow);
 
             if (!operative.selected) {
-                li.addEventListener('dragstart', handleDragStart);
-                li.addEventListener('dragover', handleDragOver);
-                li.addEventListener('dragenter', handleDragEnter);
-                li.addEventListener('dragleave', handleDragLeave);
-                li.addEventListener('drop', handleDrop);
-                li.addEventListener('dragend', handleDragEnd);
+                dragHandle.draggable = false;
+                dragHandle.addEventListener('pointerdown', handleReorderHandlePointerDown);
+                nameSpan.addEventListener('click', () => startInlineNameEdit(li, operative.name));
+                nameSpan.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        startInlineNameEdit(li, operative.name);
+                    }
+                });
+                nameInput.addEventListener('keydown', (event) => handleInlineNameEditKeyDown(event, operative.name));
+                nameInput.addEventListener('blur', () => commitInlineNameEdit(li, operative.name));
             } else {
                 li.classList.add('name-item-selected');
                 nameSpan.classList.add('line-through');
                 removeBtn.disabled = true;
                 valueInput.disabled = true;
+                nameSpan.setAttribute('tabindex', '-1');
             }
             return li;
         }
@@ -3750,26 +4441,146 @@ void main() {
                 nameListElement.appendChild(li);
             });
         }
-        function handleDragStart(e) {
-            draggedItemName = e.target?.dataset?.name; if (!draggedItemName) return; setTimeout(() => { if(e.target) e.target.classList.add('dragging'); }, 0);
-            e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', draggedItemName);
+        function renameOperative(oldName, requestedName) {
+            const newName = requestedName.trim();
+            if (!oldName) { return false; }
+            if (!newName || newName === oldName) { return false; }
+            if (allNames.some(op => op.name.toLowerCase() === newName.toLowerCase() && op.name !== oldName)) {
+                showTemporaryMessage(`// Operative "${newName}" already exists.`, "warn");
+                return false;
+            }
+            const operativeIndex = allNames.findIndex(op => op.name === oldName);
+            if (operativeIndex === -1) { return false; }
+            allNames[operativeIndex].name = newName;
+            selectionHistory = selectionHistory.map((name) => name === oldName ? newName : name);
+            pendingNextOperatives = pendingNextOperatives.map((name) => name === oldName ? newName : name);
+            renderAvailableList();
+            updateURL();
+            return true;
         }
-        function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
-        function handleDragEnter(e) { const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); if (targetLi && targetLi.dataset.name !== draggedItemName) { targetLi.classList.add('drag-over'); } }
-        function handleDragLeave(e) { const targetLi = e.target.closest('.name-item'); if (targetLi && !targetLi.contains(e.relatedTarget)) { targetLi.classList.remove('drag-over'); } }
-        function handleDrop(e) {
-            e.stopPropagation(); e.preventDefault(); const targetLi = e.target.closest('.name-item:not(.name-item-selected)'); const droppedName = e.dataTransfer.getData('text/plain');
-            document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); if (!targetLi || !droppedName || targetLi.dataset.name === droppedName) { return; }
-            const draggedIndex = allNames.findIndex(op => op.name === droppedName); let targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
-            if (draggedIndex > -1 && targetIndex > -1) {
-                const [draggedOperative] = allNames.splice(draggedIndex, 1); targetIndex = allNames.findIndex(op => op.name === targetLi.dataset.name);
-                if(targetIndex > -1) { allNames.splice(targetIndex, 0, draggedOperative); } else { allNames.push(draggedOperative); }
-                renderAvailableList();
-                updateURL(); // Save new order to URL
+        function startInlineNameEdit(itemElement, operativeName) {
+            if (!(itemElement instanceof Element)) { return; }
+            const nameSpan = itemElement.querySelector('.name-span');
+            const nameInput = itemElement.querySelector('.name-edit-input');
+            if (!(nameSpan instanceof HTMLElement) || !(nameInput instanceof HTMLInputElement)) { return; }
+            nameSpan.classList.add('hidden');
+            nameInput.classList.remove('hidden');
+            nameInput.value = operativeName;
+            nameInput.focus();
+            nameInput.select();
+        }
+        function stopInlineNameEdit(itemElement, operativeName) {
+            if (!(itemElement instanceof Element)) { return; }
+            const nameSpan = itemElement.querySelector('.name-span');
+            const nameInput = itemElement.querySelector('.name-edit-input');
+            if (!(nameSpan instanceof HTMLElement) || !(nameInput instanceof HTMLInputElement)) { return; }
+            nameInput.classList.add('hidden');
+            nameSpan.classList.remove('hidden');
+            nameInput.value = operativeName;
+        }
+        function commitInlineNameEdit(itemElement, operativeName) {
+            if (!(itemElement instanceof Element)) { return; }
+            const nameInput = itemElement.querySelector('.name-edit-input');
+            if (!(nameInput instanceof HTMLInputElement)) { return; }
+            const didRename = renameOperative(operativeName, nameInput.value);
+            if (!didRename) {
+                stopInlineNameEdit(itemElement, operativeName);
             }
         }
-        function handleDragEnd(e) {
-            document.querySelectorAll('.name-item.dragging').forEach(item => item.classList.remove('dragging')); document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over')); draggedItemName = null;
+        function handleInlineNameEditKeyDown(event, operativeName) {
+            const itemElement = event.currentTarget instanceof Element ? event.currentTarget.closest('.name-item') : null;
+            if (!(itemElement instanceof Element)) { return; }
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                commitInlineNameEdit(itemElement, operativeName);
+            } else if (event.key === 'Escape') {
+                event.preventDefault();
+                stopInlineNameEdit(itemElement, operativeName);
+                itemElement.querySelector('.name-span')?.focus();
+            }
+        }
+        function reorderOperativeByName(droppedName, targetName) {
+            if (!droppedName || !targetName || droppedName === targetName) { return false; }
+            const draggedIndex = allNames.findIndex(op => op.name === droppedName);
+            let targetIndex = allNames.findIndex(op => op.name === targetName);
+            if (draggedIndex === -1 || targetIndex === -1) { return false; }
+            const [draggedOperative] = allNames.splice(draggedIndex, 1);
+            targetIndex = allNames.findIndex(op => op.name === targetName);
+            if (targetIndex > -1) {
+                allNames.splice(targetIndex, 0, draggedOperative);
+            } else {
+                allNames.push(draggedOperative);
+            }
+            renderAvailableList();
+            updateURL();
+            return true;
+        }
+        function resetPointerReorderState() {
+            document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
+            pointerDraggedItem = null;
+            pointerDragTargetItem = null;
+            pointerDragPointerId = null;
+            pointerDragHasStarted = false;
+        }
+        function handleReorderHandlePointerMove(e) {
+            if (pointerDragPointerId !== e.pointerId || !pointerDraggedItem) { return; }
+            const dragDistance = Math.hypot(e.clientX - pointerDragStartX, e.clientY - pointerDragStartY);
+            if (!pointerDragHasStarted) {
+                if (dragDistance < 6) { return; }
+                pointerDragHasStarted = true;
+                pointerDraggedItem.classList.add('dragging');
+            }
+            document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
+            const target = document.elementFromPoint(e.clientX, e.clientY);
+            const targetItem = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
+            if (targetItem && targetItem !== pointerDraggedItem) {
+                targetItem.classList.add('drag-over');
+                pointerDragTargetItem = targetItem;
+            } else {
+                pointerDragTargetItem = null;
+            }
+            e.preventDefault();
+        }
+        function finishHandlePointerReorder() {
+            const draggedName = pointerDraggedItem?.dataset?.name || null;
+            const targetName = pointerDragTargetItem?.dataset?.name || null;
+            const shouldReorder = pointerDragHasStarted && draggedName && targetName && draggedName !== targetName;
+            resetPointerReorderState();
+            if (shouldReorder) {
+                reorderOperativeByName(draggedName, targetName);
+            }
+        }
+        function handleReorderHandlePointerUp(e) {
+            if (pointerDragPointerId !== e.pointerId) { return; }
+            document.removeEventListener('pointermove', handleReorderHandlePointerMove);
+            document.removeEventListener('pointerup', handleReorderHandlePointerUp);
+            document.removeEventListener('pointercancel', handleReorderHandlePointerCancel);
+            finishHandlePointerReorder();
+        }
+        function handleReorderHandlePointerCancel() {
+            document.removeEventListener('pointermove', handleReorderHandlePointerMove);
+            document.removeEventListener('pointerup', handleReorderHandlePointerUp);
+            document.removeEventListener('pointercancel', handleReorderHandlePointerCancel);
+            resetPointerReorderState();
+        }
+        function handleReorderHandlePointerDown(e) {
+            if (e.button !== 0) { return; }
+            const sourceHandle = e.currentTarget instanceof Element ? e.currentTarget : null;
+            const sourceLi = sourceHandle?.closest('.name-item:not(.name-item-selected)');
+            if (!sourceLi) { return; }
+            resetPointerReorderState();
+            pointerDraggedItem = sourceLi;
+            pointerDragTargetItem = null;
+            pointerDragPointerId = e.pointerId;
+            pointerDragStartX = e.clientX;
+            pointerDragStartY = e.clientY;
+            if (sourceHandle.setPointerCapture) {
+                sourceHandle.setPointerCapture(e.pointerId);
+            }
+            document.addEventListener('pointermove', handleReorderHandlePointerMove);
+            document.addEventListener('pointerup', handleReorderHandlePointerUp);
+            document.addEventListener('pointercancel', handleReorderHandlePointerCancel);
+            e.preventDefault();
         }
 
         // --- Name Management Functions ---
@@ -3823,7 +4634,7 @@ void main() {
             isPicking = true; clickTriggerArea.style.pointerEvents = 'none'; selectedNameDisplayWrapper.style.pointerEvents = 'none'; selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.remove('typing', 'quote');
             updateUndoButtonState();
             const replayOperative = getNextRevertedOperative();
-            const selectedOperative = replayOperative || availableForPick[Math.floor(Math.random() * availableForPick.length)];
+            const selectedOperative = replayOperative || availableForPick[Math.floor(getRandomValue() * availableForPick.length)];
             revealNameGradually(selectedOperative.name);
         }
         function getNextRevertedOperative() {
@@ -3837,6 +4648,13 @@ void main() {
             return null;
         }
         function revealNameGradually(name) {
+            if (e2eState.enabled) {
+                selectedNameDisplay.textContent = name;
+                selectedNameDisplay.classList.remove('typing');
+                markCrtSnapshotDirty();
+                finalizeSelection(name);
+                return;
+            }
             let i = 0; if (typeIntervalId) clearInterval(typeIntervalId); selectedNameDisplay.textContent = ''; selectedNameDisplay.classList.add('typing');
             markCrtSnapshotDirty();
             typeIntervalId = setInterval(() => {
@@ -3867,15 +4685,10 @@ void main() {
                     itemElement.classList.add('name-item-selected');
                     itemElement.draggable = false;
                     itemElement.querySelector('.name-span')?.classList.add('line-through');
+                    itemElement.querySelector('.name-span')?.setAttribute('tabindex', '-1');
                     itemElement.querySelector('.remove-name-btn')?.setAttribute('disabled', 'true');
                     itemElement.querySelector('.value-row input')?.setAttribute('disabled', 'true');
-                    // Remove drag listeners
-                    itemElement.removeEventListener('dragstart', handleDragStart);
-                    itemElement.removeEventListener('dragover', handleDragOver);
-                    itemElement.removeEventListener('dragenter', handleDragEnter);
-                    itemElement.removeEventListener('dragleave', handleDragLeave);
-                    itemElement.removeEventListener('drop', handleDrop);
-                    itemElement.removeEventListener('dragend', handleDragEnd);
+                    itemElement.querySelector('.drag-handle')?.removeEventListener('pointerdown', handleReorderHandlePointerDown);
                 }
 
             } else {
@@ -4476,6 +5289,24 @@ void main() {
             if (!(target instanceof Element)) { return target; }
             return target.closest(`${CRT_INTERACTIVE_SELECTOR}, #clickTriggerArea`) || target;
         }
+        function getCrtRangeTarget(target) {
+            if (target instanceof HTMLInputElement && target.type === 'range') {
+                return target;
+            }
+            if (!(target instanceof Element)) {
+                return null;
+            }
+            const label = target.closest('label[for]');
+            if (label instanceof HTMLLabelElement && label.control instanceof HTMLInputElement && label.control.type === 'range') {
+                return label.control;
+            }
+            const rangeContainer = target.closest('.mb-3');
+            const range = rangeContainer?.querySelector('input[type="range"]');
+            if (range instanceof HTMLInputElement && range.type === 'range') {
+                return range;
+            }
+            return null;
+        }
         function getCrtPressableTarget(target) {
             if (!(target instanceof Element)) { return null; }
             return target.closest('#menuToggleBtn, #undoBtn, #managementPanel button, .command-item');
@@ -4582,12 +5413,67 @@ void main() {
             }
             return false;
         }
-        function startCrtRosterDrag(target) {
+        function resolveCrtRosterHandleTarget(target, point = null) {
+            const directHandle = target instanceof Element ? target.closest('.drag-handle') : null;
+            if (directHandle instanceof HTMLElement) { return directHandle; }
             const item = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
-            if (!item || target.closest('button, input, textarea')) { return false; }
+            const handle = item?.querySelector('.drag-handle');
+            if (!(handle instanceof HTMLElement) || !point) { return null; }
+            const rect = handle.getBoundingClientRect();
+            const slop = 18;
+            const withinX = point.x >= rect.left - slop && point.x <= rect.right + slop;
+            const withinY = point.y >= rect.top - slop && point.y <= rect.bottom + slop;
+            return withinX && withinY ? handle : null;
+        }
+        function resolveCrtRosterNameTarget(target, point = null) {
+            const directName = target instanceof Element ? target.closest('.name-span') : null;
+            if (directName instanceof HTMLElement) { return directName; }
+            const item = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
+            const nameSpan = item?.querySelector('.name-span');
+            const nameRow = item?.querySelector('.name-row');
+            if (!(nameSpan instanceof HTMLElement) || !(nameRow instanceof HTMLElement) || !point) { return null; }
+            const rowRect = nameRow.getBoundingClientRect();
+            const valueRow = item.querySelector('.value-row:not(.hidden)');
+            const handle = item.querySelector('.drag-handle');
+            const removeButton = item.querySelector('.remove-name-btn');
+            const rowSlop = 14;
+            const withinRowY = point.y >= rowRect.top - rowSlop && point.y <= rowRect.bottom + rowSlop;
+            if (!withinRowY) { return null; }
+            if (valueRow instanceof HTMLElement) {
+                const valueRect = valueRow.getBoundingClientRect();
+                if (point.y >= valueRect.top && point.y <= valueRect.bottom) { return null; }
+            }
+            const nameRect = nameSpan.getBoundingClientRect();
+            const labelSlopX = 22;
+            const withinLabelX = point.x >= nameRect.left - labelSlopX && point.x <= nameRect.right + labelSlopX;
+            if (!withinLabelX) { return null; }
+            if (handle instanceof HTMLElement) {
+                const handleRect = handle.getBoundingClientRect();
+                if (point.x <= handleRect.right + 12) { return null; }
+            }
+            if (removeButton instanceof HTMLElement) {
+                const removeRect = removeButton.getBoundingClientRect();
+                if (point.x >= removeRect.left - 12) { return null; }
+            }
+            return nameSpan;
+        }
+        function startCrtRosterDrag(target, point = null) {
+            const handle = resolveCrtRosterHandleTarget(target, point);
+            const item = handle?.closest('.name-item:not(.name-item-selected)');
+            if (!item) { return false; }
             crtEventState.activeRosterItem = item;
             draggedItemName = item.dataset.name;
             item.classList.add('dragging');
+            markCrtSnapshotDirty();
+            return true;
+        }
+        function startCrtInlineNameEdit(target, point = null) {
+            const nameLabel = resolveCrtRosterNameTarget(target, point);
+            const item = nameLabel?.closest('.name-item:not(.name-item-selected)');
+            if (!item) { return false; }
+            const operativeName = item.dataset.name;
+            if (!operativeName) { return false; }
+            startInlineNameEdit(item, operativeName);
             markCrtSnapshotDirty();
             return true;
         }
@@ -4608,19 +5494,7 @@ void main() {
             const targetItem = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
             document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
             if (targetItem && targetItem !== activeItem && draggedItemName) {
-                const draggedIndex = allNames.findIndex(op => op.name === draggedItemName);
-                let targetIndex = allNames.findIndex(op => op.name === targetItem.dataset.name);
-                if (draggedIndex > -1 && targetIndex > -1) {
-                    const [draggedOperative] = allNames.splice(draggedIndex, 1);
-                    targetIndex = allNames.findIndex(op => op.name === targetItem.dataset.name);
-                    if (targetIndex > -1) {
-                        allNames.splice(targetIndex, 0, draggedOperative);
-                    } else {
-                        allNames.push(draggedOperative);
-                    }
-                    renderAvailableList();
-                    updateURL();
-                }
+                reorderOperativeByName(draggedItemName, targetItem.dataset.name);
             }
             crtEventState.activeRosterItem = null;
             draggedItemName = null;
@@ -4636,6 +5510,11 @@ void main() {
             }
         }
         function clickCrtTarget(target, point, sourceEvent) {
+            if (startCrtInlineNameEdit(target, point)) {
+                clearCrtPressedTarget();
+                markCrtSnapshotDirtyForMotion(target instanceof Element ? target : null, 220);
+                return;
+            }
             const clickable = getCrtClickableTarget(target);
             focusCrtTarget(clickable);
             dispatchCrtMouseEvent('mouseup', clickable, point, sourceEvent);
@@ -4661,7 +5540,7 @@ void main() {
             const sourceTarget = getElementAtSourcePoint(point);
             const target = getCrtClickableTarget(sourceTarget);
             crtEventState.pointerId = event.pointerId;
-            crtEventState.target = target;
+            crtEventState.target = sourceTarget;
             crtEventState.scrollTarget = null;
             crtEventState.scrollStartX = point.x;
             crtEventState.scrollStartY = point.y;
@@ -4670,9 +5549,11 @@ void main() {
             crtEventState.didScroll = false;
             crtCanvas.setPointerCapture?.(event.pointerId);
 
-            if (target instanceof HTMLInputElement && target.type === 'range') {
-                crtEventState.activeRange = target;
-                setRangeValueFromPoint(target, point);
+            const rangeTarget = getCrtRangeTarget(target);
+            if (rangeTarget) {
+                crtEventState.activeRange = rangeTarget;
+                focusCrtTarget(rangeTarget);
+                setRangeValueFromPoint(rangeTarget, point);
                 return;
             }
             if (event.pointerType === 'touch') {
@@ -4682,7 +5563,7 @@ void main() {
                     return;
                 }
             }
-            if (startCrtModalDrag(target, point) || startCrtRosterDrag(target)) {
+            if (startCrtModalDrag(target, point) || startCrtRosterDrag(sourceTarget, point)) {
                 return;
             }
             focusCrtTarget(target);
@@ -4820,6 +5701,15 @@ void main() {
         undoBtn.addEventListener('click', undoLastPick);
         rebootBtn.addEventListener('click', rebootSystem);
         window.addEventListener('resize', handleWindowResize);
+        window.addEventListener('resize', () => syncManagedTextCaret());
+        document.addEventListener('focusin', handleManagedTextCaretFocusChange);
+        document.addEventListener('focusout', () => requestAnimationFrame(handleManagedTextCaretFocusChange));
+        document.addEventListener('selectionchange', () => syncManagedTextCaret());
+        document.addEventListener('input', handleManagedTextCaretInteraction, true);
+        document.addEventListener('keydown', handleManagedTextCaretInteraction, true);
+        document.addEventListener('keyup', handleManagedTextCaretInteraction, true);
+        document.addEventListener('click', handleManagedTextCaretInteraction, true);
+        managementPanel.addEventListener('scroll', () => syncManagedTextCaret(), { passive: true });
         
         // Settings Listeners
         brightnessSlider.addEventListener('input', (event) => {
@@ -4858,8 +5748,16 @@ void main() {
             updateCrtLeadFringeDisplay(parseFloat(event.target.value));
             scheduleURLUpdate();
         });
-        overdriveStrengthSlider.addEventListener('input', (event) => {
-            updateOverdriveStrengthDisplay(parseFloat(event.target.value));
+        overdriveDriveSlider.addEventListener('input', (event) => {
+            updateOverdriveDriveDisplay(parseFloat(event.target.value));
+            scheduleURLUpdate();
+        });
+        overdrivePersistenceSlider.addEventListener('input', (event) => {
+            updateOverdrivePersistenceDisplay(parseFloat(event.target.value));
+            scheduleURLUpdate();
+        });
+        overdriveBloomSlider.addEventListener('input', (event) => {
+            updateOverdriveBloomDisplay(parseFloat(event.target.value));
             scheduleURLUpdate();
         });
         titleInput.addEventListener('input', (event) => {
@@ -4876,7 +5774,9 @@ void main() {
         crtFishbowlSlider.addEventListener('change', updateURL);
         crtVignetteSlider.addEventListener('change', updateURL);
         crtLeadFringeSlider.addEventListener('change', updateURL);
-        overdriveStrengthSlider.addEventListener('change', updateURL);
+        overdriveDriveSlider.addEventListener('change', updateURL);
+        overdrivePersistenceSlider.addEventListener('change', updateURL);
+        overdriveBloomSlider.addEventListener('change', updateURL);
         titleInput.addEventListener('change', updateURL);
         
         // Action Button Listeners
@@ -5025,6 +5925,7 @@ void main() {
 
         // --- Initial Load ---
         document.addEventListener('DOMContentLoaded', () => { 
+            exposeE2eApi();
             const crtSnapshotObserver = new MutationObserver((mutations) => {
                 const motionTargets = mutations
                     .map((mutation) => mutation.target)
