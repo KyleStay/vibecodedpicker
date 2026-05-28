@@ -27,10 +27,6 @@ export async function setScene(page, sceneName) {
   await page.evaluate((scene) => window.__VIBE_TEST__.setScene(scene), sceneName);
 }
 
-export async function setForceCpuOverdrive(page, forceCpuOverdrive) {
-  await page.evaluate((forceCpu) => window.__VIBE_TEST__.setForceCpuOverdrive(forceCpu), forceCpuOverdrive);
-}
-
 export async function renderFrame(page) {
   await page.evaluate(() => window.__VIBE_TEST__.renderFrame());
 }
@@ -41,6 +37,12 @@ export async function getPerformanceMetrics(page) {
 
 export async function getClipboardWrites(page) {
   return page.evaluate(() => window.__TEST_CLIPBOARD__.slice());
+}
+
+export async function getRosterFromUrl(page) {
+  const url = new URL(page.url());
+  const rosterPayload = url.searchParams.get('roster');
+  return rosterPayload ? JSON.parse(rosterPayload) : [];
 }
 
 export async function clickThroughCrt(page, locator) {
@@ -92,7 +94,7 @@ export async function dragThroughCrt(page, sourceLocator, targetLocator) {
   }
   await page.mouse.move(sourceBox.x + (sourceBox.width / 2), sourceBox.y + (sourceBox.height / 2));
   await page.mouse.down();
-  await page.mouse.move(targetBox.x + (targetBox.width / 2), targetBox.y + (targetBox.height / 2), { steps: 16 });
+  await page.mouse.move(targetBox.x + (targetBox.width / 2), targetBox.y + (targetBox.height / 2), { steps: 4 });
   await page.mouse.up();
 }
 
@@ -116,8 +118,8 @@ export async function dragSliderThroughCrt(page, locator, ratio) {
 }
 
 export async function expectUrlToContain(page, expectedPairs) {
-  const url = new URL(page.url());
-  for (const [key, value] of Object.entries(expectedPairs)) {
-    await expect(url.searchParams.get(key)).toBe(String(value));
-  }
+  await page.waitForFunction((pairs) => {
+    const url = new URL(window.location.href);
+    return Object.entries(pairs).every(([key, value]) => url.searchParams.get(key) === String(value));
+  }, expectedPairs);
 }

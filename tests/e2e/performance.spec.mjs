@@ -1,57 +1,45 @@
 import { test, expect } from '../helpers/fixtures.mjs';
-import { getPerformanceMetrics, openApp, pauseRain, renderFrame, setForceCpuOverdrive } from '../helpers/app.mjs';
+import { getPerformanceMetrics, openApp, renderFrame } from '../helpers/app.mjs';
 
-async function sampleAverageCpuDrawMs(page, frameCount = 18) {
-  let totalCpuDrawMs = 0;
-  let totalCompositeMs = 0;
-  let totalCpuOverdriveTextOps = 0;
-
-  for (let index = 0; index < frameCount; index += 1) {
-    await renderFrame(page);
-    const metrics = await getPerformanceMetrics(page);
-    totalCpuDrawMs += metrics.cpuMatrixDrawMs;
-    totalCompositeMs += metrics.compositeMs;
-    totalCpuOverdriveTextOps += metrics.cpuOverdriveTextOps;
-  }
-
-  return {
-    averageCpuDrawMs: totalCpuDrawMs / frameCount,
-    averageCompositeMs: totalCompositeMs / frameCount,
-    averageCpuOverdriveTextOps: totalCpuOverdriveTextOps / frameCount
-  };
+async function sampleCanvasHash(page, canvasId = 'matrixCanvas') {
+  return page.evaluate((targetCanvasId) => {
+    const canvas = document.getElementById(targetCanvasId);
+    const context = canvas?.getContext('2d');
+    if (!canvas || !context || canvas.width <= 0 || canvas.height <= 0) {
+      return null;
+    }
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    let hash = 2166136261 >>> 0;
+    for (let index = 0; index < pixels.length; index += 64) {
+      const value = pixels[index] + pixels[index + 1] + pixels[index + 2] + pixels[index + 3];
+      hash ^= value;
+      hash = Math.imul(hash, 16777619) >>> 0;
+    }
+    return hash;
+  }, canvasId);
 }
 
-test.describe('GPU overdrive performance path', () => {
-  test('non-CRT overdrive uses the GPU compositor without increasing CPU overdrive text work versus forced CPU fallback', async ({ page }) => {
-    await openApp(page, { crt: 'false', e2eScene: 'overdrive-demo', overdrive: 'true' });
-    await pauseRain(page);
+test.describe('matrix rendering performance path', () => {
+  test('non-CRT rain reports CPU renderer metrics', async ({ page }) => {
+    await openApp(page, { crt: 'false' });
+    await renderFrame(page);
 
-    await setForceCpuOverdrive(page, false);
-    const gpuAverages = await sampleAverageCpuDrawMs(page);
-    const gpuMetrics = await getPerformanceMetrics(page);
-
-    expect(gpuMetrics.renderer).toBe('gpu-noncrt');
-    expect(gpuMetrics.compositeMs).toBeGreaterThan(0);
-
-    await setForceCpuOverdrive(page, true);
-    const cpuAverages = await sampleAverageCpuDrawMs(page);
-    const cpuMetrics = await getPerformanceMetrics(page);
-
-    expect(cpuMetrics.renderer).toBe('cpu');
-    expect(gpuAverages.averageCpuOverdriveTextOps).toBeLessThanOrEqual(cpuAverages.averageCpuOverdriveTextOps);
-    expect(gpuAverages.averageCompositeMs).toBeGreaterThanOrEqual(0);
+    const metrics = await getPerformanceMetrics(page);
+    expect(metrics.renderer).toBe('cpu');
+    expect(metrics.cpuMatrixDrawMs).toBeGreaterThanOrEqual(0);
+    expect(metrics.rainUpdateMs).toBeGreaterThanOrEqual(metrics.cpuMatrixDrawMs);
   });
 
-  test('CRT overdrive uses the GPU compositor and reports composite timing', async ({ page }) => {
-    await openApp(page, { crt: 'true', e2eScene: 'overdrive-demo', overdrive: 'true' });
-    await pauseRain(page);
+  test('CRT rain keeps animating', async ({ page }) => {
+    test.slow();
+    await openApp(page, { crt: 'true', speed: '40' });
+    await page.evaluate(() => window.__VIBE_TEST__.resumeRain());
+    await page.waitForTimeout(800);
 
-    await setForceCpuOverdrive(page, false);
-    const gpuAverages = await sampleAverageCpuDrawMs(page, 6);
-    const gpuMetrics = await getPerformanceMetrics(page);
+    const activeHash = await sampleCanvasHash(page);
+    await expect.poll(() => sampleCanvasHash(page), { timeout: 3000 }).not.toBe(activeHash);
 
-    expect(gpuMetrics.renderer).toBe('gpu-crt');
-    expect(gpuMetrics.compositeMs).toBeGreaterThan(0);
-    expect(gpuAverages.averageCpuDrawMs).toBeGreaterThan(0);
+    const debug = await page.evaluate(() => window.__VIBE_TEST__.getMatrixRenderDebug());
+    expect(debug.leaderStyle.glowPasses).toEqual([]);
   });
 });

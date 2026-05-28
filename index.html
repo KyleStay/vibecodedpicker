@@ -3,8 +3,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loading System...</title>
     <style>
-        /* Monospace font */
-        @import url('https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;700&display=swap');
         /* Small production utility subset replacing the runtime Tailwind CDN. */
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0; }
         .hidden { display: none !important; }
@@ -37,7 +35,7 @@
             --matrix-green-dark: #0a4a0a;
             --matrix-bg: #000000;
             --matrix-bg-darker: #000000;
-            --matrix-font: 'Source Code Pro', monospace;
+            --matrix-font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
             --matrix-lead: #ffffff;
             --matrix-flash: #ffffff;
 
@@ -314,9 +312,7 @@
             text-wrap: balance;
             white-space: normal;
             word-break: normal;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: block;
             transform: translateY(0.06em);
             transition: color 0.3s ease-in-out, text-shadow 0.3s ease-in-out;
         }
@@ -328,7 +324,10 @@
             animation: none;
         }
         #selectedNameDisplay.quote {
+            font-size: clamp(1.8rem, 3.6vw, 2.35rem);
             font-weight: 400;
+            line-height: 1.12;
+            max-width: min(34rem, 100%);
             color: rgba(var(--primary-color-rgb), 0.7);
             animation: none;
         }
@@ -606,8 +605,9 @@
         /* Input field styling */
         #managementPanel input[type="text"] {
             background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark); color: var(--font-color); font-family: var(--matrix-font);
-            caret-color: transparent; width: 100%; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem;
+            caret-color: var(--primary-color); width: 100%; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem;
         }
+        body.crt-mode:not(.crt-unavailable) #managementPanel input[type="text"] { caret-color: transparent; }
         #managementPanel input[type="text"]::placeholder { color: rgba(var(--primary-color-rgb), 0.4); }
         #managementPanel input[type="text"]:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 5px var(--primary-color); }
         .construct-mode #managementPanel input[type="text"] { background-color: var(--construct-bg-darker); border-color: #cccccc; color: var(--construct-text); }
@@ -643,8 +643,100 @@
         /* Label styling */
         #managementPanel label { display: block; font-size: 0.875rem; color: rgba(var(--primary-color-rgb), 0.7); margin-bottom: 0.25rem; }
         .construct-mode #managementPanel label { color: var(--construct-text-light); }
+        #managementPanel label[data-tooltip] {
+            position: relative;
+            cursor: help;
+            padding-right: 1.7rem;
+        }
+        #managementPanel label[data-tooltip]::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            left: 0;
+            bottom: calc(100% + 0.45rem);
+            width: min(18rem, 76vw);
+            padding: 0.45rem 0.55rem;
+            border: 1px solid rgba(var(--primary-color-rgb), 0.72);
+            border-radius: 3px;
+            background: rgba(0, 0, 0, 0.96);
+            color: var(--font-color);
+            box-shadow: 0 0 12px rgba(var(--primary-color-rgb), 0.28);
+            font-size: 0.74rem;
+            line-height: 1.25;
+            font-weight: 500;
+            white-space: normal;
+            text-transform: none;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(0.25rem);
+            transition: opacity 0.12s ease, transform 0.12s ease;
+            z-index: 140;
+        }
+        #managementPanel label[data-tooltip]:hover::after,
+        #managementPanel label[data-tooltip]:focus-within::after {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .construct-mode #managementPanel label[data-tooltip]::after {
+            background: rgba(var(--construct-bg-rgb), 0.98);
+            color: var(--construct-text);
+            border-color: rgba(var(--construct-accent-rgb), 0.56);
+            box-shadow: 0 4px 16px rgba(var(--construct-accent-rgb), 0.18);
+        }
+        .setting-help-btn {
+            position: absolute;
+            top: -0.1rem;
+            right: 0;
+            width: 1.25rem !important;
+            height: 1.25rem;
+            min-width: 1.25rem;
+            margin: 0 !important;
+            padding: 0 !important;
+            border-radius: 999px !important;
+            font-size: 0.76rem;
+            line-height: 1;
+            z-index: 2;
+        }
+        .setting-help-popover {
+            display: none;
+            margin: 0.15rem 0 0.45rem;
+            padding: 0.5rem 0.6rem;
+            border: 1px solid rgba(var(--primary-color-rgb), 0.46);
+            border-radius: 3px;
+            background: rgba(var(--primary-color-rgb), 0.07);
+            color: rgba(var(--primary-color-rgb), 0.84);
+            font-size: 0.76rem;
+            line-height: 1.35;
+            overflow-wrap: normal;
+            word-break: normal;
+            hyphens: manual;
+            text-wrap: pretty;
+        }
+        .setting-help-popover.visible {
+            display: block;
+        }
+        .construct-mode .setting-help-popover {
+            border-color: rgba(var(--construct-accent-rgb), 0.28);
+            background: rgba(var(--construct-accent-rgb), 0.06);
+            color: var(--construct-text);
+        }
         /* Slider styling */
         #managementPanel input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary-color); margin-top: 0.25rem; margin-bottom: 0.25rem; }
+        #tailLengthReadout {
+            border: 1px solid var(--primary-color-dark);
+            border-radius: 0.25rem;
+            padding: 0.45rem 0.5rem;
+            font-size: 0.85rem;
+            color: rgba(var(--primary-color-rgb), 0.82);
+            background: rgba(var(--primary-color-rgb), 0.055);
+        }
+        .construct-mode #tailLengthReadout {
+            border-color: rgba(var(--construct-accent-rgb), 0.28);
+            color: var(--construct-text);
+            background: rgba(var(--construct-accent-rgb), 0.055);
+        }
+        #managementPanel .mb-3:has(> label[data-tooltip]) {
+            position: relative;
+        }
         /* Panel Sections for better structure and scrolling */
         .panel-section {
             margin-bottom: 0.95rem;
@@ -732,8 +824,39 @@
             padding-top: 0.85rem;
             border-top: 1px solid rgba(var(--primary-color-rgb), 0.2);
         }
+        .effects-reset-all {
+            margin: 0.75rem 0 0.25rem;
+        }
+        .settings-subgroup-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.6rem;
+        }
+        .settings-subgroup-header h3 {
+            margin: 0;
+        }
+        #managementPanel .settings-subgroup-header .reset-effect-btn {
+            width: auto;
+            min-width: 5.2rem;
+            flex: none;
+            margin-bottom: 0;
+            padding: 0.3rem 0.55rem;
+            border-width: 1px;
+            font-size: 0.76rem;
+            line-height: 1.1;
+        }
+        .settings-subgroup-first {
+            margin-top: 0.25rem;
+            padding-top: 0;
+            border-top: none;
+        }
         .construct-mode .settings-subgroup {
             border-top-color: rgba(var(--construct-accent-rgb), 0.18);
+        }
+        .construct-mode .settings-subgroup-first {
+            border-top: none;
         }
 
         /* List styling inside panel */
@@ -1234,12 +1357,12 @@
                 <span class="panel-section-chevron" aria-hidden="true">▾</span>
             </button>
             <div id="rosterSectionBody" class="panel-section-content">
-                <label for="titleInput">// Operative Schema:</label>
+                <label for="titleInput" data-tooltip="Names this picker in the display and in shared links.">// Operative Schema:</label>
                 <input type="text" id="titleInput" placeholder="Define schema name..." class="outline-none">
-                <label for="newNameInput">// Register New Operative:</label>
+                <label for="newNameInput" data-tooltip="Adds a selectable roster entry. This is the name shown when picked.">// Register New Operative:</label>
                 <input type="text" id="newNameInput" placeholder="Enter name..." class="outline-none">
                 <div id="newValueWrapper">
-                    <label for="newValueInput" class="text-xs">// Extraction Alias (Optional):</label>
+                    <label for="newValueInput" class="text-xs" data-tooltip="Optional copied value for extraction mode; the visible roster name stays the same.">// Extraction Alias (Optional):</label>
                     <input type="text" id="newValueInput" placeholder="Alias to copy..." class="outline-none">
                 </div>
                 <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
@@ -1272,113 +1395,181 @@
                     <button id="crtModeBtn" aria-pressed="false">[T] Engage CRT</button>
                     <div id="crtModeLed" class="led-indicator" aria-hidden="true"></div>
                 </div>
-                <div id="crtSubSettings" class="hidden">
+                <div class="effects-reset-all">
+                    <button id="resetAllEffectsBtn" class="font-medium" type="button">[=] Reset All Effects</button>
+                </div>
+                <div id="crtSubSettings" class="settings-subgroup hidden">
+                    <div class="settings-subgroup-header">
+                        <h3>CRT Tube</h3>
+                        <button id="resetCrtTubeEffectsBtn" class="reset-effect-btn" type="button" data-reset-scope="crtTube">Reset</button>
+                    </div>
                     <div class="mb-3">
-                        <label for="crtFishbowlSlider" class="flex justify-between items-center">
-                            <span>// Fisheye:</span>
+                        <label for="crtFishbowlSlider" class="flex justify-between items-center" data-tooltip="Bends the CRT image toward rounded glass; higher values curve edges more strongly.">
+                            <span>// Tube Curvature:</span>
                             <span id="crtFishbowlValue" class="font-semibold text-sm">25%</span>
                         </label>
                         <input type="range" id="crtFishbowlSlider" min="0" max="100" step="1" value="25">
                     </div>
                     <div class="mb-3">
-                        <label for="crtVignetteSlider" class="flex justify-between items-center">
+                        <label for="crtVignetteSlider" class="flex justify-between items-center" data-tooltip="Darkens the tube edges; higher values make the center feel brighter and deeper.">
                             <span>// Vignette:</span>
                             <span id="crtVignetteValue" class="font-semibold text-sm">40%</span>
                         </label>
                         <input type="range" id="crtVignetteSlider" min="0" max="100" step="1" value="40">
                     </div>
-                    <div id="crtFringeSettings" class="hidden">
-                        <div class="mb-3">
-                            <label for="crtLeadFringeSlider" class="flex justify-between items-center">
-                                <span>// Lead Fringe:</span>
-                                <span id="crtLeadFringeValue" class="font-semibold text-sm">5%</span>
-                            </label>
-                            <input type="range" id="crtLeadFringeSlider" min="0" max="100" step="1" value="5">
-                        </div>
+                    <div class="mb-3">
+                        <label for="crtBeamFocusSlider" class="flex justify-between items-center" data-tooltip="Sharpens or softens the phosphor beam; lower values smear glyphs horizontally.">
+                            <span>// Beam Focus:</span>
+                            <span id="crtBeamFocusValue" class="font-semibold text-sm">72%</span>
+                        </label>
+                        <input type="range" id="crtBeamFocusSlider" min="0" max="100" step="1" value="72">
+                    </div>
+                    <div class="mb-3">
+                        <label for="crtScanlinesSlider" class="flex justify-between items-center" data-tooltip="Controls horizontal scanline contrast across the CRT image.">
+                            <span>// Scanlines:</span>
+                            <span id="crtScanlinesValue" class="font-semibold text-sm">62%</span>
+                        </label>
+                        <input type="range" id="crtScanlinesSlider" min="0" max="100" step="1" value="62">
+                    </div>
+                    <div class="mb-3">
+                        <label for="crtGrilleSlider" class="flex justify-between items-center" data-tooltip="Adds vertical aperture grille texture; higher values make columns look more like phosphor slots.">
+                            <span>// Aperture Grille:</span>
+                            <span id="crtGrilleValue" class="font-semibold text-sm">44%</span>
+                        </label>
+                        <input type="range" id="crtGrilleSlider" min="0" max="100" step="1" value="44">
+                    </div>
+                    <div class="mb-3">
+                        <label for="crtNoiseSlider" class="flex justify-between items-center" data-tooltip="Adds signal grain and shimmer to the CRT composite.">
+                            <span>// Signal Noise:</span>
+                            <span id="crtNoiseValue" class="font-semibold text-sm">14%</span>
+                        </label>
+                        <input type="range" id="crtNoiseSlider" min="0" max="100" step="1" value="14">
+                    </div>
+                    <div class="mb-3">
+                        <label for="crtSyncRollSlider" class="flex justify-between items-center" data-tooltip="Introduces a slow vertical sync wave; higher values make the image feel less stable.">
+                            <span>// Vertical Sync Roll:</span>
+                            <span id="crtSyncRollValue" class="font-semibold text-sm">6%</span>
+                        </label>
+                        <input type="range" id="crtSyncRollSlider" min="0" max="100" step="1" value="6">
+                    </div>
+                    <div class="mb-3">
+                        <label for="crtJitterSlider" class="flex justify-between items-center" data-tooltip="Adds horizontal line wobble; higher values make rows swim side to side.">
+                            <span>// Horizontal Jitter:</span>
+                            <span id="crtJitterValue" class="font-semibold text-sm">0%</span>
+                        </label>
+                        <input type="range" id="crtJitterSlider" min="0" max="100" step="1" value="0">
                     </div>
                 </div>
-                <div class="mb-3">
-                    <label for="brightnessSlider" class="flex justify-between items-center">
-                        <span id="brightnessLabel">// Intensity:</span>
-                        <span id="brightnessValue" class="font-semibold text-sm">100%</span>
-                    </label>
-                    <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="100">
+                <div class="settings-subgroup settings-subgroup-first">
+                    <div class="settings-subgroup-header">
+                        <h3>Display</h3>
+                        <button id="resetDisplayEffectsBtn" class="reset-effect-btn" type="button" data-reset-scope="display">Reset</button>
+                    </div>
+                    <div class="mb-3">
+                        <label for="brightnessSlider" class="flex justify-between items-center" data-tooltip="Dims Matrix mode or adds glare in Construct mode. Lower Matrix values make the scene darker.">
+                            <span id="brightnessLabel">// Intensity:</span>
+                            <span id="brightnessValue" class="font-semibold text-sm">100%</span>
+                        </label>
+                        <input type="range" id="brightnessSlider" min="0" max="100" step="1" value="100">
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="speedSlider" class="flex justify-between items-center">
-                        <span>// Velocity (FPS):</span>
-                        <span id="speedValue" class="font-semibold text-sm">10 FPS</span>
-                    </label>
-                    <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
-                </div>
-                <div class="mb-3">
-                    <label for="fontSizeSlider" class="flex justify-between items-center">
-                        <span>// Size (px):</span>
-                        <span id="fontSizeValue" class="font-semibold text-sm">24px</span>
-                    </label>
-                    <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24">
-                </div>
-                <div class="mb-3">
-                    <label for="tailLengthSlider" class="flex justify-between items-center">
-                        <span>// Tail Length (Auto):</span>
-                        <span id="tailLengthValue" class="font-semibold text-sm">25</span>
-                    </label>
-                    <input type="range" id="tailLengthSlider" min="20" max="20" step="1" value="25" disabled>
-                </div>
-                <div class="mb-3">
-                    <label for="tailCurveSlider" class="flex justify-between items-center">
-                        <span>// Tail Dimming Curve:</span>
-                        <span id="tailCurveValue" class="font-semibold text-sm">10%</span>
-                    </label>
-                    <input type="range" id="tailCurveSlider" min="0" max="100" step="1" value="10">
-                </div>
-                <div class="mb-3">
-                    <label for="tailFloorSlider" class="flex justify-between items-center">
-                        <span>// Tail Visibility Floor:</span>
-                        <span id="tailFloorValue" class="font-semibold text-sm">1%</span>
-                    </label>
-                    <input type="range" id="tailFloorSlider" min="0" max="30" step="1" value="1">
-                </div>
-                <div class="mb-3">
-                    <label for="glitchFrequencySlider" class="flex justify-between items-center">
-                        <span>// Glitch Frequency:</span>
-                        <span id="glitchFrequencyValue" class="font-semibold text-sm">50%</span>
-                    </label>
-                    <input type="range" id="glitchFrequencySlider" min="0" max="100" step="1" value="50">
-                </div>
-
                 <div class="settings-subgroup">
-                    <h3>Effects</h3>
-                    <div class="control-group">
-                        <button id="overdriveModeBtn" aria-pressed="true">[O] Overdrive Engaged</button>
-                        <div id="overdriveModeLed" class="led-indicator" aria-hidden="true"></div>
+                    <div class="settings-subgroup-header">
+                        <h3>Rain Motion</h3>
+                        <button id="resetRainMotionEffectsBtn" class="reset-effect-btn" type="button" data-reset-scope="rainMotion">Reset</button>
                     </div>
-                    <div id="overdriveSubSettings">
-                        <div class="mb-3">
-                            <label for="overdriveDriveSlider" class="flex justify-between items-center">
-                                <span>// Beam Drive:</span>
-                                <span id="overdriveDriveValue" class="font-semibold text-sm">58%</span>
-                            </label>
-                            <input type="range" id="overdriveDriveSlider" min="0" max="200" step="1" value="58">
-                        </div>
-                        <div class="mb-3">
-                            <label for="overdrivePersistenceSlider" class="flex justify-between items-center">
-                                <span>// Phosphor Persistence:</span>
-                                <span id="overdrivePersistenceValue" class="font-semibold text-sm">260ms</span>
-                            </label>
-                            <input type="range" id="overdrivePersistenceSlider" min="80" max="2400" step="10" value="260">
-                        </div>
-                        <div class="mb-3">
-                            <label for="overdriveBloomSlider" class="flex justify-between items-center">
-                                <span>// Bloom Spread:</span>
-                                <span id="overdriveBloomValue" class="font-semibold text-sm">36%</span>
-                            </label>
-                            <input type="range" id="overdriveBloomSlider" min="0" max="200" step="1" value="36">
-                        </div>
-                        <div class="control-group">
-                            <button id="glitchOverdriveBtn" aria-pressed="true">Glitch Overdrive Enabled</button>
-                            <div id="glitchOverdriveLed" class="led-indicator" aria-hidden="true"></div>
-                        </div>
+                    <div class="mb-3">
+                        <label for="speedSlider" class="flex justify-between items-center" data-tooltip="Sets the base rain update rate. Higher values make streams fall faster.">
+                            <span>// Cascade Rate:</span>
+                            <span id="speedValue" class="font-semibold text-sm">10 FPS</span>
+                        </label>
+                        <input type="range" id="speedSlider" min="1" max="100" step="1" value="10">
+                    </div>
+                    <div class="mb-3">
+                        <label for="fontSizeSlider" class="flex justify-between items-center" data-tooltip="Changes glyph size and column density; smaller glyphs create more rain lanes.">
+                            <span>// Size (px):</span>
+                            <span id="fontSizeValue" class="font-semibold text-sm">24px</span>
+                        </label>
+                        <input type="range" id="fontSizeSlider" min="8" max="32" step="1" value="24">
+                    </div>
+                    <div class="control-group">
+                        <button id="flatGridModeBtn" aria-pressed="false">[G] Flat Grid Rain</button>
+                        <div id="flatGridModeLed" class="led-indicator" aria-hidden="true"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="flex justify-between items-center" data-tooltip="Computed from screen height and glyph size so rain trails fill the viewport cleanly.">
+                            <span>// Trace Length (Auto):</span>
+                            <span id="tailLengthValue" class="font-semibold text-sm">25</span>
+                        </label>
+                        <div id="tailLengthReadout">Viewport linked</div>
+                    </div>
+                </div>
+                <div id="rainPerspectiveControls" class="settings-subgroup">
+                    <div class="settings-subgroup-header">
+                        <h3>Rain Perspective</h3>
+                        <button id="resetRainPerspectiveEffectsBtn" class="reset-effect-btn" type="button" data-reset-scope="rainPerspective">Reset</button>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rainDepthSlider" class="flex justify-between items-center" data-tooltip="Balances background, middle, and foreground streams. Higher values push more bright streams forward.">
+                            <span>// Depth Parallax:</span>
+                            <span id="rainDepthValue" class="font-semibold text-sm">50%</span>
+                        </label>
+                        <input type="range" id="rainDepthSlider" min="0" max="100" step="1" value="50">
+                    </div>
+                    <div class="mb-3">
+                        <label for="laneDriftSlider" class="flex justify-between items-center" data-tooltip="Adds imperfect lane placement and slow horizontal drift so columns feel less grid-perfect.">
+                            <span>// Lane Drift:</span>
+                            <span id="laneDriftValue" class="font-semibold text-sm">50%</span>
+                        </label>
+                        <input type="range" id="laneDriftSlider" min="0" max="100" step="1" value="50">
+                    </div>
+                </div>
+                <div class="settings-subgroup">
+                    <div class="settings-subgroup-header">
+                        <h3>Rain Texture</h3>
+                        <button id="resetRainTextureEffectsBtn" class="reset-effect-btn" type="button" data-reset-scope="rainTexture">Reset</button>
+                    </div>
+                    <div class="mb-3">
+                        <label for="rainVarietySlider" class="flex justify-between items-center" data-tooltip="Adds per-column entropy to fall speed, brightness, tail length, dropouts, glyph flips, and rare sleeper streams.">
+                            <span>// Cascade Entropy:</span>
+                            <span id="rainVarietyValue" class="font-semibold text-sm">50%</span>
+                        </label>
+                        <input type="range" id="rainVarietySlider" min="0" max="100" step="1" value="50">
+                    </div>
+                    <div class="mb-3">
+                        <label for="tailCurveSlider" class="flex justify-between items-center" data-tooltip="Shapes how quickly trails fade behind the lead glyph. Higher values keep tails brighter for longer.">
+                            <span>// Code Fade Curve:</span>
+                            <span id="tailCurveValue" class="font-semibold text-sm">10%</span>
+                        </label>
+                        <input type="range" id="tailCurveSlider" min="0" max="100" step="1" value="10">
+                    </div>
+                    <div class="mb-3">
+                        <label for="tailFloorSlider" class="flex justify-between items-center" data-tooltip="Sets the minimum tail visibility. Higher values leave more background glyphs visible.">
+                            <span>// Residual Signal:</span>
+                            <span id="tailFloorValue" class="font-semibold text-sm">1%</span>
+                        </label>
+                        <input type="range" id="tailFloorSlider" min="0" max="30" step="1" value="1">
+                    </div>
+                    <div class="mb-3">
+                        <label for="gapDensitySlider" class="flex justify-between items-center" data-tooltip="Controls holes inside rain tails. Higher values make streams more broken and organic.">
+                            <span>// Signal Dropouts:</span>
+                            <span id="gapDensityValue" class="font-semibold text-sm">50%</span>
+                        </label>
+                        <input type="range" id="gapDensitySlider" min="0" max="100" step="1" value="50">
+                    </div>
+                    <div class="mb-3">
+                        <label for="leaderHeatSlider" class="flex justify-between items-center" data-tooltip="Warms and brightens lead glyphs. Higher values create more white-hot stream heads.">
+                            <span>// Leader Burn:</span>
+                            <span id="leaderHeatValue" class="font-semibold text-sm">50%</span>
+                        </label>
+                        <input type="range" id="leaderHeatSlider" min="0" max="100" step="1" value="50">
+                    </div>
+                    <div class="mb-3">
+                        <label for="glyphMutationSlider" class="flex justify-between items-center" data-tooltip="Controls random glyph flips in existing tails. Higher values make the code shimmer more.">
+                            <span>// Code Shimmer:</span>
+                            <span id="glyphMutationValue" class="font-semibold text-sm">50%</span>
+                        </label>
+                        <input type="range" id="glyphMutationSlider" min="0" max="100" step="1" value="50">
                     </div>
                 </div>
             </div>
@@ -1491,10 +1682,10 @@
                         </li>
                         <li>
                             <div>
-                                <span>Toggle Matrix Overdrive</span>
-                                <p class="text-sm opacity-70 mt-1">Simulates driven green phosphor: highlighted glyphs brighten instantly, bloom softly, and decay with persistence. The same beam drive, persistence, and bloom controls use a tighter glow profile outside CRT mode.</p>
+                                <span>Toggle Flat Grid Rain</span>
+                                <p class="text-sm opacity-70 mt-1">Uses uniform pre-distortion rain lanes and hides perspective controls that no longer apply.</p>
                             </div>
-                            <span><kbd>O</kbd></span>
+                            <span><kbd>G</kbd></span>
                         </li>
                          <li>
                             <div>
@@ -1539,19 +1730,19 @@ varying vec2 vTexCoord;
 
 uniform sampler2D u_matrixTex;
 uniform sampler2D u_uiTex;
-uniform sampler2D u_fxTex;
 uniform vec2 u_resolution;
 uniform vec2 u_matrixResolution;
-uniform vec2 u_fxResolution;
 uniform float u_time;
 uniform float u_intensity;
-uniform float u_leadFringe;
-uniform float u_overdriveMode;
 uniform float u_fishbowl;
 uniform float u_vignette;
+uniform float u_beamFocus;
+uniform float u_scanlines;
+uniform float u_grille;
+uniform float u_noise;
+uniform float u_syncRoll;
+uniform float u_jitter;
 uniform float u_constructMode;
-uniform float u_overdriveBloom;
-uniform float u_overdriveGain;
 
 vec2 curveRemapUV(vec2 uv) {
   uv = uv * 2.0 - 1.0;
@@ -1573,30 +1764,20 @@ vec4 sampleUiColor(vec2 sampleUV) {
   return texture2D(u_uiTex, sampleUV);
 }
 
-vec3 sampleFxColor(vec2 sampleUV) {
-  return texture2D(u_fxTex, sampleUV).rgb;
-}
-
 vec3 sampleCombinedColor(vec2 sampleUV) {
   vec4 matrixColor = sampleMatrixColor(sampleUV);
   vec4 uiColor = sampleUiColor(sampleUV);
   return mix(matrixColor.rgb, uiColor.rgb, clamp(uiColor.a, 0.0, 1.0));
 }
 
-float uiOcclusionAt(vec2 sampleUV) {
-  return clamp(sampleUiColor(sampleUV).a, 0.0, 1.0);
-}
-
-float matrixEffectVisibilityAt(vec2 sampleUV) {
-  return 1.0 - smoothstep(0.01, 0.08, uiOcclusionAt(sampleUV));
-}
-
-float matrixLeadAmountAt(vec2 sampleUV) {
-  vec3 sampleColor = sampleMatrixColor(sampleUV).rgb;
-  float sampleLuminance = dot(sampleColor, vec3(0.299, 0.587, 0.114));
-  float sampleBrightness = smoothstep(0.12, 0.40, sampleLuminance);
-  float sampleWhiteCore = smoothstep(0.06, 0.28, min(sampleColor.r, sampleColor.b));
-  return sampleBrightness * sampleWhiteCore * matrixEffectVisibilityAt(sampleUV);
+vec3 sampleFocusedColor(vec2 sampleUV, vec2 pixelStep, float focusAmount) {
+  float softness = (1.0 - focusAmount) * (1.0 - (u_constructMode * 0.55));
+  vec3 centerColor = sampleCombinedColor(sampleUV);
+  if (softness <= 0.001) { return centerColor; }
+  vec2 softStep = pixelStep * (0.65 + softness * 2.35);
+  vec3 center = centerColor * (0.56 + focusAmount * 0.22);
+  vec3 horizontal = sampleCombinedColor(sampleUV + vec2(softStep.x, 0.0)) + sampleCombinedColor(sampleUV - vec2(softStep.x, 0.0));
+  return mix(centerColor, center + (horizontal * (0.17 + softness * 0.05)), softness);
 }
 
 void main() {
@@ -1604,6 +1785,12 @@ void main() {
   vec2 remappedUV = curveRemapUV(uv);
   float edgeZoom = 1.02 + (0.13 * u_fishbowl);
   remappedUV = (remappedUV - 0.5) / edgeZoom + 0.5;
+  float jitterAmount = u_jitter * (1.0 - u_constructMode);
+  if (jitterAmount > 0.001) {
+    float lineNoise = random(vec2(floor(gl_FragCoord.y * 0.32), floor(u_time * 24.0)));
+    float wave = sin((remappedUV.y * 28.0) + (u_time * 1.7)) * 0.45 + sin((remappedUV.y * 83.0) - (u_time * 3.1)) * 0.16;
+    remappedUV.x += ((lineNoise - 0.5) * 2.0 + wave) * 0.0026 * jitterAmount;
+  }
 
   if (remappedUV.x < 0.0 || remappedUV.y < 0.0 || remappedUV.x > 1.0 || remappedUV.y > 1.0) {
     gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
@@ -1611,77 +1798,55 @@ void main() {
   }
 
   float crtIntensity = mix(u_intensity, u_intensity * 0.42, u_constructMode);
-  float chroma = 0.0018 * crtIntensity * (1.0 - u_overdriveMode);
-  vec4 baseColor;
-  baseColor.r = sampleCombinedColor(remappedUV + vec2(chroma, 0.0)).r;
-  baseColor.g = sampleCombinedColor(remappedUV).g;
-  baseColor.b = sampleCombinedColor(remappedUV - vec2(chroma, 0.0)).b;
-  baseColor.a = 1.0;
+  vec2 texelStep = 1.0 / max(u_matrixResolution, vec2(1.0));
+  float focusAmount = clamp(u_beamFocus, 0.0, 1.0);
+  float chroma = 0.00025 * crtIntensity * (1.0 - u_constructMode);
+  vec3 focusedBase = sampleFocusedColor(remappedUV, texelStep, focusAmount);
+  vec4 baseColor = vec4(
+    mix(focusedBase.r, sampleCombinedColor(remappedUV + vec2(chroma, 0.0)).r, 0.55),
+    focusedBase.g,
+    mix(focusedBase.b, sampleCombinedColor(remappedUV - vec2(chroma, 0.0)).b, 0.55),
+    1.0
+  );
   vec3 rawColor = sampleCombinedColor(remappedUV);
   float luminance = dot(rawColor, vec3(0.299, 0.587, 0.114));
-  float matrixLeadMask = matrixLeadAmountAt(remappedUV);
   float constructLeadMask = 1.0 - smoothstep(0.02, 0.35, luminance);
 
-  float line_count = 420.0;
+  float line_count = mix(300.0, 560.0, clamp(u_scanlines, 0.0, 1.0));
   float y_lines = sin(remappedUV.y * line_count * PI * 2.0);
   y_lines = (y_lines * 0.5 + 0.5) * 0.85 + 0.15;
 
-  float x_lines = sin(remappedUV.x * line_count * PI * 2.0);
-  x_lines = (x_lines * 0.5 + 0.5) * 0.85 + 0.15;
+  float x_lines = sin(gl_FragCoord.x * PI * 0.92);
+  x_lines = (x_lines * 0.5 + 0.5) * 0.72 + 0.28;
+  float fineSlot = smoothstep(0.08, 0.42, abs(fract(gl_FragCoord.x / 3.0) - 0.5) * 2.0);
 
-  float scanline = pow(y_lines, 0.65);
+  float scanlineStrength = u_scanlines * crtIntensity;
+  float scanline = mix(1.0, pow(y_lines, mix(0.95, 0.46, u_scanlines)), scanlineStrength);
   scanline = mix(scanline, mix(1.0, scanline, 0.5), u_constructMode);
-  float grille = mix(1.0, pow(x_lines, 0.85), 0.35 * crtIntensity);
+  float grillePattern = mix(pow(x_lines, 0.82), 0.74 + fineSlot * 0.26, 0.45);
+  float grille = mix(1.0, grillePattern, u_grille * crtIntensity * (1.0 - u_constructMode * 0.45));
   float vignetteMask = smoothstep(0.86, 0.10, distance(remappedUV, vec2(0.5)));
   float vignetteStrength = mix(u_vignette, u_vignette * 0.45, u_constructMode);
   float vignette = max(0.0, 1.0 - ((1.0 - vignetteMask) * vignetteStrength));
-  float noise = (random(gl_FragCoord.xy) - 0.5) * 0.035 * crtIntensity;
+  float noise = (random(gl_FragCoord.xy) - 0.5) * (0.012 + 0.095 * u_noise) * crtIntensity;
+  float syncRoll = 1.0;
+  if (u_syncRoll > 0.001) {
+    float rollY = fract(remappedUV.y - (u_time * (0.07 + u_syncRoll * 0.28)));
+    float rollBand = 1.0 - smoothstep(0.0, 0.20, abs(rollY - 0.11));
+    float rollLine = 1.0 - smoothstep(0.0, 0.035, abs(rollY - 0.018));
+    syncRoll = 1.0 + (rollBand * 0.12 * u_syncRoll) - (rollLine * 0.32 * u_syncRoll);
+  }
 
   vec3 matrixTrailColor = baseColor.rgb * (1.4 + 1.2 * u_intensity);
   vec3 constructTrailColor = mix(baseColor.rgb, vec3(luminance), 0.12) * (0.98 + 0.08 * crtIntensity);
   vec3 trailColor = mix(matrixTrailColor, constructTrailColor, u_constructMode);
   vec3 constructLeadColor = vec3(0.015, 0.015, 0.015);
   vec3 color = mix(trailColor, constructLeadColor, constructLeadMask * u_constructMode);
-  float bloomMask = matrixEffectVisibilityAt(remappedUV) * (1.0 - u_constructMode);
-  vec3 phosphorBloom = sampleFxColor(remappedUV) * bloomMask;
-  float leadFringe = u_leadFringe * (1.0 - u_constructMode);
-  float redLeadMask = matrixLeadAmountAt(remappedUV + vec2(leadFringe, 0.0));
-  float blueLeadMask = matrixLeadAmountAt(remappedUV - vec2(leadFringe, 0.0));
-  float centeredGreenMask = matrixLeadMask * (1.0 - u_constructMode);
-  float redFringeMask = redLeadMask * (1.0 - u_constructMode);
-  float blueFringeMask = blueLeadMask * (1.0 - u_constructMode);
-  float fringeEnabled = step(0.00001, leadFringe);
-  float fringeMask = clamp((redFringeMask + centeredGreenMask + blueFringeMask) * fringeEnabled, 0.0, 1.0);
-  float leadStrength = 1.6 + 1.4 * u_intensity;
-  vec3 rgbLeadColor = clamp(vec3(redFringeMask, centeredGreenMask, blueFringeMask) * leadStrength, 0.0, 1.0);
-  color = mix(color, rgbLeadColor, fringeMask);
-  color += phosphorBloom;
-  color *= scanline * grille * vignette;
+  color *= scanline * grille * vignette * syncRoll;
 
   color += noise;
 
   gl_FragColor = vec4(color, 1.0);
-}
-    </script>
-
-    <script id="matrix-fx-fragment-shader" type="x-shader/x-fragment">
-#ifdef GL_ES
-precision mediump float;
-#endif
-
-varying vec2 vTexCoord;
-
-uniform sampler2D u_fxTex;
-uniform vec2 u_resolution;
-uniform float u_overdriveBloom;
-uniform float u_overdriveGain;
-
-vec3 sampleFxColor(vec2 sampleUV) {
-  return texture2D(u_fxTex, sampleUV).rgb;
-}
-
-void main() {
-  gl_FragColor = vec4(sampleFxColor(vTexCoord), 1.0);
 }
     </script>
 
@@ -1699,14 +1864,6 @@ void main() {
         const noAvailableMessage = document.getElementById('noAvailableMessage');
         const canvas = document.getElementById('matrixCanvas');
         const ctx = canvas.getContext('2d');
-        const matrixFillCanvas = document.createElement('canvas');
-        const matrixFillCtx = matrixFillCanvas.getContext('2d');
-        const matrixHighlightCanvas = document.createElement('canvas');
-        const matrixHighlightCtx = matrixHighlightCanvas.getContext('2d');
-        const matrixFxMaskCanvas = document.createElement('canvas');
-        const matrixFxMaskCtx = matrixFxMaskCanvas.getContext('2d');
-        const matrixFxCanvas = document.createElement('canvas');
-        const matrixFxGl = matrixFxCanvas.getContext('webgl', { preserveDrawingBuffer: false, alpha: false });
         const crtCanvas = document.getElementById('crtCanvas');
         const crtGl = crtCanvas.getContext('webgl', { preserveDrawingBuffer: false });
         const crtSourceCanvas = document.createElement('canvas');
@@ -1740,38 +1897,51 @@ void main() {
         const speedValue = document.getElementById('speedValue');
         const fontSizeSlider = document.getElementById('fontSizeSlider');
         const fontSizeValue = document.getElementById('fontSizeValue');
-        const tailLengthSlider = document.getElementById('tailLengthSlider');
         const tailLengthValue = document.getElementById('tailLengthValue');
+        const tailLengthReadout = document.getElementById('tailLengthReadout');
         const tailCurveSlider = document.getElementById('tailCurveSlider');
         const tailCurveValue = document.getElementById('tailCurveValue');
         const tailFloorSlider = document.getElementById('tailFloorSlider');
         const tailFloorValue = document.getElementById('tailFloorValue');
-        const glitchFrequencySlider = document.getElementById('glitchFrequencySlider');
-        const glitchFrequencyValue = document.getElementById('glitchFrequencyValue');
+        const rainDepthSlider = document.getElementById('rainDepthSlider');
+        const rainDepthValue = document.getElementById('rainDepthValue');
+        const rainVarietySlider = document.getElementById('rainVarietySlider');
+        const rainVarietyValue = document.getElementById('rainVarietyValue');
+        const laneDriftSlider = document.getElementById('laneDriftSlider');
+        const laneDriftValue = document.getElementById('laneDriftValue');
+        const flatGridModeBtn = document.getElementById('flatGridModeBtn');
+        const flatGridModeLed = document.getElementById('flatGridModeLed');
+        const rainPerspectiveControls = document.getElementById('rainPerspectiveControls');
+        const gapDensitySlider = document.getElementById('gapDensitySlider');
+        const gapDensityValue = document.getElementById('gapDensityValue');
+        const leaderHeatSlider = document.getElementById('leaderHeatSlider');
+        const leaderHeatValue = document.getElementById('leaderHeatValue');
+        const glyphMutationSlider = document.getElementById('glyphMutationSlider');
+        const glyphMutationValue = document.getElementById('glyphMutationValue');
+        const resetAllEffectsBtn = document.getElementById('resetAllEffectsBtn');
+        const resetEffectBtns = Array.from(document.querySelectorAll('.reset-effect-btn[data-reset-scope]'));
         const panelSectionToggles = Array.from(document.querySelectorAll('.panel-section-toggle'));
         const extractionModeBtn = document.getElementById('extractionModeBtn');
         const extractionModeLed = document.getElementById('extractionModeLed');
         const crtModeBtn = document.getElementById('crtModeBtn');
         const crtModeLed = document.getElementById('crtModeLed');
-        const overdriveModeBtn = document.getElementById('overdriveModeBtn');
-        const overdriveModeLed = document.getElementById('overdriveModeLed');
-        const overdriveSubSettings = document.getElementById('overdriveSubSettings');
-        const overdriveDriveSlider = document.getElementById('overdriveDriveSlider');
-        const overdriveDriveValue = document.getElementById('overdriveDriveValue');
-        const overdrivePersistenceSlider = document.getElementById('overdrivePersistenceSlider');
-        const overdrivePersistenceValue = document.getElementById('overdrivePersistenceValue');
-        const overdriveBloomSlider = document.getElementById('overdriveBloomSlider');
-        const overdriveBloomValue = document.getElementById('overdriveBloomValue');
-        const glitchOverdriveBtn = document.getElementById('glitchOverdriveBtn');
-        const glitchOverdriveLed = document.getElementById('glitchOverdriveLed');
         const crtSubSettings = document.getElementById('crtSubSettings');
-        const crtFringeSettings = document.getElementById('crtFringeSettings');
         const crtFishbowlSlider = document.getElementById('crtFishbowlSlider');
         const crtFishbowlValue = document.getElementById('crtFishbowlValue');
         const crtVignetteSlider = document.getElementById('crtVignetteSlider');
         const crtVignetteValue = document.getElementById('crtVignetteValue');
-        const crtLeadFringeSlider = document.getElementById('crtLeadFringeSlider');
-        const crtLeadFringeValue = document.getElementById('crtLeadFringeValue');
+        const crtBeamFocusSlider = document.getElementById('crtBeamFocusSlider');
+        const crtBeamFocusValue = document.getElementById('crtBeamFocusValue');
+        const crtScanlinesSlider = document.getElementById('crtScanlinesSlider');
+        const crtScanlinesValue = document.getElementById('crtScanlinesValue');
+        const crtGrilleSlider = document.getElementById('crtGrilleSlider');
+        const crtGrilleValue = document.getElementById('crtGrilleValue');
+        const crtNoiseSlider = document.getElementById('crtNoiseSlider');
+        const crtNoiseValue = document.getElementById('crtNoiseValue');
+        const crtSyncRollSlider = document.getElementById('crtSyncRollSlider');
+        const crtSyncRollValue = document.getElementById('crtSyncRollValue');
+        const crtJitterSlider = document.getElementById('crtJitterSlider');
+        const crtJitterValue = document.getElementById('crtJitterValue');
 
         // Action Buttons (Inside Panel)
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -1809,29 +1979,35 @@ void main() {
         let currentTailLength = 25;
         let currentTailCurvePercent = 10;
         let currentTailFloorPercent = 1;
-        let currentGlitchFrequencyPercent = 50;
+        let currentRainDepthPercent = 50;
+        let currentRainVarietyPercent = 50;
+        let currentLaneDriftPercent = 50;
+        let isFlatGridMode = true;
+        let currentGapDensityPercent = 50;
+        let currentLeaderHeatPercent = 50;
+        let currentGlyphMutationPercent = 50;
         let rainAnimationId = null;
         let isAnimationPaused = false;
         let isInMatrixMode = false;
         let isExtractionMode = false;
         let isCrtMode = true;
-        let isOverdriveMode = true;
-        let isGlitchOverdriveEnabled = true;
         let currentCrtFishbowlPercent = 25;
         let currentCrtVignettePercent = 40;
-        let currentCrtLeadFringePercent = 5;
-        let currentOverdriveDrivePercent = 58;
-        let currentOverdrivePersistenceMs = 260;
-        let currentOverdriveBloomPercent = 36;
+        let currentCrtBeamFocusPercent = 72;
+        let currentCrtScanlinesPercent = 62;
+        let currentCrtGrillePercent = 44;
+        let currentCrtNoisePercent = 14;
+        let currentCrtSyncRollPercent = 6;
+        let currentCrtJitterPercent = 0;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
+        let columnProfiles = [];
         let commandPaletteSelectedIndex = 0;
         let elementToFocusOnModalClose = null; 
         let crtProgram = null;
         let crtTexture = null;
         let crtUiTexture = null;
-        let crtFxTexture = null;
         let crtPositionBuffer = null;
         let crtTexCoordBuffer = null;
         let crtUniforms = null;
@@ -1840,8 +2016,6 @@ void main() {
         let crtTextureHeight = 0;
         let crtUiTextureWidth = 0;
         let crtUiTextureHeight = 0;
-        let crtFxTextureWidth = 0;
-        let crtFxTextureHeight = 0;
         let crtReady = false;
         let crtWarningShown = false;
         let crtCompositeAvailable = true;
@@ -1850,28 +2024,12 @@ void main() {
         let crtTransitionRefreshFrameId = null;
         let crtTransitionRefreshEndTime = 0;
         let lastCrtFrameTime = 0;
-        let nonCrtFxProgram = null;
-        let nonCrtFxTexture = null;
-        let nonCrtFxPositionBuffer = null;
-        let nonCrtFxTexCoordBuffer = null;
-        let nonCrtFxUniforms = null;
-        let nonCrtFxAttributeLocations = null;
-        let nonCrtFxTextureWidth = 0;
-        let nonCrtFxTextureHeight = 0;
-        let nonCrtFxReady = false;
-        let nonCrtFxWarningShown = false;
-        let nonCrtCompositeAvailable = true;
         let framePerformanceMetrics = {
             rainUpdateMs: 0,
             cpuMatrixDrawMs: 0,
             compositeMs: 0,
-            renderer: 'cpu',
-            cpuOverdriveTextOps: 0
+            renderer: 'cpu'
         };
-        let overdriveMaskRectsCache = [];
-        let overdriveMaskDirty = true;
-        let overdriveMaskTransitionFrameId = null;
-        let overdriveMaskTransitionEndTime = 0;
         let pendingModalOpenTimeoutId = null;
         let matrixRenderStyles = null;
         let trailFillStyleCache = [];
@@ -1901,52 +2059,47 @@ void main() {
         const TYPING_INTERVAL_MS = 10;
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
+        const DEFAULT_BRIGHTNESS_PERCENT = 100;
+        const DEFAULT_RAIN_FPS = 10;
+        const DEFAULT_FONT_SIZE = 24;
+        const DEFAULT_TAIL_CURVE_PERCENT = 10;
+        const DEFAULT_TAIL_FLOOR_PERCENT = 1;
+        const DEFAULT_CONSTRUCT_MODE = false;
+        const DEFAULT_CRT_MODE = true;
         const COLUMN_SPACING_FACTOR = 1.0;
         const DEFAULT_GLITCH_FLIP_CHANCE = 0.0025;
-        const FLIP_DURATION_MS = 500;
-        const UPDATED_CHAR_HIGHLIGHT_MS = 500;
-        const DEFAULT_OVERDRIVE_DRIVE_PERCENT = 58;
-        const DEFAULT_OVERDRIVE_PERSISTENCE_MS = 260;
-        const DEFAULT_OVERDRIVE_BLOOM_PERCENT = 36;
-        const MAX_OVERDRIVE_DRIVE_PERCENT = 200;
-        const MAX_OVERDRIVE_PERSISTENCE_MS = 2400;
-        const MAX_OVERDRIVE_BLOOM_PERCENT = 200;
-        const NON_CRT_OVERDRIVE_DRIVE_SCALE = 0.72;
-        const NON_CRT_OVERDRIVE_EXTRA_DRIVE_SCALE = 0.46;
-        const NON_CRT_OVERDRIVE_PERSISTENCE_SCALE = 0.58;
-        const NON_CRT_OVERDRIVE_BLOOM_SCALE = 0.42;
-        const CRT_OVERDRIVE_VISUAL_PROFILE = {
-            fillLiftScale: 2.35,
-            glowAlphaScale: 0.2,
-            bloomAlphaBase: 0.82,
-            bloomAlphaScale: 0.95,
-            baseGlowBlur: 2.6,
-            bloomBlurScale: 7.8,
-            energyBlurScale: 8.5,
-            glowFillScale: 0.34,
-            excitationBase: 0.45,
-            excitationBloomScale: 0.4
+        const GLITCH_FLIP_COOLDOWN_MS = 500;
+        const SHIMMER_DEFAULT_BRIGHTNESS = 1;
+        const RAIN_DEPTH_PROFILES = {
+            back: { scale: 0.78, opacity: 0.34, speed: 0.62, flip: 0.5 },
+            mid: { scale: 0.92, opacity: 0.72, speed: 0.95, flip: 1.0 },
+            front: { scale: 1.08, opacity: 1.1, speed: 1.28, flip: 1.7 }
         };
-        const NON_CRT_OVERDRIVE_VISUAL_PROFILE = {
-            fillLiftScale: 1.55,
-            glowAlphaScale: 0.16,
-            bloomAlphaBase: 0.66,
-            bloomAlphaScale: 0.52,
-            baseGlowBlur: 2.8,
-            bloomBlurScale: 6.2,
-            energyBlurScale: 5.4,
-            glowFillScale: 0.22,
-            excitationBase: 0.32,
-            excitationBloomScale: 0.18
-        };
+        const MATRIX_LEADER_RGB = [184, 255, 190];
+        const MATRIX_HOT_LEADER_RGB = [232, 255, 220];
+        const DEFAULT_CRT_FISHBOWL_PERCENT = 25;
+        const DEFAULT_CRT_VIGNETTE_PERCENT = 40;
+        const DEFAULT_CRT_BEAM_FOCUS_PERCENT = 72;
+        const DEFAULT_CRT_SCANLINES_PERCENT = 62;
+        const DEFAULT_CRT_GRILLE_PERCENT = 44;
+        const DEFAULT_CRT_NOISE_PERCENT = 14;
+        const DEFAULT_CRT_SYNC_ROLL_PERCENT = 6;
+        const DEFAULT_CRT_JITTER_PERCENT = 0;
+        const DEFAULT_RAIN_DEPTH_PERCENT = 50;
+        const DEFAULT_RAIN_VARIETY_PERCENT = 50;
+        const DEFAULT_LANE_DRIFT_PERCENT = 50;
+        const DEFAULT_FLAT_GRID_MODE = true;
+        const DEFAULT_GAP_DENSITY_PERCENT = 50;
+        const DEFAULT_LEADER_HEAT_PERCENT = 50;
+        const DEFAULT_GLYPH_MUTATION_PERCENT = 50;
         const MIN_TRAIL_LENGTH = 20;
+        const MIN_COLUMN_TRAIL_LENGTH = 8;
         const MAX_TRAIL_LENGTH = 400;
         const TARGET_ANIMATION_FPS = 60;
         const ANIMATION_FRAME_DELAY = 1000 / TARGET_ANIMATION_FPS;
         const CRT_TARGET_FPS = 30;
         const CRT_FRAME_DELAY = 1000 / CRT_TARGET_FPS;
         const CRT_SOURCE_SCALE = 0.7;
-        const NON_CRT_FX_SCALE = 0.6;
         const MAX_FPS_PERCENT_OFFSET = 0.90;
         const CRT_FISHBOWL_MULTIPLIER = 1.85;
         const CRT_VIGNETTE_MULTIPLIER = 1.7;
@@ -1958,19 +2111,36 @@ void main() {
         const CRT_HIT_SLOP_PX = 28;
         const CRT_MIN_PRESSED_VISIBILITY_MS = 90;
         const URL_UPDATE_DEBOUNCE_MS = 150;
-        const OVERDRIVE_CURVE_EXPONENT = Math.log(0.2) / Math.log(0.5);
         const CRT_INTERACTIVE_SELECTOR = 'button, input, textarea, label, .command-item, .drag-handle, .name-span, #selectedNameDisplayWrapper';
-        const OVERDRIVE_MASK_ELEMENTS = [mainDisplayContainer, managementPanel, helpModal, commandPalette, menuToggleBtn, undoBtn];
         const E2E_URL_PARAMS = new URLSearchParams(window.location.search);
         const E2E_DEFAULT_SEED = 1;
-        const E2E_SCENE_OVERDRIVE_DEMO = 'overdrive-demo';
         const MANAGED_TEXT_INPUT_SELECTOR = '#managementPanel input[type="text"]';
+        const NUMERIC_SETTINGS = [
+            { urlKey: 'brightness', defaultValue: DEFAULT_BRIGHTNESS_PERCENT, slider: brightnessSlider, apply: updateBrightness, get: () => currentBrightnessPercent, parse: parseIntegerSetting },
+            { urlKey: 'speed', defaultValue: DEFAULT_RAIN_FPS, slider: speedSlider, apply: handleSpeedChange, get: () => currentRainFPS, parse: parseIntegerSetting },
+            { urlKey: 'fontSize', defaultValue: DEFAULT_FONT_SIZE, slider: fontSizeSlider, apply: handleFontSizeChange, get: () => currentFontSize, parse: parseIntegerSetting },
+            { urlKey: 'tailCurve', defaultValue: DEFAULT_TAIL_CURVE_PERCENT, slider: tailCurveSlider, apply: updateTailCurveDisplay, get: () => currentTailCurvePercent, parse: parseIntegerSetting },
+            { urlKey: 'tailFloor', defaultValue: DEFAULT_TAIL_FLOOR_PERCENT, slider: tailFloorSlider, apply: updateTailFloorDisplay, get: () => currentTailFloorPercent, parse: parseIntegerSetting },
+            { urlKey: 'rainDepth', defaultValue: DEFAULT_RAIN_DEPTH_PERCENT, slider: rainDepthSlider, apply: handleRainDepthChange, get: () => currentRainDepthPercent, parse: parseIntegerSetting, relevant: () => !isFlatGridMode },
+            { urlKey: 'rainVariety', defaultValue: DEFAULT_RAIN_VARIETY_PERCENT, slider: rainVarietySlider, apply: handleRainVarietyChange, get: () => currentRainVarietyPercent, parse: parseIntegerSetting },
+            { urlKey: 'laneDrift', defaultValue: DEFAULT_LANE_DRIFT_PERCENT, slider: laneDriftSlider, apply: handleLaneDriftChange, get: () => currentLaneDriftPercent, parse: parseIntegerSetting, relevant: () => !isFlatGridMode },
+            { urlKey: 'gapDensity', defaultValue: DEFAULT_GAP_DENSITY_PERCENT, slider: gapDensitySlider, apply: handleGapDensityChange, get: () => currentGapDensityPercent, parse: parseIntegerSetting },
+            { urlKey: 'leaderHeat', defaultValue: DEFAULT_LEADER_HEAT_PERCENT, slider: leaderHeatSlider, apply: handleLeaderHeatChange, get: () => currentLeaderHeatPercent, parse: parseIntegerSetting },
+            { urlKey: 'glyphMutation', defaultValue: DEFAULT_GLYPH_MUTATION_PERCENT, slider: glyphMutationSlider, apply: updateGlyphMutationDisplay, get: () => currentGlyphMutationPercent, parse: parseIntegerSetting },
+            { urlKey: 'crtFishbowl', defaultValue: DEFAULT_CRT_FISHBOWL_PERCENT, slider: crtFishbowlSlider, apply: updateCrtFishbowlDisplay, get: () => currentCrtFishbowlPercent, parse: parseIntegerSetting },
+            { urlKey: 'crtVignette', defaultValue: DEFAULT_CRT_VIGNETTE_PERCENT, slider: crtVignetteSlider, apply: updateCrtVignetteDisplay, get: () => currentCrtVignettePercent, parse: parseIntegerSetting },
+            { urlKey: 'crtBeamFocus', defaultValue: DEFAULT_CRT_BEAM_FOCUS_PERCENT, slider: crtBeamFocusSlider, apply: updateCrtBeamFocusDisplay, get: () => currentCrtBeamFocusPercent, parse: parseIntegerSetting },
+            { urlKey: 'crtScanlines', defaultValue: DEFAULT_CRT_SCANLINES_PERCENT, slider: crtScanlinesSlider, apply: updateCrtScanlinesDisplay, get: () => currentCrtScanlinesPercent, parse: parseIntegerSetting },
+            { urlKey: 'crtGrille', defaultValue: DEFAULT_CRT_GRILLE_PERCENT, slider: crtGrilleSlider, apply: updateCrtGrilleDisplay, get: () => currentCrtGrillePercent, parse: parseIntegerSetting },
+            { urlKey: 'crtNoise', defaultValue: DEFAULT_CRT_NOISE_PERCENT, slider: crtNoiseSlider, apply: updateCrtNoiseDisplay, get: () => currentCrtNoisePercent, parse: parseIntegerSetting },
+            { urlKey: 'crtSyncRoll', defaultValue: DEFAULT_CRT_SYNC_ROLL_PERCENT, slider: crtSyncRollSlider, apply: updateCrtSyncRollDisplay, get: () => currentCrtSyncRollPercent, parse: parseIntegerSetting },
+            { urlKey: 'crtJitter', defaultValue: DEFAULT_CRT_JITTER_PERCENT, slider: crtJitterSlider, apply: updateCrtJitterDisplay, get: () => currentCrtJitterPercent, parse: parseIntegerSetting }
+        ];
         const e2eState = {
             enabled: E2E_URL_PARAMS.get('e2e') === '1',
             seed: E2E_DEFAULT_SEED,
             randomState: E2E_DEFAULT_SEED,
             scene: null,
-            forceCpuOverdrive: false,
             rainPaused: false,
             ready: false
         };
@@ -1983,7 +2153,6 @@ void main() {
             e2eState.seed = Number.isFinite(requestedSeed) ? (requestedSeed >>> 0) || E2E_DEFAULT_SEED : E2E_DEFAULT_SEED;
             e2eState.randomState = e2eState.seed;
             e2eState.scene = E2E_URL_PARAMS.get('e2eScene') || null;
-            e2eState.forceCpuOverdrive = E2E_URL_PARAMS.get('e2eForceCpuOverdrive') === '1';
             e2eState.rainPaused = true;
         }
 
@@ -2000,7 +2169,7 @@ void main() {
             return e2eState.enabled ? 0 : performance.now() / 1000;
         }
         function isE2eVisualSceneActive() {
-            return e2eState.enabled && e2eState.scene === E2E_SCENE_OVERDRIVE_DEMO;
+            return false;
         }
         function renderCurrentMatrixFrame() {
             drawMatrixRain();
@@ -2024,10 +2193,6 @@ void main() {
             e2eState.scene = sceneName || null;
             renderCurrentMatrixFrame();
         }
-        function setE2eForceCpuOverdrive(forceCpuOverdrive) {
-            e2eState.forceCpuOverdrive = !!forceCpuOverdrive;
-            renderCurrentMatrixFrame();
-        }
         function exposeE2eApi() {
             if (!e2eState.enabled) { return; }
             window.__VIBE_TEST__ = {
@@ -2043,51 +2208,197 @@ void main() {
                 setScene(sceneName) {
                     setE2eScene(sceneName);
                 },
-                setForceCpuOverdrive(forceCpuOverdrive) {
-                    setE2eForceCpuOverdrive(forceCpuOverdrive);
-                },
                 renderFrame() {
                     renderCurrentMatrixFrame();
                 },
                 getPerformanceMetrics() {
                     return { ...framePerformanceMetrics };
+                },
+                getRainColumnProfiles() {
+                    return columnProfiles.map((profile) => ({ ...profile }));
+                },
+                getRainContinuityDebug() {
+                    return {
+                        columns,
+                        profileSeeds: columnProfiles.map((profile) => ({
+                            depthRoll: profile.depthRoll,
+                            laneJitterRoll: profile.laneJitterRoll,
+                            laneDriftRoll: profile.laneDriftRoll,
+                            opacityRoll: profile.opacityRoll,
+                            speedRoll: profile.speedRoll,
+                            trailLengthRoll: profile.trailLengthRoll,
+                            gapRoll: profile.gapRoll,
+                            flipChanceRoll: profile.flipChanceRoll,
+                            leaderHeatRoll: profile.leaderHeatRoll
+                        })),
+                        dropYs: drops.map((drop) => drop?.y ?? null),
+                        trailHeads: trails.map((trail) => Array.isArray(trail)
+                            ? trail.slice(0, 8).map((trailItem) => trailItem?.char || '').join('')
+                            : '')
+                    };
+                },
+                getMatrixRenderDebug() {
+                    if (!matrixRenderStyles) {
+                        refreshMatrixRenderStyles();
+                    }
+                    return {
+                        leaderStyle: resolveMatrixGlyphStyle('leader', 0),
+                        trailStyle: resolveMatrixGlyphStyle('trail', 0)
+                    };
                 }
             };
         }
 
         // --- Matrix Rain Setup ---
         let columns;
-        function calculateColumnDelay(baseFps) {
+        function chooseRainDepthProfile(depthRoll = getRandomValue()) {
+            if (isFlatGridMode) { return 'mid'; }
+            const roll = depthRoll;
+            const depthBias = (currentRainDepthPercent - DEFAULT_RAIN_DEPTH_PERCENT) / 100;
+            const backThreshold = Math.max(0.08, Math.min(0.52, 0.28 - (depthBias * 0.34)));
+            const midThreshold = Math.max(backThreshold + 0.12, Math.min(0.92, 0.78 - (depthBias * 0.16)));
+            if (roll < backThreshold) { return 'back'; }
+            if (roll < midThreshold) { return 'mid'; }
+            return 'front';
+        }
+        function createColumnProfile(columnIndex, columnWidth) {
+            const profile = {
+                columnIndex,
+                columnWidth,
+                depthRoll: getRandomValue(),
+                laneJitterRoll: getRandomValue(),
+                laneDriftRoll: getRandomValue(),
+                driftPhase: getRandomValue() * Math.PI * 2,
+                dormantRoll: getRandomValue(),
+                opacityRoll: getRandomValue(),
+                speedRoll: getRandomValue(),
+                trailLengthRoll: getRandomValue(),
+                gapRoll: getRandomValue(),
+                flipChanceRoll: getRandomValue(),
+                flipCooldownRoll: getRandomValue(),
+                leaderHeatRoll: getRandomValue(),
+                leaderHotRoll: getRandomValue(),
+                delayRoll: getRandomValue()
+            };
+            return refreshRainColumnProfile(profile, columnWidth);
+        }
+        function refreshRainColumnProfile(profile, columnWidth = profile?.columnWidth || currentFontSize * COLUMN_SPACING_FACTOR) {
+            if (!profile) { return null; }
+            profile.columnWidth = columnWidth;
+            const depth = chooseRainDepthProfile(profile.depthRoll);
+            const depthProfile = RAIN_DEPTH_PROFILES[depth];
+            const varietyFactor = centeredPercentFactor(currentRainVarietyPercent);
+            const gapFactor = centeredPercentFactor(currentGapDensityPercent);
+            const heatFactor = centeredPercentFactor(currentLeaderHeatPercent);
+            if (isFlatGridMode) {
+                const isDormant = profile.dormantRoll < 0.07 * varietyFactor;
+                profile.depth = depth;
+                profile.xOffset = 0;
+                profile.driftAmount = 0;
+                profile.opacityScale = Math.max(0.42, 1 + ((profile.opacityRoll - 0.5) * 0.62 * varietyFactor));
+                profile.speedScale = isDormant ? 0.35 : Math.max(0.18, 1 + ((profile.speedRoll - 0.5) * 0.92 * varietyFactor));
+                profile.trailLengthScale = Math.max(0.45, 1 + ((profile.trailLengthRoll - 0.5) * 0.75 * varietyFactor));
+                profile.gapChance = Math.min(0.42, (0.085 + (profile.gapRoll * 0.05 * varietyFactor)) * gapFactor);
+                profile.flipChanceScale = Math.max(0.25, 1 + ((profile.flipChanceRoll - 0.5) * 1.7 * varietyFactor));
+                profile.flipCooldownMs = Math.round(180 + (profile.flipCooldownRoll * 780));
+                profile.leaderHeat = profile.leaderHeatRoll * 0.58 * heatFactor;
+                profile.dormant = isDormant;
+                return profile;
+            }
+            const driftFactor = centeredPercentFactor(currentLaneDriftPercent);
+            const isDormant = profile.dormantRoll < 0.07 * (0.35 + (varietyFactor * 0.65));
+            const baseGapChance = depth === 'back' ? 0.14 : depth === 'mid' ? 0.085 : 0.045;
+            const speedRange = 0.92 * varietyFactor;
+            const trailLengthRange = (depth === 'front' ? 0.6 : 0.44) * varietyFactor;
+            profile.depth = depth;
+            profile.xOffset = (profile.laneJitterRoll - 0.5) * columnWidth * 0.34 * driftFactor;
+            profile.driftAmount = (profile.laneDriftRoll - 0.5) * columnWidth * 0.08 * driftFactor;
+            profile.opacityScale = depthProfile.opacity * (0.72 + (profile.opacityRoll * 0.62 * varietyFactor));
+            profile.speedScale = isDormant ? 0.35 : depthProfile.speed * (0.66 + (profile.speedRoll * speedRange));
+            profile.trailLengthScale = 0.42 + (profile.trailLengthRoll * trailLengthRange);
+            profile.gapChance = Math.min(0.42, (baseGapChance + (profile.gapRoll * 0.05 * varietyFactor)) * gapFactor);
+            profile.flipChanceScale = depthProfile.flip * (0.35 + (profile.flipChanceRoll * 2.55 * varietyFactor));
+            profile.flipCooldownMs = Math.round(120 + (profile.flipCooldownRoll * (depth === 'front' ? 520 : 920)));
+            profile.leaderHeat = (depth === 'front' && profile.leaderHotRoll > 0.72 ? 1 : profile.leaderHeatRoll * 0.42) * heatFactor;
+            profile.dormant = isDormant;
+            return profile;
+        }
+        function refreshRainColumnProfiles({ updateDelays = true } = {}) {
+            const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
+            columnProfiles.forEach((profile, index) => {
+                refreshRainColumnProfile(profile, effectiveColumnWidth);
+                if (updateDelays && drops[index]) {
+                    drops[index].delay = calculateColumnDelay(currentRainFPS, profile);
+                }
+            });
+        }
+        function getColumnXPosition(columnIndex, columnWidth, profile, now) {
+            const drift = profile ? Math.sin((now * 0.00013) + profile.driftPhase) * profile.driftAmount : 0;
+            return (columnIndex * columnWidth) + (profile?.xOffset || 0) + drift;
+        }
+        function getColumnFont(profile, scale = 1) {
+            const fontScale = isFlatGridMode ? 1 : (profile?.depth ? RAIN_DEPTH_PROFILES[profile.depth].scale : 1);
+            const fontSize = Math.max(1, currentFontSize * fontScale * scale);
+            const fontFamily = matrixRenderStyles?.fontFamily || getComputedStyle(bodyElement).fontFamily;
+            return `${fontSize}px ${fontFamily}`;
+        }
+        function setMatrixContextFontForProfile(targetCtx, profile, scale = 1) {
+            targetCtx.font = getColumnFont(profile, scale);
+        }
+        function getColumnTrailLength(profile) {
+            const activeLength = getActiveTrailLength();
+            if (!profile) { return activeLength; }
+            return Math.max(MIN_COLUMN_TRAIL_LENGTH, Math.min(activeLength, Math.round(activeLength * profile.trailLengthScale)));
+        }
+        function getColumnGlyphOpacity(profile, trailIndex) {
+            if (!profile) { return 1; }
+            const depthFloor = profile.depth === 'back' ? 0.18 : profile.depth === 'mid' ? 0.42 : 0.68;
+            const headLift = trailIndex <= 1 ? 1 : Math.max(depthFloor, 1 - (trailIndex * 0.018));
+            return clampUnit(profile.opacityScale * headLift);
+        }
+        function getTrailItemShimmerBrightness(trailItem) {
+            return clampUnit(trailItem?.shimmerBrightness ?? SHIMMER_DEFAULT_BRIGHTNESS);
+        }
+        function getColumnLeaderRgb(profile, trailIndex = 0) {
+            if (isConstructMode) { return null; }
+            const heat = clampUnit((profile?.leaderHeat || 0) + (trailIndex === 0 ? 0.25 : 0));
+            return mixRgb(MATRIX_LEADER_RGB, MATRIX_HOT_LEADER_RGB, heat);
+        }
+        function shouldRenderTrailItem(profile, trailIndex, trailItem) {
+            if (!trailItem || trailItem.visible === false) { return false; }
+            if (!profile || trailIndex <= 0) { return true; }
+            const trailLimit = getColumnTrailLength(profile);
+            if (trailIndex >= trailLimit) { return false; }
+            if (trailIndex > 2 && trailItem.gapSeed < profile.gapChance) { return false; }
+            if (trailIndex > 8 && trailItem.gapSeed > 0.96 && profile.depth !== 'front') { return false; }
+            return true;
+        }
+        function calculateColumnDelay(baseFps, profile = null) {
             const minMultiplier = 1.0 - MAX_FPS_PERCENT_OFFSET;
             const maxMultiplier = 1.0 + MAX_FPS_PERCENT_OFFSET;
-            const randomMultiplier = getRandomValue() * (maxMultiplier - minMultiplier) + minMultiplier;
-            const columnFps = baseFps * randomMultiplier;
+            const randomRoll = profile?.delayRoll ?? getRandomValue();
+            const randomMultiplier = isFlatGridMode ? 1 : (randomRoll * (maxMultiplier - minMultiplier) + minMultiplier);
+            const columnFps = baseFps * randomMultiplier * (profile?.speedScale || 1);
             const finalColumnFps = Math.max(0.05, columnFps);
             return 1000 / finalColumnFps;
         }
         function setupCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            matrixFillCanvas.width = window.innerWidth; matrixFillCanvas.height = window.innerHeight;
-            matrixHighlightCanvas.width = window.innerWidth; matrixHighlightCanvas.height = window.innerHeight;
-            matrixFxMaskCanvas.width = Math.max(1, Math.floor(window.innerWidth * NON_CRT_FX_SCALE));
-            matrixFxMaskCanvas.height = Math.max(1, Math.floor(window.innerHeight * NON_CRT_FX_SCALE));
-            matrixFxCanvas.width = matrixFxMaskCanvas.width; matrixFxCanvas.height = matrixFxMaskCanvas.height;
             crtCanvas.width = window.innerWidth; crtCanvas.height = window.innerHeight;
             crtSourceCanvas.width = Math.max(1, Math.floor(window.innerWidth * CRT_SOURCE_SCALE));
             crtSourceCanvas.height = Math.max(1, Math.floor(window.innerHeight * CRT_SOURCE_SCALE));
             crtUiCanvas.width = window.innerWidth; crtUiCanvas.height = window.innerHeight;
             updateTailLengthDisplay();
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
-            columns = effectiveColumnWidth > 0 ? Math.max(1, Math.floor(canvas.width / effectiveColumnWidth)) : 1;
-            drops = []; trails = [];
+            columns = effectiveColumnWidth > 0 ? Math.max(1, Math.ceil(canvas.width / effectiveColumnWidth) + 2) : 1;
+            drops = []; trails = []; columnProfiles = [];
             for (let i = 0; i < columns; i++) {
-                drops[i] = { y: Math.floor(getRandomValue() * canvas.height / currentFontSize), delay: calculateColumnDelay(currentRainFPS), lastUpdateTime: 0 };
+                columnProfiles[i] = createColumnProfile(i, effectiveColumnWidth);
+                drops[i] = { y: Math.floor(getRandomValue() * canvas.height / currentFontSize), delay: calculateColumnDelay(currentRainFPS, columnProfiles[i]), lastUpdateTime: 0 };
                 trails[i] = [];
             }
             matrixRenderStyles = null;
             markCrtSnapshotDirty();
-            markOverdriveMaskDirty();
-            setupNonCrtFxRenderer();
             setupCrtRenderer();
             updateCrtSafeArea();
         }
@@ -2164,29 +2475,22 @@ void main() {
                 crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MIN_FILTER, crtGl.LINEAR);
                 crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MAG_FILTER, crtGl.LINEAR);
 
-                crtFxTexture = crtGl.createTexture();
-                crtGl.bindTexture(crtGl.TEXTURE_2D, crtFxTexture);
-                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_S, crtGl.CLAMP_TO_EDGE);
-                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_T, crtGl.CLAMP_TO_EDGE);
-                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MIN_FILTER, crtGl.LINEAR);
-                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MAG_FILTER, crtGl.LINEAR);
-
                 crtUniforms = {
                     matrixTexture: crtGl.getUniformLocation(crtProgram, 'u_matrixTex'),
                     uiTexture: crtGl.getUniformLocation(crtProgram, 'u_uiTex'),
-                    fxTexture: crtGl.getUniformLocation(crtProgram, 'u_fxTex'),
                     resolution: crtGl.getUniformLocation(crtProgram, 'u_resolution'),
                     matrixResolution: crtGl.getUniformLocation(crtProgram, 'u_matrixResolution'),
-                    fxResolution: crtGl.getUniformLocation(crtProgram, 'u_fxResolution'),
                     time: crtGl.getUniformLocation(crtProgram, 'u_time'),
                     intensity: crtGl.getUniformLocation(crtProgram, 'u_intensity'),
-                    leadFringe: crtGl.getUniformLocation(crtProgram, 'u_leadFringe'),
-                    overdriveMode: crtGl.getUniformLocation(crtProgram, 'u_overdriveMode'),
                     fishbowl: crtGl.getUniformLocation(crtProgram, 'u_fishbowl'),
                     vignette: crtGl.getUniformLocation(crtProgram, 'u_vignette'),
-                    constructMode: crtGl.getUniformLocation(crtProgram, 'u_constructMode'),
-                    overdriveBloom: crtGl.getUniformLocation(crtProgram, 'u_overdriveBloom'),
-                    overdriveGain: crtGl.getUniformLocation(crtProgram, 'u_overdriveGain')
+                    beamFocus: crtGl.getUniformLocation(crtProgram, 'u_beamFocus'),
+                    scanlines: crtGl.getUniformLocation(crtProgram, 'u_scanlines'),
+                    grille: crtGl.getUniformLocation(crtProgram, 'u_grille'),
+                    noise: crtGl.getUniformLocation(crtProgram, 'u_noise'),
+                    syncRoll: crtGl.getUniformLocation(crtProgram, 'u_syncRoll'),
+                    jitter: crtGl.getUniformLocation(crtProgram, 'u_jitter'),
+                    constructMode: crtGl.getUniformLocation(crtProgram, 'u_constructMode')
                 };
 
                 crtReady = true;
@@ -2200,73 +2504,6 @@ void main() {
                 if (!crtWarningShown) {
                     console.warn('// CRT renderer failed, falling back to standard rain canvas.', error);
                     crtWarningShown = true;
-                }
-            }
-        }
-        function setupNonCrtFxRenderer() {
-            if (!matrixFxGl) {
-                nonCrtCompositeAvailable = false;
-                if (!nonCrtFxWarningShown) {
-                    console.warn('// Non-CRT FX renderer unavailable: WebGL not supported.');
-                    nonCrtFxWarningShown = true;
-                }
-                return;
-            }
-
-            matrixFxGl.viewport(0, 0, matrixFxCanvas.width, matrixFxCanvas.height);
-            if (nonCrtFxReady) { return; }
-
-            try {
-                const vertexShader = createWebGlShader(matrixFxGl, matrixFxGl.VERTEX_SHADER, getInlineShaderSource('crt-vertex-shader'), 'Matrix FX vertex shader compilation failed.');
-                const fragmentShader = createWebGlShader(matrixFxGl, matrixFxGl.FRAGMENT_SHADER, getInlineShaderSource('matrix-fx-fragment-shader'), 'Matrix FX fragment shader compilation failed.');
-                nonCrtFxProgram = matrixFxGl.createProgram();
-                matrixFxGl.attachShader(nonCrtFxProgram, vertexShader);
-                matrixFxGl.attachShader(nonCrtFxProgram, fragmentShader);
-                matrixFxGl.linkProgram(nonCrtFxProgram);
-                if (!matrixFxGl.getProgramParameter(nonCrtFxProgram, matrixFxGl.LINK_STATUS)) {
-                    throw new Error(matrixFxGl.getProgramInfoLog(nonCrtFxProgram) || 'Matrix FX shader link failed.');
-                }
-
-                nonCrtFxPositionBuffer = matrixFxGl.createBuffer();
-                matrixFxGl.bindBuffer(matrixFxGl.ARRAY_BUFFER, nonCrtFxPositionBuffer);
-                matrixFxGl.bufferData(matrixFxGl.ARRAY_BUFFER, new Float32Array([
-                    -1, -1, 1, -1, -1, 1,
-                    -1, 1, 1, -1, 1, 1
-                ]), matrixFxGl.STATIC_DRAW);
-
-                nonCrtFxTexCoordBuffer = matrixFxGl.createBuffer();
-                matrixFxGl.bindBuffer(matrixFxGl.ARRAY_BUFFER, nonCrtFxTexCoordBuffer);
-                matrixFxGl.bufferData(matrixFxGl.ARRAY_BUFFER, new Float32Array([
-                    0, 1, 1, 1, 0, 0,
-                    0, 0, 1, 1, 1, 0
-                ]), matrixFxGl.STATIC_DRAW);
-
-                nonCrtFxAttributeLocations = {
-                    position: matrixFxGl.getAttribLocation(nonCrtFxProgram, 'aPosition'),
-                    texCoord: matrixFxGl.getAttribLocation(nonCrtFxProgram, 'aTexCoord')
-                };
-                nonCrtFxTexture = matrixFxGl.createTexture();
-                matrixFxGl.bindTexture(matrixFxGl.TEXTURE_2D, nonCrtFxTexture);
-                matrixFxGl.texParameteri(matrixFxGl.TEXTURE_2D, matrixFxGl.TEXTURE_WRAP_S, matrixFxGl.CLAMP_TO_EDGE);
-                matrixFxGl.texParameteri(matrixFxGl.TEXTURE_2D, matrixFxGl.TEXTURE_WRAP_T, matrixFxGl.CLAMP_TO_EDGE);
-                matrixFxGl.texParameteri(matrixFxGl.TEXTURE_2D, matrixFxGl.TEXTURE_MIN_FILTER, matrixFxGl.LINEAR);
-                matrixFxGl.texParameteri(matrixFxGl.TEXTURE_2D, matrixFxGl.TEXTURE_MAG_FILTER, matrixFxGl.LINEAR);
-                nonCrtFxUniforms = {
-                    fxTexture: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_fxTex'),
-                    resolution: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_resolution'),
-                    overdriveBloom: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_overdriveBloom'),
-                    overdriveGain: matrixFxGl.getUniformLocation(nonCrtFxProgram, 'u_overdriveGain')
-                };
-
-                nonCrtFxReady = true;
-                nonCrtCompositeAvailable = true;
-                ensureNonCrtFxTextureSize();
-            } catch (error) {
-                nonCrtFxReady = false;
-                nonCrtCompositeAvailable = false;
-                if (!nonCrtFxWarningShown) {
-                    console.warn('// Non-CRT FX renderer failed, falling back to CPU glow path.', error);
-                    nonCrtFxWarningShown = true;
                 }
             }
         }
@@ -2287,22 +2524,6 @@ void main() {
                 crtUiTextureHeight = crtUiCanvas.height;
                 crtUiSnapshotDirty = true;
             }
-            if (crtFxTexture && matrixFxMaskCanvas.width > 0 && matrixFxMaskCanvas.height > 0 && (crtFxTextureWidth !== matrixFxMaskCanvas.width || crtFxTextureHeight !== matrixFxMaskCanvas.height)) {
-                crtGl.activeTexture(crtGl.TEXTURE2);
-                crtGl.bindTexture(crtGl.TEXTURE_2D, crtFxTexture);
-                crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, null);
-                crtFxTextureWidth = matrixFxMaskCanvas.width;
-                crtFxTextureHeight = matrixFxMaskCanvas.height;
-            }
-        }
-        function ensureNonCrtFxTextureSize() {
-            if (!matrixFxGl || !nonCrtFxTexture || matrixFxMaskCanvas.width <= 0 || matrixFxMaskCanvas.height <= 0) { return; }
-            if (nonCrtFxTextureWidth === matrixFxMaskCanvas.width && nonCrtFxTextureHeight === matrixFxMaskCanvas.height) { return; }
-            matrixFxGl.activeTexture(matrixFxGl.TEXTURE0);
-            matrixFxGl.bindTexture(matrixFxGl.TEXTURE_2D, nonCrtFxTexture);
-            matrixFxGl.texImage2D(matrixFxGl.TEXTURE_2D, 0, matrixFxGl.RGBA, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height, 0, matrixFxGl.RGBA, matrixFxGl.UNSIGNED_BYTE, null);
-            nonCrtFxTextureWidth = matrixFxMaskCanvas.width;
-            nonCrtFxTextureHeight = matrixFxMaskCanvas.height;
         }
         function getCrtFishbowlAmount() {
             return (currentCrtFishbowlPercent / 100) * CRT_FISHBOWL_MULTIPLIER;
@@ -2508,23 +2729,52 @@ void main() {
             if (isConstructMode || !(element instanceof Element)) { return false; }
             return !!element.closest('.command-item.selected, .command-item:hover, .command-item.crt-pressed, #managementPanel button.active, #managementPanel button:hover, #managementPanel button:active, #managementPanel button.crt-pressed, #menuToggleBtn.crt-pressed, #undoBtn.crt-pressed');
         }
+        function getAlignedCrtTextX(text, rect, style) {
+            const textWidth = crtPaintCtx.measureText(text).width;
+            const textAlign = style.textAlign;
+            if (textAlign === 'center') {
+                return rect.left + Math.max(0, (rect.width - textWidth) / 2);
+            }
+            if (textAlign === 'right' || textAlign === 'end') {
+                return rect.right - textWidth;
+            }
+            return rect.left;
+        }
         function drawCrtText(text, rect, maxWidth, style, emphasizeInvertedText = false) {
+            const clipWidth = Math.max(maxWidth || rect.width, 10);
+            const clipHeight = Math.max(rect.height + 6, parseFloat(style.lineHeight) || parseFloat(style.fontSize) || rect.height);
+            crtPaintCtx.save();
+            crtPaintCtx.beginPath();
+            crtPaintCtx.rect(rect.left - 2, rect.top - 3, clipWidth + 4, clipHeight);
+            crtPaintCtx.clip();
             if (!emphasizeInvertedText) {
-                crtPaintCtx.fillText(text, rect.left, rect.top, maxWidth);
+                crtPaintCtx.fillText(text, getAlignedCrtTextX(text, rect, style), rect.top);
+                crtPaintCtx.restore();
                 return;
             }
 
-            crtPaintCtx.save();
             applyTextStyleForCrt(style, '#000000', '800');
             crtPaintCtx.strokeStyle = '#000000';
             crtPaintCtx.lineJoin = 'round';
             crtPaintCtx.lineWidth = Math.max(2, parseFloat(style.fontSize) * 0.12);
-            crtPaintCtx.strokeText(text, rect.left, rect.top, maxWidth);
-            crtPaintCtx.fillText(text, rect.left, rect.top, maxWidth);
-            crtPaintCtx.fillText(text, rect.left + 0.75, rect.top, maxWidth);
+            const alignedX = getAlignedCrtTextX(text, rect, style);
+            crtPaintCtx.strokeText(text, alignedX, rect.top);
+            crtPaintCtx.fillText(text, alignedX, rect.top);
+            crtPaintCtx.fillText(text, alignedX + 0.75, rect.top);
             crtPaintCtx.restore();
         }
-        function wrapCrtTextToRects(text, rects) {
+        function shouldUseUnifiedCrtTextWrap(parent) {
+            return parent instanceof Element && !!parent.closest('#selectedNameDisplay, .setting-help-popover');
+        }
+        function getCrtTextContentRect(parent, style, fallbackRect) {
+            const parentRect = parent.getBoundingClientRect();
+            const paddingLeft = parseFloat(style.paddingLeft) || 0;
+            const paddingRight = parseFloat(style.paddingRight) || 0;
+            const left = parentRect.left + paddingLeft;
+            const width = Math.max(10, parentRect.width - paddingLeft - paddingRight);
+            return { left, right: left + width, width, top: fallbackRect.top, bottom: fallbackRect.bottom, height: fallbackRect.height };
+        }
+        function wrapCrtTextToRects(text, rects, wrapWidth = null) {
             const normalizedText = text.replace(/\s+/g, ' ').trim();
             if (!normalizedText) { return []; }
             if (rects.length <= 1) { return [normalizedText]; }
@@ -2534,7 +2784,7 @@ void main() {
 
             rects.forEach((rect, index) => {
                 if (words.length === 0) { return; }
-                const maxWidth = Math.max(rect.width - 4, 10);
+                const maxWidth = Math.max((wrapWidth || rect.width) - 4, 10);
                 let currentLine = '';
 
                 while (words.length > 0) {
@@ -2578,12 +2828,17 @@ void main() {
 
             applyTextStyleForCrt(style);
             const emphasizeInvertedText = shouldEmphasizeCrtInvertedText(parent);
-            const wrappedLines = wrapCrtTextToRects(text, rects);
+            const useUnifiedWrap = shouldUseUnifiedCrtTextWrap(parent);
+            const contentRect = useUnifiedWrap ? getCrtTextContentRect(parent, style, rects[0]) : null;
+            const wrappedLines = wrapCrtTextToRects(text, rects, contentRect?.width || null);
             rects.forEach((rect, index) => {
                 const lineText = wrappedLines[index];
                 if (!lineText) { return; }
-                const maxWidth = Math.max(rect.width + 6, 10);
-                drawCrtText(lineText, rect, maxWidth, style, emphasizeInvertedText);
+                const lineRect = contentRect
+                    ? { ...contentRect, top: rect.top, bottom: rect.bottom, height: rect.height }
+                    : rect;
+                const maxWidth = Math.max(lineRect.width + 6, 10);
+                drawCrtText(lineText, lineRect, maxWidth, style, emphasizeInvertedText);
             });
         }
         function drawInputForCrt(input, style, rect) {
@@ -2795,6 +3050,49 @@ void main() {
         function clampUnit(value) {
             return Math.max(0, Math.min(1, value));
         }
+        function parseIntegerSetting(value) {
+            const parsed = parseInt(value, 10);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+        function parseFloatSetting(value) {
+            const parsed = parseFloat(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+        function centeredPercentFactor(percent) {
+            return Math.max(0, percent / 50);
+        }
+        function resetRainColumns() {
+            if (!canvas.width || !canvas.height || !Array.isArray(drops) || drops.length === 0) {
+                return;
+            }
+            if (rainAnimationId !== null) {
+                cancelAnimationFrame(rainAnimationId);
+                rainAnimationId = null;
+            }
+            setupCanvas();
+            startMatrixRain();
+        }
+        function applyNumericSettingsFromURL(urlParams) {
+            NUMERIC_SETTINGS.forEach((setting) => {
+                if (!urlParams.has(setting.urlKey)) { return; }
+                const parsedValue = setting.parse(urlParams.get(setting.urlKey));
+                if (parsedValue === null) { return; }
+                setting.apply(parsedValue);
+            });
+        }
+        function bindNumericSettingControls() {
+            NUMERIC_SETTINGS.forEach((setting) => {
+                if (!setting.slider) { return; }
+                setting.slider.addEventListener('input', (event) => {
+                    const parsedValue = setting.parse(event.target.value);
+                    if (parsedValue !== null) {
+                        setting.apply(parsedValue);
+                        scheduleURLUpdate();
+                    }
+                });
+                setting.slider.addEventListener('change', updateURL);
+            });
+        }
         function smoothStep01(value) {
             const t = clampUnit(value);
             return t * t * (3 - (2 * t));
@@ -2808,21 +3106,6 @@ void main() {
         function mixRgb(rgbA, rgbB, amount) {
             const t = clampUnit(amount);
             return rgbA.map((value, index) => value + ((rgbB[index] - value) * t));
-        }
-        function getEffectiveOverdriveDriveRatio(isCrtProfile = isCrtMode && !isConstructMode) {
-            const normalizedDrive = Math.max(0, currentOverdriveDrivePercent / 100);
-            if (isCrtProfile) { return normalizedDrive; }
-            if (normalizedDrive <= 1) { return normalizedDrive * NON_CRT_OVERDRIVE_DRIVE_SCALE; }
-            return NON_CRT_OVERDRIVE_DRIVE_SCALE + ((normalizedDrive - 1) * NON_CRT_OVERDRIVE_EXTRA_DRIVE_SCALE);
-        }
-        function getOverdriveAmount() {
-            if (!isOverdriveMode || isConstructMode) { return 0; }
-            const normalizedDrive = getEffectiveOverdriveDriveRatio();
-            const strength = normalizedDrive <= 1
-                ? Math.pow(normalizedDrive, OVERDRIVE_CURVE_EXPONENT)
-                : 1 + (Math.pow(normalizedDrive - 1, 1.15) * 1.65);
-            const brightnessFactor = currentBrightnessPercent / 100;
-            return Math.max(0, strength * brightnessFactor);
         }
         function getViewportTailLength() {
             const visibleRows = Math.floor(canvas.height / Math.max(1, currentFontSize));
@@ -2849,182 +3132,18 @@ void main() {
             return clampUnit(currentTailFloorPercent / 100);
         }
         function getGlitchFlipChance() {
-            const normalizedFrequency = clampUnit(currentGlitchFrequencyPercent / 100);
-            return DEFAULT_GLITCH_FLIP_CHANCE * Math.pow(normalizedFrequency / 0.5, 2.0);
-        }
-        function getPhosphorPersistenceMs(isCrtProfile = isCrtMode && !isConstructMode) {
-            const persistenceScale = isCrtProfile ? 1 : NON_CRT_OVERDRIVE_PERSISTENCE_SCALE;
-            return Math.max(80, Math.round(currentOverdrivePersistenceMs * persistenceScale));
-        }
-        function getPhosphorBloomAmount(isCrtProfile = isCrtMode && !isConstructMode) {
-            const bloomScale = isCrtProfile ? 1 : NON_CRT_OVERDRIVE_BLOOM_SCALE;
-            return Math.max(0, (currentOverdriveBloomPercent / 100) * bloomScale);
-        }
-        function getOverdriveFxUniformState() {
-            const isCrtProfile = isCrtMode && !isConstructMode;
-            const bloomAmount = getPhosphorBloomAmount(isCrtProfile);
-            const driveAmount = getEffectiveOverdriveDriveRatio(isCrtProfile);
-            return {
-                bloomUniform: clampUnit(Math.min(1, bloomAmount / 1.8)),
-                gainUniform: 0.7 + (Math.min(2.4, driveAmount) * 0.55)
-            };
-        }
-        function getPhosphorExcitation(elapsedMs, persistenceMs, eventStrength = 1) {
-            const normalizedStrength = clampUnit(eventStrength);
-            if (!Number.isFinite(elapsedMs) || elapsedMs < 0) { return normalizedStrength; }
-            return clampUnit(normalizedStrength * Math.exp(-elapsedMs / Math.max(1, persistenceMs)));
-        }
-        function resolveCrtOverdriveProfile(baseTrailOpacity, overdriveAmount, phosphorExcitation, isCrtProfile) {
-            const normalizedTrailOpacity = clampUnit(baseTrailOpacity);
-            const normalizedExcitation = clampUnit(phosphorExcitation);
-            const beamEnergy = Math.max(0, overdriveAmount * normalizedExcitation);
-            const bloomAmount = getPhosphorBloomAmount(isCrtProfile);
-            const profile = isCrtProfile ? CRT_OVERDRIVE_VISUAL_PROFILE : NON_CRT_OVERDRIVE_VISUAL_PROFILE;
-            const fillLift = 1 - Math.exp(-beamEnergy * profile.fillLiftScale);
-            const emittedGreen = Math.round(255 * clampUnit(normalizedTrailOpacity + ((1 - normalizedTrailOpacity) * fillLift)));
-            const phosphorVisibility = clampUnit(0.18 + normalizedTrailOpacity + (Math.min(beamEnergy, 3.5) * 0.22));
-            const glowEnergy = beamEnergy * clampUnit((emittedGreen / 255) * 1.05);
-            const glowAlpha = Math.min(1, glowEnergy * phosphorVisibility * profile.glowAlphaScale * (profile.bloomAlphaBase + (bloomAmount * profile.bloomAlphaScale)));
-            const glowBlur = profile.baseGlowBlur + (bloomAmount * profile.bloomBlurScale) + (Math.min(glowEnergy, 3.2) * profile.energyBlurScale);
-            const glowFillAlpha = Math.min(1, glowEnergy * profile.glowFillScale);
-            const excitationAlpha = Math.min(1, (1 - Math.exp(-beamEnergy * 0.9)) * (profile.excitationBase + (Math.min(bloomAmount, 1.8) * profile.excitationBloomScale)));
-            const glowPasses = [];
-
-            if (glowAlpha > 0.002) {
-                glowPasses.push({
-                    fillStyle: toRgbaString([0, 255, 0], glowFillAlpha),
-                    shadowColor: toRgbaString([0, 255, 0], glowAlpha),
-                    shadowBlur: glowBlur,
-                    compositeOperation: 'lighter'
-                });
-            }
-
-            return {
-                fillStyle: toRgbaString([0, emittedGreen, 0], 1),
-                shadowColor: 'transparent',
-                shadowBlur: 0,
-                glowPasses,
-                excitationAlpha
-            };
+            return DEFAULT_GLITCH_FLIP_CHANCE * centeredPercentFactor(currentGlyphMutationPercent);
         }
         function getTrailOpacity(trailIndex) {
             return trailOpacityCache[trailIndex] ?? 0;
-        }
-        function getOverdriveExcitationState(elapsedMs, baseDurationMs, options = {}) {
-            const eventStrength = clampUnit(options.eventStrength ?? 1);
-            const persistenceMs = getPhosphorPersistenceMs();
-            if (!Number.isFinite(elapsedMs) || elapsedMs < 0) {
-                return { fillActive: true, glowActive: true, phosphorExcitation: eventStrength, glowDurationMs: persistenceMs };
-            }
-            const glowDurationMs = Math.max(baseDurationMs, persistenceMs * 3);
-            const phosphorExcitation = elapsedMs < glowDurationMs ? getPhosphorExcitation(elapsedMs, persistenceMs, eventStrength) : 0;
-            const active = phosphorExcitation > 0.015;
-            return {
-                fillActive: active,
-                glowActive: active,
-                phosphorExcitation,
-                glowDurationMs
-            };
-        }
-        function getOverlayMaskVisibility(element) {
-            if (!element) { return false; }
-            if (element === managementPanel) {
-                return managementPanel.classList.contains('visible');
-            }
-            if (element === helpModal) {
-                return helpModalOverlay.classList.contains('visible');
-            }
-            if (element === commandPalette) {
-                return commandPaletteOverlay.classList.contains('visible');
-            }
-            return true;
-        }
-        function markOverdriveMaskDirty() {
-            overdriveMaskDirty = true;
-        }
-        function cancelOverdriveMaskTransitionRefresh() {
-            if (overdriveMaskTransitionFrameId !== null) {
-                cancelAnimationFrame(overdriveMaskTransitionFrameId);
-                overdriveMaskTransitionFrameId = null;
-            }
-            overdriveMaskTransitionEndTime = 0;
-        }
-        function markOverdriveMaskDirtyDuringTransition(durationMs) {
-            markOverdriveMaskDirty();
-            if (isCrtMode || !isOverdriveMode || isConstructMode) { return; }
-            const transitionDuration = Math.max(0, durationMs || 0);
-            const refreshBufferMs = 80;
-            overdriveMaskTransitionEndTime = Math.max(overdriveMaskTransitionEndTime, performance.now() + transitionDuration + refreshBufferMs);
-            if (overdriveMaskTransitionFrameId !== null) { return; }
-
-            const refreshDuringTransition = (now) => {
-                overdriveMaskTransitionFrameId = null;
-                markOverdriveMaskDirty();
-                if (now < overdriveMaskTransitionEndTime) {
-                    overdriveMaskTransitionFrameId = requestAnimationFrame(refreshDuringTransition);
-                }
-            };
-
-            overdriveMaskTransitionFrameId = requestAnimationFrame(refreshDuringTransition);
-        }
-        function computeOverdriveMaskRects() {
-            return OVERDRIVE_MASK_ELEMENTS
-                .filter(element => getOverlayMaskVisibility(element) && isElementVisibleForCrt(element))
-                .map(element => element.getBoundingClientRect())
-                .filter(rect => rect.width > 0 && rect.height > 0);
-        }
-        function getOverdriveMaskRects() {
-            if (overdriveMaskDirty) {
-                overdriveMaskRectsCache = computeOverdriveMaskRects();
-                overdriveMaskDirty = false;
-            }
-            return overdriveMaskRectsCache;
-        }
-        function isOverdriveMaskedAtGlyph(x, y, width, height, maskRects) {
-            if (!maskRects || maskRects.length === 0) { return false; }
-            const glyphRect = {
-                left: x,
-                right: x + width,
-                top: y - currentFontSize,
-                bottom: y + Math.max(2, currentFontSize * 0.18)
-            };
-            return maskRects.some(rect =>
-                glyphRect.right > rect.left &&
-                glyphRect.left < rect.right &&
-                glyphRect.bottom > rect.top &&
-                glyphRect.top < rect.bottom
-            );
-        }
-        function getIntersectingOverdriveMaskRects(x, y, width, height, maskRects) {
-            if (!maskRects || maskRects.length === 0) { return []; }
-            const glyphRect = {
-                left: x,
-                right: x + width,
-                top: y - currentFontSize,
-                bottom: y + Math.max(2, currentFontSize * 0.18)
-            };
-            return maskRects.filter(rect =>
-                glyphRect.right > rect.left &&
-                glyphRect.left < rect.right &&
-                glyphRect.bottom > rect.top &&
-                glyphRect.top < rect.bottom
-            );
-        }
-        function clearMaskedRects(targetCtx, maskRects, scale = 1) {
-            if (!targetCtx || !maskRects || maskRects.length === 0) { return; }
-            maskRects.forEach(rect => {
-                targetCtx.clearRect(rect.left * scale, rect.top * scale, rect.width * scale, rect.height * scale);
-            });
-        }
-        function shouldRenderMaskedFallbackFill(x, y, width, height, maskRects) {
-            return isOverdriveMaskedAtGlyph(x, y, width, height, maskRects);
         }
         function refreshMatrixRenderStyles() {
             const computedStyle = getComputedStyle(bodyElement);
             const trailColorRgb = isConstructMode ? computedStyle.getPropertyValue('--construct-text-rgb').trim() : computedStyle.getPropertyValue('--matrix-green-rgb').trim();
             const trailRgb = parseRgbTriplet(trailColorRgb);
-            const leadRgb = isConstructMode ? trailRgb : [255, 255, 255];
-            const flashRgb = isConstructMode ? trailRgb : [255, 255, 255];
+            const leadRgb = isConstructMode ? trailRgb : MATRIX_LEADER_RGB;
+            const flashRgb = isConstructMode ? trailRgb : MATRIX_HOT_LEADER_RGB;
+            const fontFamily = computedStyle.fontFamily;
             matrixRenderStyles = {
                 bgColor: isConstructMode ? `rgba(${computedStyle.getPropertyValue('--construct-bg-rgb').trim()}, 0.1)` : 'rgba(0, 0, 0, 0.1)',
                 trailColorRgb,
@@ -3033,7 +3152,8 @@ void main() {
                 leadRgb,
                 flashColor: computedStyle.getPropertyValue('--flash-color').trim(),
                 flashRgb,
-                font: `${currentFontSize}px ${computedStyle.fontFamily}`
+                fontFamily,
+                font: `${currentFontSize}px ${fontFamily}`
             };
             const trailCurveProfile = getTailCurveProfile();
             const activeTrailLength = getActiveTrailLength();
@@ -3052,12 +3172,7 @@ void main() {
                 refreshMatrixRenderStyles();
             }
 
-            const overdriveAmount = getOverdriveAmount();
             const baseTrailOpacity = trailIndex > 0 ? getTrailOpacity(trailIndex) : 1;
-            const isOverdriveAllowed = !options.disableOverdrive && !isConstructMode;
-            const isCrtProfile = isCrtMode && !isConstructMode;
-            const isLegacyFringeMode = isCrtProfile && !isOverdriveMode && !options.disableOverdrive;
-            const phosphorExcitation = options.phosphorExcitation ?? 1;
             if (kind === 'trail') {
                 return {
                     fillStyle: trailFillStyleCache[trailIndex] || `rgba(${matrixRenderStyles.trailColorRgb}, 0)`,
@@ -3066,8 +3181,7 @@ void main() {
                     glowPasses: []
                 };
             }
-
-            if (options.disableOverdrive && !isConstructMode) {
+            if (kind === 'glitch') {
                 return {
                     fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity),
                     shadowColor: 'transparent',
@@ -3075,30 +3189,12 @@ void main() {
                     glowPasses: []
                 };
             }
-
-            if (isLegacyFringeMode) {
-                if (kind === 'glitch') {
-                    return { fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0, glowPasses: [] };
-                }
-                return { fillStyle: toRgbaString(matrixRenderStyles.leadRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0, glowPasses: [] };
-            }
-
-            if (overdriveAmount <= 0 || !isOverdriveAllowed || (kind === 'glitch' && !isGlitchOverdriveEnabled)) {
-                if (kind === 'glitch') {
-                    return { fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0, glowPasses: [] };
-                }
-                if (!isOverdriveMode) {
-                    return { fillStyle: toRgbaString(matrixRenderStyles.leadRgb, baseTrailOpacity), shadowColor: 'transparent', shadowBlur: 0, glowPasses: [] };
-                }
-                return {
-                    fillStyle: toRgbaString([0, Math.round(255 * baseTrailOpacity), 0], 1),
-                    shadowColor: 'transparent',
-                    shadowBlur: 0,
-                    glowPasses: []
-                };
-            }
-
-            return resolveCrtOverdriveProfile(baseTrailOpacity, overdriveAmount, phosphorExcitation, isCrtProfile);
+            return {
+                fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity),
+                shadowColor: 'transparent',
+                shadowBlur: 0,
+                glowPasses: []
+            };
         }
         function applyMatrixGlyphStyleToContext(targetCtx, style) {
             targetCtx.fillStyle = style.fillStyle;
@@ -3113,15 +3209,11 @@ void main() {
             const targetAlpha = clampUnit(options.alphaMultiplier ?? 1);
             const fillAlphaMultiplier = clampUnit(options.fillAlphaMultiplier ?? 1);
             const glowAlphaMultiplier = clampUnit(options.glowAlphaMultiplier ?? 1);
-            const countAsOverdriveOperation = options.countAsOverdriveOperation === true;
             const targetFillAlpha = clampUnit(targetAlpha * fillAlphaMultiplier);
             const targetGlowAlpha = clampUnit(targetAlpha * glowAlphaMultiplier);
             if (targetAlpha <= 0) { return; }
             const glowPasses = Array.isArray(style.glowPasses) ? style.glowPasses : [];
             if (targetGlowAlpha > 0) {
-                if (countAsOverdriveOperation) {
-                    framePerformanceMetrics.cpuOverdriveTextOps += glowPasses.length * 3;
-                }
                 glowPasses.forEach(pass => {
                     targetCtx.save();
                     targetCtx.globalAlpha = targetGlowAlpha;
@@ -3134,9 +3226,6 @@ void main() {
                 });
             }
             if (targetFillAlpha > 0) {
-                if (countAsOverdriveOperation) {
-                    framePerformanceMetrics.cpuOverdriveTextOps += 1;
-                }
                 targetCtx.save();
                 targetCtx.globalAlpha = targetFillAlpha;
                 applyMatrixGlyphStyleToContext(targetCtx, style);
@@ -3147,263 +3236,31 @@ void main() {
         function renderMatrixGlyphWithStyle(char, x, y, style) {
             renderMatrixGlyphWithStyleToContext(ctx, char, x, y, style);
         }
-        function renderGlyphFillToContext(targetCtx, char, x, y, style, options = {}) {
-            if (options.countAsOverdriveOperation === true) {
-                framePerformanceMetrics.cpuOverdriveTextOps += 1;
-            }
-            targetCtx.fillStyle = style.fillStyle;
-            targetCtx.fillText(char, x, y);
-        }
-        function createScaledFxGlowStyle(style, scale) {
-            return {
-                fillStyle: style.fillStyle,
-                shadowColor: 'transparent',
-                shadowBlur: 0,
-                glowPasses: (Array.isArray(style.glowPasses) ? style.glowPasses : []).map((pass) => ({
-                    ...pass,
-                    shadowBlur: (pass.shadowBlur || 0) * scale
-                }))
-            };
-        }
-        function renderExcitationMaskToContext(targetCtx, char, x, y, style, alphaMultiplier = 1, options = {}) {
-            const targetAlpha = clampUnit(alphaMultiplier);
-            if (targetAlpha <= 0) { return false; }
-            const glowPasses = Array.isArray(style.glowPasses) ? style.glowPasses : [];
-            if (glowPasses.length === 0) { return false; }
-            const scale = Math.max(0.01, options.scale || 1);
-            const scaledStyle = createScaledFxGlowStyle(style, scale);
-            renderMatrixGlyphWithStyleToContext(targetCtx, char, x * scale, y * scale, scaledStyle, {
-                fillAlphaMultiplier: 0,
-                glowAlphaMultiplier: targetAlpha,
-                countAsOverdriveOperation: options.countAsOverdriveOperation === true
-            });
-            return true;
-        }
-        function composeCpuMatrixFrame(frameState) {
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(matrixFillCanvas, 0, 0);
-            if (frameState.hasHighlightFill) {
-                ctx.drawImage(matrixHighlightCanvas, 0, 0);
-            }
-        }
-        function drawE2eOverdriveDemoScene(baseCtx, frameState) {
-            const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
-            const centerX = canvas.width * 0.5;
-            const centerY = canvas.height * 0.46;
-            const sceneGlyphs = [
-                { char: 'L', x: centerX, y: centerY, kind: 'leader', trailIndex: 0, elapsedMs: 160, baseDurationMs: UPDATED_CHAR_HIGHLIGHT_MS },
-                { char: 'R', x: centerX - (effectiveColumnWidth * 2.4), y: centerY + (currentFontSize * 1.5), kind: 'leader', trailIndex: 4, elapsedMs: 340, baseDurationMs: UPDATED_CHAR_HIGHLIGHT_MS },
-                { char: 'G', x: centerX + (effectiveColumnWidth * 2.4), y: centerY + (currentFontSize * 1.5), kind: 'glitch', trailIndex: 5, elapsedMs: 410, baseDurationMs: FLIP_DURATION_MS },
-                { char: 'T', x: centerX - (effectiveColumnWidth * 4.1), y: centerY + (currentFontSize * 3.8), kind: 'trail', trailIndex: 10 },
-                { char: 'Y', x: centerX + (effectiveColumnWidth * 4.1), y: centerY - (currentFontSize * 2.1), kind: 'trail', trailIndex: 14 },
-                { char: '0', x: centerX, y: centerY + (currentFontSize * 4.6), kind: 'trail', trailIndex: 18 }
-            ];
-
-            if (frameState.useGpuOverdriveLayers) {
-                sceneGlyphs.forEach((glyph) => {
-                    if (glyph.kind === 'trail') {
-                        renderGlyphFillToContext(baseCtx, glyph.char, glyph.x, glyph.y, resolveFrameBaseGlyphStyle(frameState, 'trail', glyph.trailIndex));
-                        return;
-                    }
-                    const excitationState = getOverdriveExcitationState(glyph.elapsedMs, glyph.baseDurationMs);
-                    if (shouldRenderMaskedFallbackFill(glyph.x, glyph.y, effectiveColumnWidth, currentFontSize, frameState.overdriveMaskRects)) {
-                        renderGlyphFillToContext(baseCtx, glyph.char, glyph.x, glyph.y, resolveFrameBaseGlyphStyle(frameState, glyph.kind, glyph.trailIndex));
-                    }
-                    const highlightStyle = resolveFrameHighlightFillStyle(frameState, glyph.kind, glyph.trailIndex, {
-                        phosphorExcitation: excitationState.phosphorExcitation
-                    });
-                    if (highlightStyle && (excitationState.fillActive || excitationState.glowActive)) {
-                        renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, glyph.char, glyph.x, glyph.y, highlightStyle, {
-                            fillAlphaMultiplier: excitationState.fillActive ? 1 : 0,
-                            glowAlphaMultiplier: 0,
-                            countAsOverdriveOperation: true
-                        });
-                        frameState.hasHighlightFill = true;
-                        frameState.hasFxHighlights = renderExcitationMaskToContext(matrixFxMaskCtx, glyph.char, glyph.x, glyph.y, highlightStyle, 1, {
-                            countAsOverdriveOperation: true,
-                            scale: NON_CRT_FX_SCALE
-                        }) || frameState.hasFxHighlights;
-                    }
-                });
-            } else {
-                const maskRects = isOverdriveMode ? getOverdriveMaskRects() : [];
-                sceneGlyphs.forEach((glyph) => {
-                    if (glyph.kind === 'trail') {
-                        drawMatrixGlyph(glyph.char, glyph.x, glyph.y, glyph.kind, glyph.trailIndex, maskRects);
-                        return;
-                    }
-                    const excitationState = getOverdriveExcitationState(glyph.elapsedMs, glyph.baseDurationMs);
-                    drawMatrixHighlightGlyph(glyph.char, glyph.x, glyph.y, glyph.kind, glyph.trailIndex, maskRects, excitationState);
-                });
-            }
-        }
-        function buildMatrixFrameState() {
-            if (!matrixRenderStyles) {
-                refreshMatrixRenderStyles();
-            }
-            const overdriveAmount = getOverdriveAmount();
-            const allowGpuOverdriveLayers = !e2eState.forceCpuOverdrive;
-            const useNonCrtFxRenderer = allowGpuOverdriveLayers && !isCrtMode && !isConstructMode && nonCrtFxReady && nonCrtCompositeAvailable;
-            const useCrtFxRenderer = allowGpuOverdriveLayers && isCrtMode && !isConstructMode && crtReady && crtCompositeAvailable;
-            const useGpuOverdriveLayers = isOverdriveMode && overdriveAmount > 0 && (useNonCrtFxRenderer || useCrtFxRenderer);
-            return {
-                overdriveAmount,
-                useNonCrtFxRenderer,
-                useCrtFxRenderer,
-                useGpuOverdriveLayers,
-                useSplitOverdriveLayers: useGpuOverdriveLayers,
-                overdriveMaskRects: useGpuOverdriveLayers ? getOverdriveMaskRects() : [],
-                baseStyleCache: new Map(),
-                highlightStyleCache: new Map(),
-                hasHighlightFill: false,
-                hasFxHighlights: false
-            };
-        }
-        function resolveFrameBaseGlyphStyle(frameState, kind, trailIndex = 0) {
-            const cacheKey = `${kind}:${trailIndex}:${frameState.useSplitOverdriveLayers ? 'split' : 'full'}`;
-            if (frameState.baseStyleCache.has(cacheKey)) {
-                return frameState.baseStyleCache.get(cacheKey);
-            }
-
-            let style;
-            if (kind === 'trail') {
-                style = {
-                    fillStyle: trailFillStyleCache[trailIndex] || `rgba(${matrixRenderStyles.trailColorRgb}, 0)`,
-                    shadowColor: 'transparent',
-                    shadowBlur: 0,
-                    glowPasses: []
-                };
-            } else if (frameState.useSplitOverdriveLayers) {
-                const baseTrailOpacity = trailIndex > 0 ? getTrailOpacity(trailIndex) : 1;
-                style = {
-                    fillStyle: toRgbaString(matrixRenderStyles.trailRgb, baseTrailOpacity),
-                    shadowColor: 'transparent',
-                    shadowBlur: 0,
-                    glowPasses: []
-                };
-            } else {
-                style = resolveMatrixGlyphStyle(kind, trailIndex);
-            }
-
-            frameState.baseStyleCache.set(cacheKey, style);
-            return style;
-        }
-        function resolveFrameHighlightFillStyle(frameState, kind, trailIndex = 0, options = {}) {
-            if (!frameState.useSplitOverdriveLayers) { return null; }
-            if (kind === 'glitch' && !isGlitchOverdriveEnabled) { return null; }
-            const phosphorExcitation = clampUnit(options.phosphorExcitation ?? 1);
-            const cacheKey = `${kind}:${trailIndex}:${phosphorExcitation.toFixed(4)}`;
-            if (frameState.highlightStyleCache.has(cacheKey)) {
-                return frameState.highlightStyleCache.get(cacheKey);
-            }
-            const style = resolveMatrixGlyphStyle(kind, trailIndex, { phosphorExcitation });
-            frameState.highlightStyleCache.set(cacheKey, style);
-            return style;
-        }
-        function renderNonCrtFxLayer() {
-            if (!matrixFxGl || !nonCrtFxReady || !nonCrtCompositeAvailable || !nonCrtFxAttributeLocations) { return false; }
-            const fxUniformState = getOverdriveFxUniformState();
-
-            matrixFxGl.viewport(0, 0, matrixFxCanvas.width, matrixFxCanvas.height);
-            matrixFxGl.useProgram(nonCrtFxProgram);
-
-            matrixFxGl.bindBuffer(matrixFxGl.ARRAY_BUFFER, nonCrtFxPositionBuffer);
-            matrixFxGl.enableVertexAttribArray(nonCrtFxAttributeLocations.position);
-            matrixFxGl.vertexAttribPointer(nonCrtFxAttributeLocations.position, 2, matrixFxGl.FLOAT, false, 0, 0);
-
-            matrixFxGl.bindBuffer(matrixFxGl.ARRAY_BUFFER, nonCrtFxTexCoordBuffer);
-            matrixFxGl.enableVertexAttribArray(nonCrtFxAttributeLocations.texCoord);
-            matrixFxGl.vertexAttribPointer(nonCrtFxAttributeLocations.texCoord, 2, matrixFxGl.FLOAT, false, 0, 0);
-
-            matrixFxGl.activeTexture(matrixFxGl.TEXTURE0);
-            matrixFxGl.bindTexture(matrixFxGl.TEXTURE_2D, nonCrtFxTexture);
-            ensureNonCrtFxTextureSize();
-            matrixFxGl.pixelStorei(matrixFxGl.UNPACK_FLIP_Y_WEBGL, false);
-
-            try {
-                matrixFxGl.texSubImage2D(matrixFxGl.TEXTURE_2D, 0, 0, 0, matrixFxGl.RGBA, matrixFxGl.UNSIGNED_BYTE, matrixFxMaskCanvas);
-            } catch (error) {
-                nonCrtCompositeAvailable = false;
-                console.warn('// Non-CRT FX compositor unavailable: texture upload failed. Falling back to CPU glow path.', error);
-                return false;
-            }
-
-            matrixFxGl.uniform1i(nonCrtFxUniforms.fxTexture, 0);
-            matrixFxGl.uniform2f(nonCrtFxUniforms.resolution, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height);
-            matrixFxGl.uniform1f(nonCrtFxUniforms.overdriveBloom, fxUniformState.bloomUniform);
-            matrixFxGl.uniform1f(nonCrtFxUniforms.overdriveGain, fxUniformState.gainUniform);
-            matrixFxGl.drawArrays(matrixFxGl.TRIANGLES, 0, 6);
-            return true;
-        }
-        function composeNonCrtFrame(frameState) {
-            ctx.setTransform(1, 0, 0, 1, 0, 0);
-            ctx.globalCompositeOperation = 'source-over';
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(matrixFillCanvas, 0, 0);
-            if (frameState.hasHighlightFill) {
-                ctx.drawImage(matrixHighlightCanvas, 0, 0);
-            }
-            if (frameState.hasFxHighlights && renderNonCrtFxLayer()) {
-                ctx.save();
-                ctx.globalCompositeOperation = 'lighter';
-                ctx.drawImage(matrixFxCanvas, 0, 0, canvas.width, canvas.height);
-                ctx.restore();
-            }
-        }
         function drawMatrixGlyph(char, x, y, kind, trailIndex = 0, maskRects = [], options = {}) {
             if (kind !== 'trail') {
                 drawMatrixHighlightGlyph(char, x, y, kind, trailIndex, maskRects, options);
                 return;
             }
-            renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle(kind, trailIndex, options));
+            renderMatrixGlyphWithStyleToContext(ctx, char, x, y, resolveMatrixGlyphStyle(kind, trailIndex, options), {
+                alphaMultiplier: options.opacityMultiplier ?? 1
+            });
         }
         function drawMatrixHighlightGlyph(char, x, y, kind, trailIndex = 0, maskRects = [], timingState = {}) {
             const fillActive = timingState.fillActive !== false;
-            const glowActive = timingState.glowActive !== false;
-            const phosphorExcitation = clampUnit(timingState.phosphorExcitation ?? 1);
-            if (!fillActive && (!glowActive || phosphorExcitation <= 0)) {
-                renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle('trail', trailIndex));
-                return;
-            }
-
-            const overdriveIntersectingRects = isOverdriveMode && !isConstructMode && kind !== 'trail'
-                ? getIntersectingOverdriveMaskRects(x, y, currentFontSize * COLUMN_SPACING_FACTOR, currentFontSize, maskRects)
-                : [];
-            const highlightStyle = resolveMatrixGlyphStyle(kind, trailIndex, { phosphorExcitation });
-
-            if (overdriveIntersectingRects.length === 0) {
-                if (!fillActive) {
-                    renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle('trail', trailIndex));
-                }
-                renderMatrixGlyphWithStyleToContext(ctx, char, x, y, highlightStyle, {
-                    fillAlphaMultiplier: fillActive ? 1 : 0,
-                    countAsOverdriveOperation: true
+            const opacityMultiplier = clampUnit(timingState.opacityMultiplier ?? 1);
+            if (!fillActive) {
+                renderMatrixGlyphWithStyleToContext(ctx, char, x, y, resolveMatrixGlyphStyle('trail', trailIndex), {
+                    alphaMultiplier: opacityMultiplier
                 });
                 return;
             }
-
-            renderMatrixGlyphWithStyle(char, x, y, resolveMatrixGlyphStyle('trail', trailIndex));
-
-            ctx.save();
-            const clipPath = new Path2D();
-            clipPath.rect(0, 0, canvas.width, canvas.height);
-            overdriveIntersectingRects.forEach(rect => {
-                clipPath.rect(rect.left, rect.top, rect.width, rect.height);
+            renderMatrixGlyphWithStyleToContext(ctx, char, x, y, resolveMatrixGlyphStyle(kind, trailIndex, timingState), {
+                alphaMultiplier: opacityMultiplier
             });
-            ctx.clip(clipPath, 'evenodd');
-            renderMatrixGlyphWithStyleToContext(ctx, char, x, y, highlightStyle, {
-                fillAlphaMultiplier: fillActive ? 1 : 0,
-                countAsOverdriveOperation: true
-            });
-            ctx.restore();
         }
         function renderCrtFrame() {
             if (!isCrtMode || !crtReady || !crtGl || !crtCompositeAvailable || !crtAttributeLocations) { return; }
             const compositeStart = performance.now();
-            const fxUniformState = getOverdriveFxUniformState();
-
             crtGl.viewport(0, 0, crtCanvas.width, crtCanvas.height);
             crtGl.useProgram(crtProgram);
 
@@ -3427,9 +3284,6 @@ void main() {
                     repaintCrtUiLayer();
                     crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, crtUiCanvas);
                 }
-                crtGl.activeTexture(crtGl.TEXTURE2);
-                crtGl.bindTexture(crtGl.TEXTURE_2D, crtFxTexture);
-                crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, matrixFxMaskCanvas);
             } catch (error) {
                 crtCompositeAvailable = false;
                 bodyElement.classList.add('crt-unavailable');
@@ -3440,216 +3294,93 @@ void main() {
 
             crtGl.uniform1i(crtUniforms.matrixTexture, 0);
             crtGl.uniform1i(crtUniforms.uiTexture, 1);
-            crtGl.uniform1i(crtUniforms.fxTexture, 2);
             crtGl.uniform2f(crtUniforms.resolution, crtCanvas.width, crtCanvas.height);
             crtGl.uniform2f(crtUniforms.matrixResolution, crtSourceCanvas.width, crtSourceCanvas.height);
-            crtGl.uniform2f(crtUniforms.fxResolution, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height);
             crtGl.uniform1f(crtUniforms.time, getShaderTimeSeconds());
             crtGl.uniform1f(crtUniforms.intensity, isCrtMode ? 0.88 : 0.0);
-            const leadFringeMax = (currentFontSize * COLUMN_SPACING_FACTOR) / Math.max(1, crtCanvas.width);
-            const activeLeadFringePercent = isCrtMode && !isOverdriveMode ? currentCrtLeadFringePercent : 0;
-            crtGl.uniform1f(crtUniforms.leadFringe, (activeLeadFringePercent / 100) * leadFringeMax);
-            crtGl.uniform1f(crtUniforms.overdriveMode, isOverdriveMode && !isConstructMode ? 1.0 : 0.0);
             crtGl.uniform1f(crtUniforms.fishbowl, getCrtFishbowlAmount());
             crtGl.uniform1f(crtUniforms.vignette, getCrtVignetteAmount());
+            crtGl.uniform1f(crtUniforms.beamFocus, currentCrtBeamFocusPercent / 100);
+            crtGl.uniform1f(crtUniforms.scanlines, currentCrtScanlinesPercent / 100);
+            crtGl.uniform1f(crtUniforms.grille, currentCrtGrillePercent / 100);
+            crtGl.uniform1f(crtUniforms.noise, currentCrtNoisePercent / 100);
+            crtGl.uniform1f(crtUniforms.syncRoll, currentCrtSyncRollPercent / 100);
+            crtGl.uniform1f(crtUniforms.jitter, currentCrtJitterPercent / 100);
             crtGl.uniform1f(crtUniforms.constructMode, isConstructMode ? 1.0 : 0.0);
-            crtGl.uniform1f(crtUniforms.overdriveBloom, fxUniformState.bloomUniform);
-            crtGl.uniform1f(crtUniforms.overdriveGain, fxUniformState.gainUniform);
             crtGl.drawArrays(crtGl.TRIANGLES, 0, 6);
             lastCrtFrameTime = performance.now();
             framePerformanceMetrics.compositeMs = performance.now() - compositeStart;
         }
         function drawMatrixRain() {
             const frameStart = performance.now();
-            const frameState = buildMatrixFrameState();
-            framePerformanceMetrics.cpuOverdriveTextOps = 0;
-            const useGpuOverdriveLayers = frameState.useGpuOverdriveLayers;
-            const baseCtx = useGpuOverdriveLayers ? matrixFillCtx : ctx;
+            if (!matrixRenderStyles) {
+                refreshMatrixRenderStyles();
+            }
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             const now = Date.now();
             const glitchFlipChance = getGlitchFlipChance();
-            const overdriveMaskRects = frameState.useSplitOverdriveLayers ? frameState.overdriveMaskRects : (isOverdriveMode ? getOverdriveMaskRects() : []);
 
-            baseCtx.setTransform(1, 0, 0, 1, 0, 0);
-            baseCtx.fillStyle = matrixRenderStyles.bgColor;
-            baseCtx.shadowColor = 'transparent';
-            baseCtx.shadowBlur = 0;
-            baseCtx.fillRect(0, 0, canvas.width, canvas.height);
-            baseCtx.font = matrixRenderStyles.font;
-
-            if (useGpuOverdriveLayers) {
-                matrixHighlightCtx.setTransform(1, 0, 0, 1, 0, 0);
-                matrixHighlightCtx.shadowColor = 'transparent';
-                matrixHighlightCtx.shadowBlur = 0;
-                matrixHighlightCtx.clearRect(0, 0, matrixHighlightCanvas.width, matrixHighlightCanvas.height);
-                matrixHighlightCtx.font = matrixRenderStyles.font;
-
-                matrixFxMaskCtx.setTransform(1, 0, 0, 1, 0, 0);
-                matrixFxMaskCtx.shadowColor = 'transparent';
-                matrixFxMaskCtx.shadowBlur = 0;
-                matrixFxMaskCtx.clearRect(0, 0, matrixFxMaskCanvas.width, matrixFxMaskCanvas.height);
-                matrixFxMaskCtx.font = `${Math.max(1, currentFontSize * NON_CRT_FX_SCALE)}px ${getComputedStyle(bodyElement).fontFamily}`;
-            }
-
-            if (isE2eVisualSceneActive()) {
-                drawE2eOverdriveDemoScene(baseCtx, frameState);
-                framePerformanceMetrics.cpuMatrixDrawMs = performance.now() - frameStart;
-                if (frameState.useCrtFxRenderer) {
-                    if (frameState.overdriveMaskRects.length > 0) {
-                        clearMaskedRects(matrixHighlightCtx, frameState.overdriveMaskRects, 1);
-                        clearMaskedRects(matrixFxMaskCtx, frameState.overdriveMaskRects, NON_CRT_FX_SCALE);
-                    }
-                    composeCpuMatrixFrame(frameState);
-                }
-                if (frameState.useNonCrtFxRenderer) {
-                    const compositeStart = performance.now();
-                    if (frameState.overdriveMaskRects.length > 0) {
-                        clearMaskedRects(matrixHighlightCtx, frameState.overdriveMaskRects, 1);
-                        clearMaskedRects(matrixFxMaskCtx, frameState.overdriveMaskRects, NON_CRT_FX_SCALE);
-                    }
-                    composeNonCrtFrame(frameState);
-                    framePerformanceMetrics.compositeMs = performance.now() - compositeStart;
-                }
-                framePerformanceMetrics.rainUpdateMs = performance.now() - frameStart;
-                framePerformanceMetrics.renderer = frameState.useNonCrtFxRenderer ? 'gpu-noncrt' : (frameState.useCrtFxRenderer ? 'gpu-crt' : 'cpu');
-                ctx.shadowColor = 'transparent';
-                ctx.shadowBlur = 0;
-                return;
-            }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = matrixRenderStyles.bgColor;
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.font = matrixRenderStyles.font;
 
             for (let i = 0; i < drops.length; i++) {
                 const drop = drops[i];
+                const profile = columnProfiles[i] || null;
                 if (now - drop.lastUpdateTime >= drop.delay) {
                     const newLeaderChar = MATRIX_CHARS[Math.floor(getRandomValue() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
-                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now }); if (trails[i].length > getActiveTrailLength()) { trails[i].pop(); } drop.y++;
+                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now, gapSeed: getRandomValue() });
+                    const columnTrailLength = getColumnTrailLength(profile);
+                    if (trails[i].length > columnTrailLength) { trails[i].pop(); }
+                    drop.y++;
                     if (drop.y * currentFontSize > canvas.height && getRandomValue() > 0.975) {
                         drop.y = 0;
                         trails[i] = [];
-                        drop.delay = calculateColumnDelay(currentRainFPS); // Randomize speed on reset
+                        if (profile) {
+                            profile.delayRoll = getRandomValue();
+                        }
+                        drop.delay = calculateColumnDelay(currentRainFPS, profile); // Randomize speed on reset
                     }
                     drop.lastUpdateTime = now;
                 }
                 if (trails[i]) {
+                    setMatrixContextFontForProfile(ctx, profile);
                     for (let k = 0; k < trails[i].length; k++) {
                         let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
-                        const trailXPos = i * effectiveColumnWidth;
-                        if (k > 0 && !trailItem.flipTimestamp && getRandomValue() < glitchFlipChance) {
+                        if (!shouldRenderTrailItem(profile, k, trailItem)) { continue; }
+                        const trailXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now);
+                        const glyphOpacity = getColumnGlyphOpacity(profile, k);
+                        const canFlipTrailGlyph = k > 0 && (!trailItem.lastFlipTime || now - trailItem.lastFlipTime >= (profile?.flipCooldownMs || GLITCH_FLIP_COOLDOWN_MS));
+                        if (canFlipTrailGlyph && getRandomValue() < glitchFlipChance * (profile?.flipChanceScale || 1)) {
                             let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(getRandomValue() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
-                            trailItem.char = flippedChar; trailItem.flipped = true; trailItem.flipTimestamp = now; trailItem.updateTimestamp = now;
+                            trailItem.char = flippedChar; trailItem.flipped = true; trailItem.lastFlipTime = now;
+                            trailItem.shimmerBrightness = getRandomValue();
                         }
-                        const glitchElapsedMs = trailItem.flipTimestamp ? (now - trailItem.flipTimestamp) : null;
-                        const recentElapsedMs = trailItem.updateTimestamp ? (now - trailItem.updateTimestamp) : null;
-                        const glitchExcitationState = trailItem.flipTimestamp ? getOverdriveExcitationState(glitchElapsedMs, FLIP_DURATION_MS) : null;
-                        const recentExcitationState = (k === 0 && trailItem.updateTimestamp) ? getOverdriveExcitationState(recentElapsedMs, UPDATED_CHAR_HIGHLIGHT_MS) : null;
-                        const isHighlighting = !!(glitchExcitationState && (glitchExcitationState.fillActive || glitchExcitationState.glowActive));
-                        const isRecentlyUpdated = !!(recentExcitationState && (recentExcitationState.fillActive || recentExcitationState.glowActive));
-                        if (isHighlighting) {
-                            if (useGpuOverdriveLayers) {
-                                if (shouldRenderMaskedFallbackFill(trailXPos, trailYPos, effectiveColumnWidth, currentFontSize, frameState.overdriveMaskRects)) {
-                                    renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'glitch', k));
-                                }
-                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'glitch', k, {
-                                    phosphorExcitation: glitchExcitationState.phosphorExcitation
-                                });
-                                if (highlightFillStyle) {
-                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, {
-                                        fillAlphaMultiplier: glitchExcitationState.fillActive ? 1 : 0,
-                                        glowAlphaMultiplier: 0,
-                                        countAsOverdriveOperation: true
-                                    });
-                                    frameState.hasHighlightFill = true;
-                                    frameState.hasFxHighlights = renderExcitationMaskToContext(matrixFxMaskCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, 1, {
-                                        countAsOverdriveOperation: true,
-                                        scale: NON_CRT_FX_SCALE
-                                    }) || frameState.hasFxHighlights;
-                                }
-                            } else {
-                                drawMatrixHighlightGlyph(trailItem.char, trailXPos, trailYPos, 'glitch', k, overdriveMaskRects, glitchExcitationState);
-                            }
-                        } else if (isRecentlyUpdated) {
-                            if (useGpuOverdriveLayers) {
-                                if (shouldRenderMaskedFallbackFill(trailXPos, trailYPos, effectiveColumnWidth, currentFontSize, frameState.overdriveMaskRects)) {
-                                    renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'leader', k));
-                                }
-                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'leader', k, {
-                                    phosphorExcitation: recentExcitationState.phosphorExcitation
-                                });
-                                if (highlightFillStyle) {
-                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, {
-                                        fillAlphaMultiplier: recentExcitationState.fillActive ? 1 : 0,
-                                        glowAlphaMultiplier: 0,
-                                        countAsOverdriveOperation: true
-                                    });
-                                    frameState.hasHighlightFill = true;
-                                    frameState.hasFxHighlights = renderExcitationMaskToContext(matrixFxMaskCtx, trailItem.char, trailXPos, trailYPos, highlightFillStyle, 1, {
-                                        countAsOverdriveOperation: true,
-                                        scale: NON_CRT_FX_SCALE
-                                    }) || frameState.hasFxHighlights;
-                                }
-                            } else {
-                                drawMatrixHighlightGlyph(trailItem.char, trailXPos, trailYPos, 'leader', k, overdriveMaskRects, recentExcitationState);
-                            }
-                        } else {
-                            if (useGpuOverdriveLayers) {
-                                renderGlyphFillToContext(baseCtx, trailItem.char, trailXPos, trailYPos, resolveFrameBaseGlyphStyle(frameState, 'trail', k));
-                            } else {
-                                drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'trail', k);
-                            }
-                            if (trailItem.flipTimestamp && (!glitchExcitationState || !glitchExcitationState.glowActive)) { trailItem.flipTimestamp = undefined; trailItem.flipped = false; }
-                            if (trailItem.updateTimestamp && (!recentExcitationState || !recentExcitationState.glowActive)) { trailItem.updateTimestamp = undefined; }
-                        }
+                        const shimmerOpacity = glyphOpacity * getTrailItemShimmerBrightness(trailItem);
+                        drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'trail', k, [], {
+                            opacityMultiplier: shimmerOpacity
+                        });
                     }
                     if (trails[i][0]) {
-                        const leaderXPos = i * effectiveColumnWidth; const leaderYPos = drop.y * currentFontSize;
+                        const leaderXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now); const leaderYPos = drop.y * currentFontSize;
                         if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) {
-                            if (useGpuOverdriveLayers) {
-                                if (shouldRenderMaskedFallbackFill(leaderXPos, leaderYPos, effectiveColumnWidth, currentFontSize, frameState.overdriveMaskRects)) {
-                                    renderGlyphFillToContext(baseCtx, trails[i][0].char, leaderXPos, leaderYPos, resolveFrameBaseGlyphStyle(frameState, 'leader', 0));
-                                }
-                                const highlightFillStyle = resolveFrameHighlightFillStyle(frameState, 'leader', 0, {
-                                    phosphorExcitation: 1
-                                });
-                                if (highlightFillStyle) {
-                                    renderMatrixGlyphWithStyleToContext(matrixHighlightCtx, trails[i][0].char, leaderXPos, leaderYPos, highlightFillStyle, {
-                                        fillAlphaMultiplier: 1,
-                                        glowAlphaMultiplier: 0,
-                                        countAsOverdriveOperation: true
-                                    });
-                                    frameState.hasHighlightFill = true;
-                                    frameState.hasFxHighlights = renderExcitationMaskToContext(matrixFxMaskCtx, trails[i][0].char, leaderXPos, leaderYPos, highlightFillStyle, 1, {
-                                        countAsOverdriveOperation: true,
-                                        scale: NON_CRT_FX_SCALE
-                                    }) || frameState.hasFxHighlights;
-                                }
-                            } else {
-                                drawMatrixHighlightGlyph(trails[i][0].char, leaderXPos, leaderYPos, 'leader', 0, overdriveMaskRects, {
-                                    fillActive: true,
-                                    glowActive: true,
-                                    phosphorExcitation: 1
-                                });
-                            }
+                            const leaderOpacity = getColumnGlyphOpacity(profile, 0);
+                            const leadRgb = getColumnLeaderRgb(profile, 0);
+                            drawMatrixHighlightGlyph(trails[i][0].char, leaderXPos, leaderYPos, 'leader', 0, [], {
+                                fillActive: true,
+                                opacityMultiplier: leaderOpacity,
+                                leadRgb
+                            });
                         }
                     }
                 }
             }
             framePerformanceMetrics.cpuMatrixDrawMs = performance.now() - frameStart;
-            if (frameState.useCrtFxRenderer) {
-                if (frameState.overdriveMaskRects.length > 0) {
-                    clearMaskedRects(matrixHighlightCtx, frameState.overdriveMaskRects, 1);
-                    clearMaskedRects(matrixFxMaskCtx, frameState.overdriveMaskRects, NON_CRT_FX_SCALE);
-                }
-                composeCpuMatrixFrame(frameState);
-            }
-            if (frameState.useNonCrtFxRenderer) {
-                if (frameState.overdriveMaskRects.length > 0) {
-                    clearMaskedRects(matrixHighlightCtx, frameState.overdriveMaskRects, 1);
-                    clearMaskedRects(matrixFxMaskCtx, frameState.overdriveMaskRects, NON_CRT_FX_SCALE);
-                }
-                composeNonCrtFrame(frameState);
-                framePerformanceMetrics.compositeMs = performance.now() - frameStart - framePerformanceMetrics.cpuMatrixDrawMs;
-            }
             framePerformanceMetrics.rainUpdateMs = performance.now() - frameStart;
-            framePerformanceMetrics.renderer = frameState.useNonCrtFxRenderer ? 'gpu-noncrt' : (frameState.useCrtFxRenderer ? 'gpu-crt' : 'cpu');
+            framePerformanceMetrics.renderer = 'cpu';
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
         }
@@ -3691,44 +3422,71 @@ void main() {
         }
 
         // --- URL State Management ---
-        function buildStateURL() {
-            const namesArray = allNames.map(op => {
-                const encodedName = encodeURIComponent(op.name);
-                const encodedValue = encodeURIComponent(op.value || '');
-                return `${encodedName}|${encodedValue}`;
-            });
-            const encodedNames = namesArray.join(',');
-
-            const currentTitle = titleInput.value.trim();
-            const encodedTitle = currentTitle ? encodeURIComponent(currentTitle) : '';
-
-            let params = [];
-            if (e2eState.enabled) {
-                params.push('e2e=1');
-                if (e2eState.seed !== E2E_DEFAULT_SEED) { params.push('e2eSeed=' + e2eState.seed); }
-                if (e2eState.scene) { params.push('e2eScene=' + encodeURIComponent(e2eState.scene)); }
+        function safeDecodeUrlComponent(value) {
+            try {
+                return decodeURIComponent(value);
+            } catch {
+                return value;
             }
-            if (encodedNames) { params.push('names=' + encodedNames); }
-            if (encodedTitle) { params.push('title=' + encodedTitle); }
-            if (currentBrightnessPercent !== 100) { params.push('brightness=' + currentBrightnessPercent); }
-            if (currentRainFPS !== 10) { params.push('speed=' + currentRainFPS); }
-            if (currentFontSize !== 24) { params.push('fontSize=' + currentFontSize); }
-            if (currentTailCurvePercent !== 10) { params.push('tailCurve=' + currentTailCurvePercent); }
-            if (currentTailFloorPercent !== 1) { params.push('tailFloor=' + currentTailFloorPercent); }
-            if (currentGlitchFrequencyPercent !== 50) { params.push('glitchFrequency=' + currentGlitchFrequencyPercent); }
-            if (isExtractionMode) { params.push('extract=true'); }
-            if (!isCrtMode) { params.push('crt=false'); }
-            if (!isOverdriveMode) { params.push('overdrive=false'); }
-            if (currentOverdriveDrivePercent !== DEFAULT_OVERDRIVE_DRIVE_PERCENT) { params.push('overdriveDrive=' + currentOverdriveDrivePercent); }
-            if (currentOverdrivePersistenceMs !== DEFAULT_OVERDRIVE_PERSISTENCE_MS) { params.push('overdrivePersistence=' + currentOverdrivePersistenceMs); }
-            if (currentOverdriveBloomPercent !== DEFAULT_OVERDRIVE_BLOOM_PERCENT) { params.push('overdriveBloom=' + currentOverdriveBloomPercent); }
-            if (!isGlitchOverdriveEnabled) { params.push('glitchOverdrive=false'); }
-            if (currentCrtFishbowlPercent !== 25) { params.push('crtFishbowl=' + currentCrtFishbowlPercent); }
-            if (currentCrtVignettePercent !== 40) { params.push('crtVignette=' + currentCrtVignettePercent); }
-            if (!isOverdriveMode && currentCrtLeadFringePercent !== 5) { params.push('crtLeadFringe=' + currentCrtLeadFringePercent); }
-            if (isConstructMode) { params.push('theme=construct'); }
+        }
+        function serializeRosterForURL() {
+            return JSON.stringify(allNames.map(op => ({
+                name: op.name,
+                value: op.value || ''
+            })));
+        }
+        function parseRosterFromURL(urlParams) {
+            if (urlParams.has('roster')) {
+                try {
+                    const parsedRoster = JSON.parse(urlParams.get('roster') || '[]');
+                    if (Array.isArray(parsedRoster)) {
+                        return parsedRoster.map((entry) => {
+                            const name = typeof entry?.name === 'string' ? entry.name.trim() : '';
+                            const value = typeof entry?.value === 'string' ? entry.value : '';
+                            return name ? { name, value, selected: false } : null;
+                        }).filter(Boolean);
+                    }
+                } catch (error) {
+                    console.warn('// Roster URL state ignored: malformed roster payload.', error);
+                }
+            }
+            if (urlParams.has('names')) {
+                const namesParam = urlParams.get('names');
+                if (namesParam) {
+                    return namesParam.split(',').map(pair => {
+                        const parts = pair.split('|').map(part => safeDecodeUrlComponent(part.trim()));
+                        const name = parts[0];
+                        const value = parts[1] || '';
+                        return name ? { name, value, selected: false } : null;
+                    }).filter(Boolean);
+                }
+            }
+            return null;
+        }
+        function buildStateURL() {
+            const currentTitle = titleInput.value.trim();
+            const params = new URLSearchParams();
+            if (e2eState.enabled) {
+                params.set('e2e', '1');
+                if (e2eState.seed !== E2E_DEFAULT_SEED) { params.set('e2eSeed', String(e2eState.seed)); }
+                if (e2eState.scene) { params.set('e2eScene', e2eState.scene); }
+            }
+            if (allNames.length > 0) { params.set('roster', serializeRosterForURL()); }
+            if (currentTitle) { params.set('title', currentTitle); }
+            NUMERIC_SETTINGS.forEach((setting) => {
+                if (setting.relevant && !setting.relevant()) { return; }
+                const currentValue = setting.get();
+                if (currentValue !== setting.defaultValue) {
+                    params.set(setting.urlKey, String(currentValue));
+                }
+            });
+            if (isFlatGridMode !== DEFAULT_FLAT_GRID_MODE) { params.set('flatGrid', String(isFlatGridMode)); }
+            if (isExtractionMode) { params.set('extract', 'true'); }
+            if (!isCrtMode) { params.set('crt', 'false'); }
+            if (isConstructMode) { params.set('theme', 'construct'); }
 
-            return window.location.pathname + (params.length > 0 ? '?' + params.join('&') : '');
+            const queryString = params.toString();
+            return window.location.pathname + (queryString ? '?' + queryString : '');
         }
         function updateURL() {
             if (urlUpdateTimerId !== null) {
@@ -3767,31 +3525,37 @@ void main() {
             }
             bodyElement.classList.toggle('e2e-mode', e2eState.enabled);
             // Reset settings to default before loading from URL
-            currentBrightnessPercent = 100;
-            currentRainFPS = 10;
-            currentFontSize = 24;
+            currentBrightnessPercent = DEFAULT_BRIGHTNESS_PERCENT;
+            currentRainFPS = DEFAULT_RAIN_FPS;
+            currentFontSize = DEFAULT_FONT_SIZE;
             currentTailLength = getViewportTailLength();
-            currentTailCurvePercent = 10;
-            currentTailFloorPercent = 1;
-            currentGlitchFrequencyPercent = 50;
+            currentTailCurvePercent = DEFAULT_TAIL_CURVE_PERCENT;
+            currentTailFloorPercent = DEFAULT_TAIL_FLOOR_PERCENT;
+            currentRainDepthPercent = DEFAULT_RAIN_DEPTH_PERCENT;
+            currentRainVarietyPercent = DEFAULT_RAIN_VARIETY_PERCENT;
+            currentLaneDriftPercent = DEFAULT_LANE_DRIFT_PERCENT;
+            isFlatGridMode = DEFAULT_FLAT_GRID_MODE;
+            currentGapDensityPercent = DEFAULT_GAP_DENSITY_PERCENT;
+            currentLeaderHeatPercent = DEFAULT_LEADER_HEAT_PERCENT;
+            currentGlyphMutationPercent = DEFAULT_GLYPH_MUTATION_PERCENT;
             isExtractionMode = false;
-            isCrtMode = true;
-            isOverdriveMode = true;
-            isGlitchOverdriveEnabled = true;
-            currentCrtFishbowlPercent = 25;
-            currentCrtVignettePercent = 40;
-            currentCrtLeadFringePercent = 5;
-            currentOverdriveDrivePercent = DEFAULT_OVERDRIVE_DRIVE_PERCENT;
-            currentOverdrivePersistenceMs = DEFAULT_OVERDRIVE_PERSISTENCE_MS;
-            currentOverdriveBloomPercent = DEFAULT_OVERDRIVE_BLOOM_PERCENT;
-            isConstructMode = false;
+            isCrtMode = DEFAULT_CRT_MODE;
+            currentCrtFishbowlPercent = DEFAULT_CRT_FISHBOWL_PERCENT;
+            currentCrtVignettePercent = DEFAULT_CRT_VIGNETTE_PERCENT;
+            currentCrtBeamFocusPercent = DEFAULT_CRT_BEAM_FOCUS_PERCENT;
+            currentCrtScanlinesPercent = DEFAULT_CRT_SCANLINES_PERCENT;
+            currentCrtGrillePercent = DEFAULT_CRT_GRILLE_PERCENT;
+            currentCrtNoisePercent = DEFAULT_CRT_NOISE_PERCENT;
+            currentCrtSyncRollPercent = DEFAULT_CRT_SYNC_ROLL_PERCENT;
+            currentCrtJitterPercent = DEFAULT_CRT_JITTER_PERCENT;
+            isConstructMode = DEFAULT_CONSTRUCT_MODE;
             selectionHistory = [];
             pendingNextOperatives = [];
 
             if (urlParams.has('title')) {
                 const titleParam = urlParams.get('title').trim();
                 if (titleParam) {
-                    pageTitle = decodeURIComponent(titleParam);
+                    pageTitle = safeDecodeUrlComponent(titleParam);
                     schemaTitle = pageTitle;
                 }
             }
@@ -3836,74 +3600,17 @@ void main() {
                 }
             }
             updateTailFloorDisplay(currentTailFloorPercent);
-            if (urlParams.has('glitchFrequency')) {
-                const glitchFrequencyParam = parseInt(urlParams.get('glitchFrequency'), 10);
-                if (!isNaN(glitchFrequencyParam) && glitchFrequencyParam >= 0 && glitchFrequencyParam <= 100) {
-                    currentGlitchFrequencyPercent = glitchFrequencyParam;
-                }
-            }
-            updateGlitchFrequencyDisplay(currentGlitchFrequencyPercent);
             if (urlParams.has('extract')) {
                 isExtractionMode = urlParams.get('extract') === 'true';
+            }
+            if (urlParams.has('flatGrid')) {
+                isFlatGridMode = urlParams.get('flatGrid') === 'true';
             }
             updateExtractionButton();
             updateExtractionUIVisibility();
 
             if (urlParams.has('crt')) {
                 isCrtMode = urlParams.get('crt') !== 'false';
-            }
-            if (urlParams.has('overdrive')) {
-                isOverdriveMode = urlParams.get('overdrive') !== 'false';
-            }
-            const hasOverdriveDriveParam = urlParams.has('overdriveDrive');
-            const hasOverdrivePersistenceParam = urlParams.has('overdrivePersistence');
-            const hasOverdriveBloomParam = urlParams.has('overdriveBloom');
-            let legacyOverdriveStrengthParam = null;
-            let legacyOverdriveGlowParam = null;
-            let legacyOverdriveGlowDurationParam = null;
-
-            if (hasOverdriveDriveParam) {
-                const overdriveDriveParam = parseFloat(urlParams.get('overdriveDrive'));
-                if (!isNaN(overdriveDriveParam) && overdriveDriveParam >= 0 && overdriveDriveParam <= MAX_OVERDRIVE_DRIVE_PERCENT) {
-                    currentOverdriveDrivePercent = Math.round(overdriveDriveParam);
-                }
-            } else if (urlParams.has('overdriveStrength')) {
-                legacyOverdriveStrengthParam = parseFloat(urlParams.get('overdriveStrength'));
-                if (!isNaN(legacyOverdriveStrengthParam) && legacyOverdriveStrengthParam >= 0 && legacyOverdriveStrengthParam <= 100) {
-                    currentOverdriveDrivePercent = Math.round(legacyOverdriveStrengthParam);
-                }
-            }
-            if (hasOverdrivePersistenceParam) {
-                const overdrivePersistenceParam = parseInt(urlParams.get('overdrivePersistence'), 10);
-                if (!isNaN(overdrivePersistenceParam) && overdrivePersistenceParam >= 80 && overdrivePersistenceParam <= MAX_OVERDRIVE_PERSISTENCE_MS) {
-                    currentOverdrivePersistenceMs = overdrivePersistenceParam;
-                }
-            } else if (urlParams.has('overdriveGlowDuration')) {
-                legacyOverdriveGlowDurationParam = parseInt(urlParams.get('overdriveGlowDuration'), 10);
-                if (!isNaN(legacyOverdriveGlowDurationParam) && legacyOverdriveGlowDurationParam >= 150 && legacyOverdriveGlowDurationParam <= 1500) {
-                    const legacyDurationRatio = clampUnit((legacyOverdriveGlowDurationParam - 150) / (1500 - 150));
-                    currentOverdrivePersistenceMs = 80 + Math.round((MAX_OVERDRIVE_PERSISTENCE_MS - 80) * legacyDurationRatio);
-                }
-            }
-            if (hasOverdriveBloomParam) {
-                const overdriveBloomParam = parseInt(urlParams.get('overdriveBloom'), 10);
-                if (!isNaN(overdriveBloomParam) && overdriveBloomParam >= 0 && overdriveBloomParam <= MAX_OVERDRIVE_BLOOM_PERCENT) {
-                    currentOverdriveBloomPercent = overdriveBloomParam;
-                }
-            } else if (urlParams.has('overdriveGlow')) {
-                legacyOverdriveGlowParam = parseFloat(urlParams.get('overdriveGlow'));
-                if (!isNaN(legacyOverdriveGlowParam) && legacyOverdriveGlowParam >= 0 && legacyOverdriveGlowParam <= 300) {
-                    currentOverdriveBloomPercent = Math.round((legacyOverdriveGlowParam / 300) * MAX_OVERDRIVE_BLOOM_PERCENT);
-                }
-            }
-            if (urlParams.has('glitchOverdrive')) {
-                isGlitchOverdriveEnabled = urlParams.get('glitchOverdrive') !== 'false';
-            }
-            if (urlParams.has('crtLeadFringe')) {
-                const fringeParam = parseFloat(urlParams.get('crtLeadFringe'));
-                if (!isNaN(fringeParam) && fringeParam >= 0 && fringeParam <= 100) {
-                    currentCrtLeadFringePercent = Math.round(fringeParam);
-                }
             }
             if (urlParams.has('crtFishbowl')) {
                 const fishbowlParam = parseInt(urlParams.get('crtFishbowl'), 10);
@@ -3917,14 +3624,58 @@ void main() {
                     currentCrtVignettePercent = vignetteParam;
                 }
             }
-            updateOverdriveButton();
-            updateOverdriveDriveDisplay(currentOverdriveDrivePercent);
-            updateOverdrivePersistenceDisplay(currentOverdrivePersistenceMs);
-            updateOverdriveBloomDisplay(currentOverdriveBloomPercent);
-            updateGlitchOverdriveButton();
+            if (urlParams.has('crtBeamFocus')) {
+                const beamFocusParam = parseInt(urlParams.get('crtBeamFocus'), 10);
+                if (!isNaN(beamFocusParam) && beamFocusParam >= 0 && beamFocusParam <= 100) {
+                    currentCrtBeamFocusPercent = beamFocusParam;
+                }
+            }
+            if (urlParams.has('crtScanlines')) {
+                const scanlinesParam = parseInt(urlParams.get('crtScanlines'), 10);
+                if (!isNaN(scanlinesParam) && scanlinesParam >= 0 && scanlinesParam <= 100) {
+                    currentCrtScanlinesPercent = scanlinesParam;
+                }
+            }
+            if (urlParams.has('crtGrille')) {
+                const grilleParam = parseInt(urlParams.get('crtGrille'), 10);
+                if (!isNaN(grilleParam) && grilleParam >= 0 && grilleParam <= 100) {
+                    currentCrtGrillePercent = grilleParam;
+                }
+            }
+            if (urlParams.has('crtNoise')) {
+                const noiseParam = parseInt(urlParams.get('crtNoise'), 10);
+                if (!isNaN(noiseParam) && noiseParam >= 0 && noiseParam <= 100) {
+                    currentCrtNoisePercent = noiseParam;
+                }
+            }
+            if (urlParams.has('crtSyncRoll')) {
+                const syncRollParam = parseInt(urlParams.get('crtSyncRoll'), 10);
+                if (!isNaN(syncRollParam) && syncRollParam >= 0 && syncRollParam <= 100) {
+                    currentCrtSyncRollPercent = syncRollParam;
+                }
+            }
+            if (urlParams.has('crtJitter')) {
+                const jitterParam = parseInt(urlParams.get('crtJitter'), 10);
+                if (!isNaN(jitterParam) && jitterParam >= 0 && jitterParam <= 100) {
+                    currentCrtJitterPercent = jitterParam;
+                }
+            }
+            applyNumericSettingsFromURL(urlParams);
+            updateRainDepthDisplay(currentRainDepthPercent);
+            updateRainVarietyDisplay(currentRainVarietyPercent);
+            updateLaneDriftDisplay(currentLaneDriftPercent);
+            updateFlatGridButton();
+            updateGapDensityDisplay(currentGapDensityPercent);
+            updateLeaderHeatDisplay(currentLeaderHeatPercent);
+            updateGlyphMutationDisplay(currentGlyphMutationPercent);
             updateCrtFishbowlDisplay(currentCrtFishbowlPercent);
             updateCrtVignetteDisplay(currentCrtVignettePercent);
-            updateCrtLeadFringeDisplay(currentCrtLeadFringePercent);
+            updateCrtBeamFocusDisplay(currentCrtBeamFocusPercent);
+            updateCrtScanlinesDisplay(currentCrtScanlinesPercent);
+            updateCrtGrilleDisplay(currentCrtGrillePercent);
+            updateCrtNoiseDisplay(currentCrtNoisePercent);
+            updateCrtSyncRollDisplay(currentCrtSyncRollPercent);
+            updateCrtJitterDisplay(currentCrtJitterPercent);
             updateCrtMode();
 
             if (urlParams.has('theme') && urlParams.get('theme') === 'construct') {
@@ -3932,16 +3683,9 @@ void main() {
             }
             updateTheme();
 
-            if (urlParams.has('names')) {
-                const namesParam = urlParams.get('names');
-                if (namesParam) {
-                    initialNames = namesParam.split(',').map(pair => {
-                        const parts = pair.split('|').map(part => decodeURIComponent(part.trim()));
-                        const name = parts[0];
-                        const value = parts[1] || '';
-                        return name ? { name, value, selected: false } : null;
-                    }).filter(Boolean);
-                }
+            const parsedRoster = parseRosterFromURL(urlParams);
+            if (parsedRoster) {
+                initialNames = parsedRoster;
             } else {
                 initialNames = [
                     { name: 'Neo', value: 'The One', selected: false },
@@ -3983,7 +3727,7 @@ void main() {
             currentRainFPS = Math.max(1, Math.min(100, fps)); if (speedSlider) speedSlider.value = currentRainFPS; if (speedValue) speedValue.textContent = `${currentRainFPS} FPS`; markCrtSnapshotDirty();
         }
         function handleSpeedChange(fps) {
-            updateRainSpeedDisplay(fps); if (drops && drops.length > 0) { drops.forEach(drop => { drop.delay = calculateColumnDelay(currentRainFPS); }); }
+            updateRainSpeedDisplay(fps); if (drops && drops.length > 0) { drops.forEach((drop, index) => { drop.delay = calculateColumnDelay(currentRainFPS, columnProfiles[index]); }); }
         }
         function updateFontSizeDisplay(size) {
             currentFontSize = Math.max(8, Math.min(32, size)); if (fontSizeSlider) fontSizeSlider.value = currentFontSize; if (fontSizeValue) fontSizeValue.textContent = `${currentFontSize}px`; matrixRenderStyles = null; markCrtSnapshotDirty();
@@ -3993,13 +3737,8 @@ void main() {
         }
         function updateTailLengthDisplay() {
             currentTailLength = getViewportTailLength();
-            if (tailLengthSlider) {
-                tailLengthSlider.min = String(MIN_TRAIL_LENGTH);
-                tailLengthSlider.max = String(currentTailLength);
-                tailLengthSlider.value = String(currentTailLength);
-                tailLengthSlider.disabled = true;
-            }
             if (tailLengthValue) tailLengthValue.textContent = `${currentTailLength}`;
+            if (tailLengthReadout) tailLengthReadout.textContent = `${currentTailLength} rows from viewport`;
             trails = trails.map(trail => Array.isArray(trail) ? trail.slice(0, currentTailLength) : trail);
             matrixRenderStyles = null;
             markCrtSnapshotDirty();
@@ -4013,44 +3752,23 @@ void main() {
             extractionModeLed.classList.toggle('active', isPressed);
             markCrtSnapshotDirty();
         }
-        function updateOverdriveButton() {
-            const isPressed = isOverdriveMode;
-            overdriveModeBtn.setAttribute('aria-pressed', isPressed);
-            overdriveModeBtn.textContent = isPressed ? '[O] Overdrive Engaged' : '[O] Engage Overdrive';
-            overdriveModeBtn.classList.toggle('active', isPressed);
-            overdriveModeLed.classList.toggle('active', isPressed);
-            syncEffectSubSettingsVisibility();
-            matrixRenderStyles = null;
-            markOverdriveMaskDirty();
-            if (!isPressed || isConstructMode) {
-                cancelOverdriveMaskTransitionRefresh();
+        function updateFlatGridButton() {
+            const isPressed = isFlatGridMode;
+            flatGridModeBtn.setAttribute('aria-pressed', isPressed);
+            flatGridModeBtn.textContent = isPressed ? '[G] Flat Grid Engaged' : '[G] Flat Grid Rain';
+            flatGridModeBtn.classList.toggle('active', isPressed);
+            flatGridModeLed.classList.toggle('active', isPressed);
+            rainPerspectiveControls.classList.toggle('hidden', isPressed);
+            rainPerspectiveControls.inert = isPressed;
+            [rainDepthSlider, laneDriftSlider].forEach((slider) => {
+                if (slider) { slider.disabled = isPressed; }
+            });
+            if (rainVarietySlider) { rainVarietySlider.disabled = false; }
+            if (isPressed) {
+                closeSettingHelpPopovers();
             }
             markCrtSnapshotDirty();
-            renderCrtFrame();
-        }
-        function updateOverdriveDriveDisplay(percent) {
-            currentOverdriveDrivePercent = Math.max(0, Math.min(MAX_OVERDRIVE_DRIVE_PERCENT, Math.round(percent)));
-            if (overdriveDriveSlider) overdriveDriveSlider.value = currentOverdriveDrivePercent;
-            if (overdriveDriveValue) overdriveDriveValue.textContent = `${currentOverdriveDrivePercent}%`;
-            matrixRenderStyles = null;
-            markCrtSnapshotDirty();
-            renderCrtFrame();
-        }
-        function updateOverdrivePersistenceDisplay(durationMs) {
-            currentOverdrivePersistenceMs = Math.max(80, Math.min(MAX_OVERDRIVE_PERSISTENCE_MS, Math.round(durationMs / 10) * 10));
-            if (overdrivePersistenceSlider) overdrivePersistenceSlider.value = currentOverdrivePersistenceMs;
-            if (overdrivePersistenceValue) overdrivePersistenceValue.textContent = `${currentOverdrivePersistenceMs}ms`;
-            matrixRenderStyles = null;
-            markCrtSnapshotDirty();
-            renderCrtFrame();
-        }
-        function updateOverdriveBloomDisplay(percent) {
-            currentOverdriveBloomPercent = Math.max(0, Math.min(MAX_OVERDRIVE_BLOOM_PERCENT, Math.round(percent)));
-            if (overdriveBloomSlider) overdriveBloomSlider.value = currentOverdriveBloomPercent;
-            if (overdriveBloomValue) overdriveBloomValue.textContent = `${currentOverdriveBloomPercent}%`;
-            matrixRenderStyles = null;
-            markCrtSnapshotDirty();
-            renderCrtFrame();
+            markCrtSnapshotDirtyDuringTransition(180);
         }
         function updateTailCurveDisplay(percent) {
             currentTailCurvePercent = Math.max(0, Math.min(100, Math.round(percent)));
@@ -4068,37 +3786,107 @@ void main() {
             markCrtSnapshotDirty();
             renderCrtFrame();
         }
-        function updateGlitchFrequencyDisplay(percent) {
-            currentGlitchFrequencyPercent = Math.max(0, Math.min(100, Math.round(percent)));
-            if (glitchFrequencySlider) glitchFrequencySlider.value = currentGlitchFrequencyPercent;
-            if (glitchFrequencyValue) glitchFrequencyValue.textContent = `${currentGlitchFrequencyPercent}%`;
+        function updateRainDepthDisplay(percent) {
+            currentRainDepthPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (rainDepthSlider) rainDepthSlider.value = currentRainDepthPercent;
+            if (rainDepthValue) rainDepthValue.textContent = `${currentRainDepthPercent}%`;
+            markCrtSnapshotDirty();
+        }
+        function handleRainDepthChange(percent) {
+            updateRainDepthDisplay(percent);
+            refreshRainColumnProfiles();
+        }
+        function updateRainVarietyDisplay(percent) {
+            currentRainVarietyPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (rainVarietySlider) rainVarietySlider.value = currentRainVarietyPercent;
+            if (rainVarietyValue) rainVarietyValue.textContent = `${currentRainVarietyPercent}%`;
+            markCrtSnapshotDirty();
+        }
+        function handleRainVarietyChange(percent) {
+            updateRainVarietyDisplay(percent);
+            refreshRainColumnProfiles();
+        }
+        function updateLaneDriftDisplay(percent) {
+            currentLaneDriftPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (laneDriftSlider) laneDriftSlider.value = currentLaneDriftPercent;
+            if (laneDriftValue) laneDriftValue.textContent = `${currentLaneDriftPercent}%`;
+            markCrtSnapshotDirty();
+        }
+        function handleLaneDriftChange(percent) {
+            updateLaneDriftDisplay(percent);
+            refreshRainColumnProfiles();
+        }
+        function updateGapDensityDisplay(percent) {
+            currentGapDensityPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (gapDensitySlider) gapDensitySlider.value = currentGapDensityPercent;
+            if (gapDensityValue) gapDensityValue.textContent = `${currentGapDensityPercent}%`;
+            markCrtSnapshotDirty();
+        }
+        function handleGapDensityChange(percent) {
+            updateGapDensityDisplay(percent);
+            refreshRainColumnProfiles({ updateDelays: false });
+        }
+        function updateLeaderHeatDisplay(percent) {
+            currentLeaderHeatPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (leaderHeatSlider) leaderHeatSlider.value = currentLeaderHeatPercent;
+            if (leaderHeatValue) leaderHeatValue.textContent = `${currentLeaderHeatPercent}%`;
+            markCrtSnapshotDirty();
+        }
+        function handleLeaderHeatChange(percent) {
+            updateLeaderHeatDisplay(percent);
+            refreshRainColumnProfiles({ updateDelays: false });
+        }
+        function updateGlyphMutationDisplay(percent) {
+            currentGlyphMutationPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (glyphMutationSlider) glyphMutationSlider.value = currentGlyphMutationPercent;
+            if (glyphMutationValue) glyphMutationValue.textContent = `${currentGlyphMutationPercent}%`;
+            markCrtSnapshotDirty();
+        }
+        function updateCrtBeamFocusDisplay(percent) {
+            currentCrtBeamFocusPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (crtBeamFocusSlider) crtBeamFocusSlider.value = currentCrtBeamFocusPercent;
+            if (crtBeamFocusValue) crtBeamFocusValue.textContent = `${currentCrtBeamFocusPercent}%`;
             markCrtSnapshotDirty();
             renderCrtFrame();
         }
-        function updateGlitchOverdriveButton() {
-            glitchOverdriveBtn.setAttribute('aria-pressed', String(isGlitchOverdriveEnabled));
-            glitchOverdriveBtn.textContent = isGlitchOverdriveEnabled ? 'Glitch Overdrive Enabled' : 'Glitch Overdrive Disabled';
-            glitchOverdriveBtn.classList.toggle('active', isGlitchOverdriveEnabled);
-            glitchOverdriveLed.classList.toggle('active', isGlitchOverdriveEnabled);
-            matrixRenderStyles = null;
+        function updateCrtScanlinesDisplay(percent) {
+            currentCrtScanlinesPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (crtScanlinesSlider) crtScanlinesSlider.value = currentCrtScanlinesPercent;
+            if (crtScanlinesValue) crtScanlinesValue.textContent = `${currentCrtScanlinesPercent}%`;
             markCrtSnapshotDirty();
             renderCrtFrame();
         }
-        function updateCrtLeadFringeDisplay(percent) {
-            currentCrtLeadFringePercent = Math.max(0, Math.min(100, Math.round(percent)));
-            if (crtLeadFringeSlider) crtLeadFringeSlider.value = currentCrtLeadFringePercent;
-            if (crtLeadFringeValue) crtLeadFringeValue.textContent = `${currentCrtLeadFringePercent}%`;
+        function updateCrtGrilleDisplay(percent) {
+            currentCrtGrillePercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (crtGrilleSlider) crtGrilleSlider.value = currentCrtGrillePercent;
+            if (crtGrilleValue) crtGrilleValue.textContent = `${currentCrtGrillePercent}%`;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateCrtNoiseDisplay(percent) {
+            currentCrtNoisePercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (crtNoiseSlider) crtNoiseSlider.value = currentCrtNoisePercent;
+            if (crtNoiseValue) crtNoiseValue.textContent = `${currentCrtNoisePercent}%`;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateCrtSyncRollDisplay(percent) {
+            currentCrtSyncRollPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (crtSyncRollSlider) crtSyncRollSlider.value = currentCrtSyncRollPercent;
+            if (crtSyncRollValue) crtSyncRollValue.textContent = `${currentCrtSyncRollPercent}%`;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateCrtJitterDisplay(percent) {
+            currentCrtJitterPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (crtJitterSlider) crtJitterSlider.value = currentCrtJitterPercent;
+            if (crtJitterValue) crtJitterValue.textContent = `${currentCrtJitterPercent}%`;
             markCrtSnapshotDirty();
             renderCrtFrame();
         }
         function syncEffectSubSettingsVisibility() {
             const isCrtVisible = isCrtMode;
-            const isFringeVisible = isCrtMode && !isOverdriveMode;
-            overdriveSubSettings.classList.toggle('hidden', !isOverdriveMode);
             crtSubSettings.classList.toggle('hidden', !isCrtVisible);
-            if (crtFringeSettings) {
-                crtFringeSettings.classList.toggle('hidden', !isFringeVisible);
-            }
         }
         function refreshCrtControlLayout() {
             updateCrtSafeArea();
@@ -4116,10 +3904,8 @@ void main() {
             const isPressed = isCrtMode;
             if (isPressed) {
                 setupCrtRenderer();
-                cancelOverdriveMaskTransitionRefresh();
             } else {
                 cancelCrtTransitionRefresh();
-                markOverdriveMaskDirty();
             }
             crtModeBtn.setAttribute('aria-pressed', isPressed);
             crtModeBtn.textContent = isPressed ? '[T] CRT Engaged' : '[T] Engage CRT';
@@ -4127,6 +3913,9 @@ void main() {
             crtModeLed.classList.toggle('active', isPressed);
             bodyElement.classList.toggle('crt-mode', isPressed);
             bodyElement.classList.toggle('crt-unavailable', isPressed && (!crtReady || !crtCompositeAvailable));
+            if (!isCrtRoutingActive()) {
+                hideManagedTextCaret();
+            }
             syncEffectSubSettingsVisibility();
             if (isPressed) {
                 refreshCrtControlLayout();
@@ -4148,6 +3937,97 @@ void main() {
             if (crtVignetteValue) crtVignetteValue.textContent = `${currentCrtVignettePercent}%`;
             markCrtSnapshotDirty();
             renderCrtFrame();
+        }
+        function finishEffectReset({ updateUrl = true, announce = '', rebuildRain = false } = {}) {
+            closeSettingHelpPopovers();
+            matrixRenderStyles = null;
+            markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(220);
+            if (rebuildRain) {
+                resetRainColumns();
+            }
+            renderCrtFrame();
+            if (updateUrl) {
+                updateURL();
+            }
+            if (announce) {
+                showTemporaryMessage(announce);
+            }
+        }
+        function getResetAnnouncement(options, defaultMessage) {
+            return Object.prototype.hasOwnProperty.call(options, 'announce') ? options.announce : defaultMessage;
+        }
+        function resetDisplayEffectsToDefaults(options = {}) {
+            updateBrightness(DEFAULT_BRIGHTNESS_PERCENT);
+            finishEffectReset({ ...options, announce: getResetAnnouncement(options, '// Display effects reset.') });
+        }
+        function resetRainMotionEffectsToDefaults(options = {}) {
+            updateRainSpeedDisplay(DEFAULT_RAIN_FPS);
+            updateFontSizeDisplay(DEFAULT_FONT_SIZE);
+            isFlatGridMode = DEFAULT_FLAT_GRID_MODE;
+            updateFlatGridButton();
+            updateTailLengthDisplay();
+            finishEffectReset({ ...options, announce: getResetAnnouncement(options, '// Rain motion reset.'), rebuildRain: true });
+        }
+        function resetRainPerspectiveEffectsToDefaults(options = {}) {
+            updateRainDepthDisplay(DEFAULT_RAIN_DEPTH_PERCENT);
+            updateLaneDriftDisplay(DEFAULT_LANE_DRIFT_PERCENT);
+            refreshRainColumnProfiles();
+            finishEffectReset({ ...options, announce: getResetAnnouncement(options, '// Rain perspective reset.') });
+        }
+        function resetRainTextureEffectsToDefaults(options = {}) {
+            updateRainVarietyDisplay(DEFAULT_RAIN_VARIETY_PERCENT);
+            updateTailCurveDisplay(DEFAULT_TAIL_CURVE_PERCENT);
+            updateTailFloorDisplay(DEFAULT_TAIL_FLOOR_PERCENT);
+            updateGapDensityDisplay(DEFAULT_GAP_DENSITY_PERCENT);
+            updateLeaderHeatDisplay(DEFAULT_LEADER_HEAT_PERCENT);
+            updateGlyphMutationDisplay(DEFAULT_GLYPH_MUTATION_PERCENT);
+            refreshRainColumnProfiles();
+            finishEffectReset({ ...options, announce: getResetAnnouncement(options, '// Rain texture reset.') });
+        }
+        function resetCrtTubeEffectsToDefaults(options = {}) {
+            updateCrtFishbowlDisplay(DEFAULT_CRT_FISHBOWL_PERCENT);
+            updateCrtVignetteDisplay(DEFAULT_CRT_VIGNETTE_PERCENT);
+            updateCrtBeamFocusDisplay(DEFAULT_CRT_BEAM_FOCUS_PERCENT);
+            updateCrtScanlinesDisplay(DEFAULT_CRT_SCANLINES_PERCENT);
+            updateCrtGrilleDisplay(DEFAULT_CRT_GRILLE_PERCENT);
+            updateCrtNoiseDisplay(DEFAULT_CRT_NOISE_PERCENT);
+            updateCrtSyncRollDisplay(DEFAULT_CRT_SYNC_ROLL_PERCENT);
+            updateCrtJitterDisplay(DEFAULT_CRT_JITTER_PERCENT);
+            finishEffectReset({ ...options, announce: getResetAnnouncement(options, '// CRT tube effects reset.') });
+        }
+        function resetAllEffectsToDefaults() {
+            isConstructMode = DEFAULT_CONSTRUCT_MODE;
+            updateTheme();
+            isCrtMode = DEFAULT_CRT_MODE;
+            updateCrtMode();
+            resetDisplayEffectsToDefaults({ updateUrl: false, announce: '' });
+            resetRainMotionEffectsToDefaults({ updateUrl: false, announce: '' });
+            resetRainPerspectiveEffectsToDefaults({ updateUrl: false, announce: '' });
+            resetRainTextureEffectsToDefaults({ updateUrl: false, announce: '' });
+            resetCrtTubeEffectsToDefaults({ updateUrl: false, announce: '' });
+            finishEffectReset({ announce: '// All effects reset to defaults.', rebuildRain: true });
+        }
+        function resetEffectScopeToDefaults(scope) {
+            switch (scope) {
+                case 'display':
+                    resetDisplayEffectsToDefaults();
+                    break;
+                case 'rainMotion':
+                    resetRainMotionEffectsToDefaults();
+                    break;
+                case 'rainPerspective':
+                    resetRainPerspectiveEffectsToDefaults();
+                    break;
+                case 'rainTexture':
+                    resetRainTextureEffectsToDefaults();
+                    break;
+                case 'crtTube':
+                    resetCrtTubeEffectsToDefaults();
+                    break;
+                default:
+                    break;
+            }
         }
         function updateExtractionUIVisibility() {
             newValueWrapper.classList.toggle('hidden', !isExtractionMode);
@@ -4171,6 +4051,72 @@ void main() {
             markCrtSnapshotDirty();
             markCrtSnapshotDirtyDuringTransition(200);
         }
+        function closeSettingHelpPopovers(exceptPopover = null) {
+            document.querySelectorAll('.setting-help-popover.visible').forEach((popover) => {
+                if (popover === exceptPopover) { return; }
+                popover.classList.remove('visible');
+                popover.hidden = true;
+                const button = popover.id ? document.querySelector(`.setting-help-btn[aria-controls="${popover.id}"]`) : null;
+                if (button) {
+                    button.setAttribute('aria-expanded', 'false');
+                }
+            });
+        }
+        function toggleSettingHelp(button, forceExpanded) {
+            const popoverId = button?.getAttribute('aria-controls');
+            const popover = popoverId ? document.getElementById(popoverId) : null;
+            if (!popover) { return; }
+            const shouldOpen = typeof forceExpanded === 'boolean'
+                ? forceExpanded
+                : button.getAttribute('aria-expanded') !== 'true';
+            closeSettingHelpPopovers(shouldOpen ? popover : null);
+            button.setAttribute('aria-expanded', String(shouldOpen));
+            popover.hidden = !shouldOpen;
+            popover.classList.toggle('visible', shouldOpen);
+            markCrtSnapshotDirty();
+            markCrtSnapshotDirtyDuringTransition(160);
+        }
+        function initializeSettingHelpButtons() {
+            const labels = Array.from(document.querySelectorAll('#appearanceSectionBody label[data-tooltip]'));
+            labels.forEach((label, index) => {
+                if (label.dataset.helpInitialized === 'true') { return; }
+                const helpText = label.getAttribute('data-tooltip');
+                const row = label.closest('.mb-3') || label.parentElement;
+                if (!helpText || !row) { return; }
+                const popoverId = `settingHelpPopover${index}`;
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'setting-help-btn';
+                button.textContent = '?';
+                button.setAttribute('aria-label', `Explain ${label.textContent.replace(/\s+/g, ' ').trim()}`);
+                button.setAttribute('aria-controls', popoverId);
+                button.setAttribute('aria-expanded', 'false');
+                const popover = document.createElement('div');
+                popover.id = popoverId;
+                popover.className = 'setting-help-popover';
+                popover.textContent = helpText;
+                popover.hidden = true;
+                button.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toggleSettingHelp(button);
+                });
+                label.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    toggleSettingHelp(button);
+                });
+                button.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        event.preventDefault();
+                        toggleSettingHelp(button, false);
+                    }
+                });
+                row.insertBefore(button, label.nextSibling);
+                row.insertBefore(popover, button.nextSibling);
+                label.dataset.helpInitialized = 'true';
+            });
+        }
 
         // --- Theme Toggle ---
         function updateTheme() {
@@ -4189,10 +4135,6 @@ void main() {
             // Re-apply brightness with the correct color overlay
             updateBrightness(currentBrightnessPercent);
             matrixRenderStyles = null;
-            markOverdriveMaskDirty();
-            if (isConstructMode) {
-                cancelOverdriveMaskTransitionRefresh();
-            }
             // Redraw canvas with new colors
             if (rainAnimationId !== null) cancelAnimationFrame(rainAnimationId);
             startMatrixRain();
@@ -4232,6 +4174,7 @@ void main() {
         }
 
         function isManagedTextInput(element) {
+            if (!isCrtRoutingActive()) { return false; }
             return element instanceof HTMLInputElement
                 && element.type === 'text'
                 && !!element.closest('#managementPanel');
@@ -4515,6 +4458,26 @@ void main() {
             updateURL();
             return true;
         }
+        function getReorderTargetItemFromPoint(clientX, clientY, activeItem = null) {
+            const listRect = nameListElement.getBoundingClientRect();
+            const isNearListX = clientX >= listRect.left - 24 && clientX <= listRect.right + 24;
+            if (!isNearListX) { return null; }
+            const items = Array.from(nameListElement.querySelectorAll('.name-item:not(.name-item-selected)'))
+                .filter(item => item !== activeItem);
+            let nearestItem = null;
+            let nearestDistance = Infinity;
+            for (const item of items) {
+                const rect = item.getBoundingClientRect();
+                const isInsideY = clientY >= rect.top && clientY <= rect.bottom;
+                if (isInsideY) { return item; }
+                const distance = Math.min(Math.abs(clientY - rect.top), Math.abs(clientY - rect.bottom));
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestItem = item;
+                }
+            }
+            return nearestDistance <= 48 ? nearestItem : null;
+        }
         function resetPointerReorderState() {
             document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
             pointerDraggedItem = null;
@@ -4531,8 +4494,7 @@ void main() {
                 pointerDraggedItem.classList.add('dragging');
             }
             document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
-            const target = document.elementFromPoint(e.clientX, e.clientY);
-            const targetItem = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
+            const targetItem = getReorderTargetItemFromPoint(e.clientX, e.clientY, pointerDraggedItem);
             if (targetItem && targetItem !== pointerDraggedItem) {
                 targetItem.classList.add('drag-over');
                 pointerDragTargetItem = targetItem;
@@ -4814,8 +4776,6 @@ void main() {
             menuToggleBtn.innerHTML = isVisible ? '✕' : '☰';
             menuToggleBtn.classList.toggle('active', isVisible);
             menuToggleBtn.setAttribute('aria-expanded', isVisible);
-            markOverdriveMaskDirty();
-            markOverdriveMaskDirtyDuringTransition(420);
             markCrtSnapshotDirty();
             markCrtSnapshotDirtyDuringTransition(420);
         }
@@ -4854,8 +4814,6 @@ void main() {
             if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => { console.warn(`FS request failed: ${err.message}`); }); }
             bodyElement.classList.add('matrix-mode-active');
             enterMatrixBtn.textContent = '[M] Exit'; renderProgressBar();
-            markOverdriveMaskDirty();
-            markOverdriveMaskDirtyDuringTransition(360);
             markCrtSnapshotDirty();
             markCrtSnapshotDirtyDuringTransition(360);
         }
@@ -4866,8 +4824,6 @@ void main() {
             enterMatrixBtn.textContent = '[M] Matrix'; renderProgressBar();
             menuToggleBtn.innerHTML = '☰'; menuToggleBtn.classList.remove('active');
             menuToggleBtn.setAttribute('aria-expanded', 'false');
-            markOverdriveMaskDirty();
-            markOverdriveMaskDirtyDuringTransition(360);
             markCrtSnapshotDirty();
             markCrtSnapshotDirtyDuringTransition(360);
         }
@@ -4883,7 +4839,7 @@ void main() {
             { name: "Toggle Construct Mode", action: () => themeToggleBtn.click(), shortcut: 'C' },
             { name: "Toggle Extraction Mode", action: () => extractionModeBtn.click(), shortcut: 'E' },
             { name: "Toggle CRT Mode", action: () => crtModeBtn.click(), shortcut: 'T' },
-            { name: "Toggle Matrix Overdrive", action: () => overdriveModeBtn.click(), shortcut: 'O' },
+            { name: "Toggle Flat Grid Rain", action: () => flatGridModeBtn.click(), shortcut: 'G' },
             { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
             { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
             { name: "Previous Operative", action: undoLastPick, shortcut: 'U' },
@@ -4995,7 +4951,6 @@ void main() {
                 requestAnimationFrame(() => {
                     if (!modalOverlay.classList.contains('visible')) { return; }
                     modalContent.centerInOverlay();
-                    markOverdriveMaskDirty();
                     markCrtSnapshotDirty();
                     if (isCrtMode) {
                         renderCrtFrame();
@@ -5021,7 +4976,6 @@ void main() {
             requestAnimationFrame(() => {
                 managementPanel.style.transition = '';
             });
-            markOverdriveMaskDirty();
             markCrtSnapshotDirty();
             if (isCrtMode) {
                 renderCrtFrame();
@@ -5149,8 +5103,6 @@ void main() {
                     elementToFocusOnModalClose = null;
                 }
             }
-            markOverdriveMaskDirty();
-            markOverdriveMaskDirtyDuringTransition(420);
             markCrtSnapshotDirty();
             markCrtSnapshotDirtyDuringTransition(420);
         }
@@ -5306,6 +5258,15 @@ void main() {
                 return range;
             }
             return null;
+        }
+        function getCrtSettingHelpTarget(target) {
+            if (!(target instanceof Element)) { return null; }
+            const directButton = target.closest('.setting-help-btn');
+            if (directButton instanceof HTMLButtonElement) { return directButton; }
+            const label = target.closest('label[data-tooltip]');
+            const row = label?.closest('.mb-3');
+            const button = row?.querySelector('.setting-help-btn');
+            return button instanceof HTMLButtonElement ? button : null;
         }
         function getCrtPressableTarget(target) {
             if (!(target instanceof Element)) { return null; }
@@ -5480,8 +5441,7 @@ void main() {
         function updateCrtRosterDrag(point) {
             if (!crtEventState.activeRosterItem) { return; }
             document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
-            const target = getElementAtSourcePoint(point);
-            const targetItem = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
+            const targetItem = getReorderTargetItemFromPoint(point.x, point.y, crtEventState.activeRosterItem);
             if (targetItem && targetItem !== crtEventState.activeRosterItem) {
                 targetItem.classList.add('drag-over');
             }
@@ -5490,8 +5450,7 @@ void main() {
         function finishCrtRosterDrag(point) {
             const activeItem = crtEventState.activeRosterItem;
             if (!activeItem) { return; }
-            const target = getElementAtSourcePoint(point);
-            const targetItem = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
+            const targetItem = getReorderTargetItemFromPoint(point.x, point.y, activeItem);
             document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
             if (targetItem && targetItem !== activeItem && draggedItemName) {
                 reorderOperativeByName(draggedItemName, targetItem.dataset.name);
@@ -5510,6 +5469,13 @@ void main() {
             }
         }
         function clickCrtTarget(target, point, sourceEvent) {
+            const settingHelpButton = getCrtSettingHelpTarget(target);
+            if (settingHelpButton) {
+                toggleSettingHelp(settingHelpButton);
+                clearCrtPressedTarget();
+                markCrtSnapshotDirtyForMotion(settingHelpButton, 160);
+                return;
+            }
             if (startCrtInlineNameEdit(target, point)) {
                 clearCrtPressedTarget();
                 markCrtSnapshotDirtyForMotion(target instanceof Element ? target : null, 220);
@@ -5548,6 +5514,15 @@ void main() {
             crtEventState.scrollLastY = point.y;
             crtEventState.didScroll = false;
             crtCanvas.setPointerCapture?.(event.pointerId);
+
+            const settingHelpTarget = getCrtSettingHelpTarget(sourceTarget);
+            if (settingHelpTarget) {
+                crtEventState.target = settingHelpTarget;
+                focusCrtTarget(settingHelpTarget);
+                setCrtPressedTarget(settingHelpTarget);
+                dispatchCrtMouseEvent('mousedown', settingHelpTarget, point, event);
+                return;
+            }
 
             const rangeTarget = getCrtRangeTarget(target);
             if (rangeTarget) {
@@ -5712,71 +5687,12 @@ void main() {
         managementPanel.addEventListener('scroll', () => syncManagedTextCaret(), { passive: true });
         
         // Settings Listeners
-        brightnessSlider.addEventListener('input', (event) => {
-            updateBrightness(parseInt(event.target.value));
-            scheduleURLUpdate();
-        });
-        speedSlider.addEventListener('input', (event) => {
-            handleSpeedChange(parseInt(event.target.value));
-            scheduleURLUpdate();
-        });
-        fontSizeSlider.addEventListener('input', (event) => {
-            handleFontSizeChange(parseInt(event.target.value));
-            scheduleURLUpdate();
-        });
-        tailCurveSlider.addEventListener('input', (event) => {
-            updateTailCurveDisplay(parseInt(event.target.value, 10));
-            scheduleURLUpdate();
-        });
-        tailFloorSlider.addEventListener('input', (event) => {
-            updateTailFloorDisplay(parseInt(event.target.value, 10));
-            scheduleURLUpdate();
-        });
-        glitchFrequencySlider.addEventListener('input', (event) => {
-            updateGlitchFrequencyDisplay(parseInt(event.target.value, 10));
-            scheduleURLUpdate();
-        });
-        crtFishbowlSlider.addEventListener('input', (event) => {
-            updateCrtFishbowlDisplay(parseInt(event.target.value));
-            scheduleURLUpdate();
-        });
-        crtVignetteSlider.addEventListener('input', (event) => {
-            updateCrtVignetteDisplay(parseInt(event.target.value));
-            scheduleURLUpdate();
-        });
-        crtLeadFringeSlider.addEventListener('input', (event) => {
-            updateCrtLeadFringeDisplay(parseFloat(event.target.value));
-            scheduleURLUpdate();
-        });
-        overdriveDriveSlider.addEventListener('input', (event) => {
-            updateOverdriveDriveDisplay(parseFloat(event.target.value));
-            scheduleURLUpdate();
-        });
-        overdrivePersistenceSlider.addEventListener('input', (event) => {
-            updateOverdrivePersistenceDisplay(parseFloat(event.target.value));
-            scheduleURLUpdate();
-        });
-        overdriveBloomSlider.addEventListener('input', (event) => {
-            updateOverdriveBloomDisplay(parseFloat(event.target.value));
-            scheduleURLUpdate();
-        });
+        bindNumericSettingControls();
         titleInput.addEventListener('input', (event) => {
             updateSchemaTitle(event.target.value);
             markCrtSnapshotDirty();
             scheduleURLUpdate();
         });
-        brightnessSlider.addEventListener('change', updateURL);
-        speedSlider.addEventListener('change', updateURL);
-        fontSizeSlider.addEventListener('change', updateURL);
-        tailCurveSlider.addEventListener('change', updateURL);
-        tailFloorSlider.addEventListener('change', updateURL);
-        glitchFrequencySlider.addEventListener('change', updateURL);
-        crtFishbowlSlider.addEventListener('change', updateURL);
-        crtVignetteSlider.addEventListener('change', updateURL);
-        crtLeadFringeSlider.addEventListener('change', updateURL);
-        overdriveDriveSlider.addEventListener('change', updateURL);
-        overdrivePersistenceSlider.addEventListener('change', updateURL);
-        overdriveBloomSlider.addEventListener('change', updateURL);
         titleInput.addEventListener('change', updateURL);
         
         // Action Button Listeners
@@ -5784,6 +5700,12 @@ void main() {
             isConstructMode = !isConstructMode;
             updateTheme();
             updateURL();
+        });
+        resetAllEffectsBtn.addEventListener('click', resetAllEffectsToDefaults);
+        resetEffectBtns.forEach((button) => {
+            button.addEventListener('click', () => {
+                resetEffectScopeToDefaults(button.dataset.resetScope);
+            });
         });
         fullscreenBtn.addEventListener('click', toggleFullScreen);
         enterMatrixBtn.addEventListener('click', () => { if (isInMatrixMode) { exitMatrixMode(); } else { enterMatrixMode(); } });
@@ -5797,25 +5719,19 @@ void main() {
             showTemporaryMessage(`// Extraction Mode ${isExtractionMode ? 'Engaged' : 'Disengaged'}.`);
             updateURL();
         });
+        flatGridModeBtn.addEventListener('click', () => {
+            isFlatGridMode = !isFlatGridMode;
+            updateFlatGridButton();
+            refreshRainColumnProfiles();
+            showTemporaryMessage(`// Flat Grid Rain ${isFlatGridMode ? 'Engaged' : 'Disengaged'}.`);
+            updateURL();
+        });
         crtModeBtn.addEventListener('click', () => {
             isCrtMode = !isCrtMode;
             updateCrtMode();
             showTemporaryMessage(`// CRT Mode ${isCrtMode ? 'Engaged' : 'Disengaged'}.`);
             updateURL();
         });
-        overdriveModeBtn.addEventListener('click', () => {
-            isOverdriveMode = !isOverdriveMode;
-            updateOverdriveButton();
-            showTemporaryMessage(`// Overdrive ${isOverdriveMode ? 'Engaged' : 'Disengaged'}.`);
-            updateURL();
-        });
-        glitchOverdriveBtn.addEventListener('click', () => {
-            isGlitchOverdriveEnabled = !isGlitchOverdriveEnabled;
-            updateGlitchOverdriveButton();
-            showTemporaryMessage(`// Glitch Overdrive ${isGlitchOverdriveEnabled ? 'Enabled' : 'Disabled'}.`);
-            updateURL();
-        });
-
         // Modal & Palette Listeners
         helpBtn.addEventListener('click', () => toggleHelpModal(true));
         helpModalOverlay.addEventListener('click', (e) => { if (e.target === helpModalOverlay) toggleHelpModal(false); });
@@ -5824,6 +5740,13 @@ void main() {
              commandPaletteSelectedIndex = 0;
              renderCommands(commandPaletteInput.value);
              markCrtSnapshotDirty();
+        });
+        managementPanel.addEventListener('click', (event) => {
+            if (event.target instanceof Element && event.target.closest('.setting-help-btn, .setting-help-popover, label[data-tooltip]')) {
+                return;
+            }
+            closeSettingHelpPopovers();
+            markCrtSnapshotDirty();
         });
         bodyElement.addEventListener('transitionrun', (event) => {
             if (!(event.target instanceof Element)) { return; }
@@ -5913,7 +5836,7 @@ void main() {
                      case 'c': themeToggleBtn.click(); break;
                      case 'e': extractionModeBtn.click(); break;
                      case 't': crtModeBtn.click(); break;
-                     case 'o': overdriveModeBtn.click(); break;
+                     case 'g': flatGridModeBtn.click(); break;
                      case 'f': toggleFullScreen(); break;
                      case 'm': enterMatrixBtn.click(); break;
                      case 'u': undoLastPick(); break;
@@ -5926,13 +5849,13 @@ void main() {
         // --- Initial Load ---
         document.addEventListener('DOMContentLoaded', () => { 
             exposeE2eApi();
+            initializeSettingHelpButtons();
             const crtSnapshotObserver = new MutationObserver((mutations) => {
                 const motionTargets = mutations
                     .map((mutation) => mutation.target)
                     .filter((target) => target instanceof Element && target !== crtCanvas);
                 if (motionTargets.length > 0) {
                     markCrtSnapshotDirty();
-                    markOverdriveMaskDirty();
                     const longestMotionMs = motionTargets.reduce((maxDuration, target) => Math.max(maxDuration, getComputedMotionDurationMs(target)), 0);
                     if (longestMotionMs > 0) {
                         markCrtSnapshotDirtyDuringTransition(longestMotionMs);

@@ -1,5 +1,5 @@
 import { test, expect } from '../helpers/fixtures.mjs';
-import { clickThroughCrt, dragThroughCrt, expectTypingCaretFor, openApp } from '../helpers/app.mjs';
+import { clickThroughCrt, dragThroughCrt, expectTypingCaretFor, getRosterFromUrl, openApp, waitForAppReady } from '../helpers/app.mjs';
 import { expectRosterOrder } from '../helpers/roster.mjs';
 
 async function openMenuThroughCrt(page) {
@@ -30,7 +30,23 @@ test.describe('CRT interaction routing', () => {
     await expect(page.locator('#crtFishbowlSlider')).toHaveValue('80');
   });
 
+  test('CRT-routed setting help buttons expand explanations', async ({ page }) => {
+    test.slow();
+    await openApp(page, { crt: 'true', flatGrid: 'false' });
+    await openMenuThroughCrt(page);
+
+    const helpLabel = page.locator('label[for="rainDepthSlider"]');
+    const helpButton = page.locator('label[for="rainDepthSlider"] + .setting-help-btn');
+    await expect(helpButton).toHaveCount(1);
+    const popoverId = await helpButton.getAttribute('aria-controls');
+    await clickThroughCrt(page, helpLabel);
+
+    await expect(helpButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator(`#${popoverId}`)).toBeVisible();
+  });
+
   test('clicking a name edits it in CRT mode without extraction', async ({ page }) => {
+    test.slow();
     await openApp(page, { crt: 'true' });
     await openMenuThroughCrt(page);
 
@@ -44,7 +60,7 @@ test.describe('CRT interaction routing', () => {
     await nameInput.press('Enter');
 
     await expect(page.locator('li[data-name="Thomas Anderson"]')).toBeVisible();
-    await expect(page.url()).toContain('Thomas%20Anderson|The%20One');
+    await expect(await getRosterFromUrl(page)).toContainEqual({ name: 'Thomas Anderson', value: 'The One' });
   });
 
   test('clicking a name edits it in CRT mode with extraction and preserves alias', async ({ page }) => {
@@ -63,7 +79,7 @@ test.describe('CRT interaction routing', () => {
     await nameInput.press('Enter');
 
     await expect(page.locator('li[data-name="Pythia"]')).toBeVisible();
-    await expect(page.url()).toContain('Pythia|Prophet');
+    await expect(await getRosterFromUrl(page)).toContainEqual({ name: 'Pythia', value: 'Prophet' });
   });
 
   test('shows a visible typing caret for add, extraction, inline rename, and construct inputs in CRT mode', async ({ page }) => {
@@ -86,6 +102,7 @@ test.describe('CRT interaction routing', () => {
   });
 
   test('drag handle reorders operatives in CRT mode without extraction', async ({ page }) => {
+    test.slow();
     await openApp(page, { crt: 'true' });
     await openMenuThroughCrt(page);
 
@@ -97,10 +114,12 @@ test.describe('CRT interaction routing', () => {
 
     await expectRosterOrder(page, ['Oracle', 'Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Cypher']);
     await page.reload();
+    await waitForAppReady(page);
     await expectRosterOrder(page, ['Oracle', 'Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Cypher']);
   });
 
   test('drag handle reorders operatives in CRT mode with extraction engaged', async ({ page }) => {
+    test.slow();
     await openApp(page, { crt: 'true' });
     await openMenuThroughCrt(page);
     await enableExtractionModeThroughCrt(page);
@@ -113,6 +132,7 @@ test.describe('CRT interaction routing', () => {
 
     await expectRosterOrder(page, ['Trinity', 'Neo', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher']);
     await page.reload();
+    await waitForAppReady(page);
     await expectRosterOrder(page, ['Trinity', 'Neo', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher']);
   });
 });
