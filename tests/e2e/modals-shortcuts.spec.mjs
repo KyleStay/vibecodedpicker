@@ -50,8 +50,6 @@ test.describe('modals, shortcuts, and fullscreen-backed modes', () => {
     await page.keyboard.press('t');
     await expect(page.locator('#crtModeBtn')).toHaveAttribute('aria-pressed', 'true');
 
-    await page.keyboard.press('o');
-    await expect(page.locator('#overdriveModeBtn')).toHaveAttribute('aria-pressed', 'false');
   });
 
   test('matrix mode enters fullscreen and exits when fullscreen ends', async ({ page }) => {

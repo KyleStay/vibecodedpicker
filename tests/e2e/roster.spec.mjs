@@ -1,5 +1,5 @@
 import { test, expect } from '../helpers/fixtures.mjs';
-import { openApp, expectTypingCaretFor, expectUrlToContain } from '../helpers/app.mjs';
+import { getRosterFromUrl, openApp, expectUrlToContain } from '../helpers/app.mjs';
 import { addOperative, enableExtractionMode, expectRosterOrder, openMenu } from '../helpers/roster.mjs';
 
 test.describe('roster management', () => {
@@ -13,7 +13,7 @@ test.describe('roster management', () => {
     await expect(page.locator('#nameList .name-item[data-name="Switch"]')).toBeVisible();
     await expect(page.locator('#schemaTitleDisplay')).toHaveText('Mission Roster');
     await expectUrlToContain(page, { title: 'Mission Roster' });
-    await expect(page.url()).toContain('Switch|');
+    await expect(await getRosterFromUrl(page)).toContainEqual({ name: 'Switch', value: '' });
   });
 
   test('shows alias inputs in extraction mode and saves alias edits', async ({ page }) => {
@@ -25,12 +25,12 @@ test.describe('roster management', () => {
     await expect(page.locator('#newValueWrapper')).toBeVisible();
 
     await addOperative(page, { name: 'Dozer', alias: 'Zion' });
-    await expect(page.url()).toContain('Dozer|Zion');
+    await expect(await getRosterFromUrl(page)).toContainEqual({ name: 'Dozer', value: 'Zion' });
 
     const aliasInput = page.locator('li[data-name="Dozer"] .value-row input');
     await aliasInput.fill('Nebuchadnezzar');
     await aliasInput.blur();
-    await expect(page.url()).toContain('Dozer|Nebuchadnezzar');
+    await expect(await getRosterFromUrl(page)).toContainEqual({ name: 'Dozer', value: 'Nebuchadnezzar' });
   });
 
   test('clicking a name edits it in non-extraction mode', async ({ page }) => {
@@ -44,7 +44,7 @@ test.describe('roster management', () => {
     await nameInput.press('Enter');
 
     await expect(page.locator('li[data-name="Thomas Anderson"]')).toBeVisible();
-    await expect(page.url()).toContain('Thomas%20Anderson|The%20One');
+    await expect(await getRosterFromUrl(page)).toContainEqual({ name: 'Thomas Anderson', value: 'The One' });
   });
 
   test('clicking a name edits it in extraction mode and preserves the alias', async ({ page }) => {
@@ -59,26 +59,30 @@ test.describe('roster management', () => {
     await nameInput.press('Enter');
 
     await expect(page.locator('li[data-name="Pythia"]')).toBeVisible();
-    await expect(page.url()).toContain('Pythia|Prophet');
+    await expect(await getRosterFromUrl(page)).toContainEqual({ name: 'Pythia', value: 'Prophet' });
   });
 
-  test('shows a visible typing caret for add, extraction, inline rename, and construct inputs in non-CRT mode', async ({ page }) => {
+  test('uses the native input caret in non-CRT mode', async ({ page }) => {
     await openApp(page, { crt: 'false' });
     await openMenu(page);
 
     await page.locator('#newNameInput').click();
-    await expectTypingCaretFor(page, '#newNameInput');
+    await expect(page.locator('#newNameInput')).toBeFocused();
+    await expect(page.locator('#managedTextCaret')).toHaveAttribute('data-active', 'false');
 
     await enableExtractionMode(page);
     await page.locator('li[data-name="Neo"] .value-row input').click();
-    await expectTypingCaretFor(page, 'li[data-name="Neo"] .value-row input');
+    await expect(page.locator('li[data-name="Neo"] .value-row input')).toBeFocused();
+    await expect(page.locator('#managedTextCaret')).toHaveAttribute('data-active', 'false');
 
     await page.locator('li[data-name="Neo"] .name-span').click();
-    await expectTypingCaretFor(page, 'li[data-name="Neo"] .name-edit-input');
+    await expect(page.locator('li[data-name="Neo"] .name-edit-input')).toBeFocused();
+    await expect(page.locator('#managedTextCaret')).toHaveAttribute('data-active', 'false');
 
     await page.locator('#themeToggleBtn').click();
     await page.locator('#newNameInput').click();
-    await expectTypingCaretFor(page, '#newNameInput');
+    await expect(page.locator('#newNameInput')).toBeFocused();
+    await expect(page.locator('#managedTextCaret')).toHaveAttribute('data-active', 'false');
   });
 
   test('does not add duplicate names', async ({ page }) => {
@@ -100,7 +104,7 @@ test.describe('roster management', () => {
     await page.waitForTimeout(350);
 
     await expect(page.locator('li[data-name="Cypher"]')).toHaveCount(0);
-    await expect(page.url()).not.toContain('Cypher%7C');
+    await expect((await getRosterFromUrl(page)).some((entry) => entry.name === 'Cypher')).toBe(false);
   });
 
   test('reorders operatives and keeps the order after reload', async ({ page }) => {
