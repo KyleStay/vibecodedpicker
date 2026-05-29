@@ -41,11 +41,19 @@ export async function getClipboardWrites(page) {
 
 export async function getRosterFromUrl(page) {
   const url = new URL(page.url());
+  const names = url.searchParams.getAll('name');
+  if (names.length > 0) {
+    const aliases = url.searchParams.getAll('alias');
+    return names.map((name, index) => ({
+      name,
+      value: aliases[index] || ''
+    }));
+  }
   const rosterPayload = url.searchParams.get('roster');
   return rosterPayload ? JSON.parse(rosterPayload) : [];
 }
 
-export async function clickThroughCrt(page, locator) {
+export async function clickThroughCrt(page, locator, options = {}) {
   await locator.evaluate((element) => {
     element.scrollIntoView({ block: 'center', inline: 'nearest' });
   });
@@ -54,7 +62,11 @@ export async function clickThroughCrt(page, locator) {
   if (!box) {
     throw new Error('Locator is not visible for CRT click.');
   }
-  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  const targetPosition = options.targetPosition || {
+    x: box.width / 2,
+    y: box.height / 2
+  };
+  await page.mouse.click(box.x + targetPosition.x, box.y + targetPosition.y);
 }
 
 export async function expectTypingCaretFor(page, inputSelector) {
@@ -79,7 +91,7 @@ export async function expectTypingCaretFor(page, inputSelector) {
   }, inputSelector);
 }
 
-export async function dragThroughCrt(page, sourceLocator, targetLocator) {
+export async function dragThroughCrt(page, sourceLocator, targetLocator, options = {}) {
   await sourceLocator.evaluate((element) => {
     element.scrollIntoView({ block: 'center', inline: 'nearest' });
   });
@@ -94,7 +106,11 @@ export async function dragThroughCrt(page, sourceLocator, targetLocator) {
   }
   await page.mouse.move(sourceBox.x + (sourceBox.width / 2), sourceBox.y + (sourceBox.height / 2));
   await page.mouse.down();
-  await page.mouse.move(targetBox.x + (targetBox.width / 2), targetBox.y + (targetBox.height / 2), { steps: 4 });
+  const targetPosition = options.targetPosition || {
+    x: targetBox.width / 2,
+    y: targetBox.height / 2
+  };
+  await page.mouse.move(targetBox.x + targetPosition.x, targetBox.y + targetPosition.y, { steps: 4 });
   await page.mouse.up();
 }
 
