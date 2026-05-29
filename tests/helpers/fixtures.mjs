@@ -4,6 +4,7 @@ async function installBrowserStubs(page) {
   await page.addInitScript(() => {
     window.__TEST_CLIPBOARD__ = [];
     window.__TEST_FULLSCREEN_ELEMENT__ = null;
+    window.__TEST_FULLSCREEN_REJECT_COUNT__ = window.__TEST_FULLSCREEN_REJECT_COUNT__ || 0;
 
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -23,6 +24,10 @@ async function installBrowserStubs(page) {
     });
 
     Element.prototype.requestFullscreen = function requestFullscreen() {
+      if (window.__TEST_FULLSCREEN_REJECT_COUNT__ > 0) {
+        window.__TEST_FULLSCREEN_REJECT_COUNT__ -= 1;
+        return Promise.reject(new Error('Fullscreen blocked by test stub.'));
+      }
       window.__TEST_FULLSCREEN_ELEMENT__ = this;
       document.dispatchEvent(new Event('fullscreenchange'));
       return Promise.resolve();

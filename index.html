@@ -2278,6 +2278,8 @@ void main() {
         let rainAnimationId = null;
         let isAnimationPaused = false;
         let isInMatrixMode = false;
+        let isMatrixFullscreenPending = false;
+        let suppressNextMatrixModeClick = false;
         let isExtractionMode = false;
         let isCrtMode = true;
         let currentCrtFishbowlPercent = 25;
@@ -3128,6 +3130,12 @@ void main() {
             markCrtSnapshotDirty();
             renderCrtFrame();
             crtStartupFrameId = requestAnimationFrame(refreshCrtStartupFrame);
+        }
+        function restartCrtStartupScreen() {
+            if (!isCrtMode || !crtReady || !crtCompositeAvailable) { return; }
+            cancelCrtStartupRefresh();
+            crtStartupProgressOverride = null;
+            startInitialCrtStartup();
         }
         function beginInitialCrtStartup() {
             cancelCrtStartupRefresh();
@@ -4168,9 +4176,17 @@ void main() {
             if (isExtractionMode) { params.set('extraction', 'on'); }
             if (!isCrtMode) { params.set('crt-effect', 'off'); }
             if (isConstructMode) { params.set('theme', 'construct'); }
+            if (isInMatrixMode) { params.set('matrix-mode', 'on'); }
 
             const queryString = params.toString();
             return window.location.pathname + (queryString ? '?' + queryString : '');
+        }
+        function buildBlankMatrixModeURL() {
+            const url = new URL(window.location.href);
+            url.search = '';
+            url.hash = '';
+            url.searchParams.set('matrix-mode', 'on');
+            return url.toString();
         }
         function updateURL() {
             if (urlUpdateTimerId !== null) {
@@ -4297,6 +4313,8 @@ void main() {
             if (extractionParam !== null) {
                 isExtractionMode = isURLValueOn(extractionParam);
             }
+            const matrixModeParam = getURLParamValue(urlParams, 'matrix-mode', ['matrixMode', 'matrix']);
+            const shouldEnterMatrixMode = matrixModeParam !== null && isURLValueOn(matrixModeParam);
             const rainLayoutParam = getURLParamValue(urlParams, 'rain-layout');
             if (rainLayoutParam !== null) {
                 isFlatGridMode = String(rainLayoutParam).toLowerCase() !== 'organic';
@@ -4407,6 +4425,9 @@ void main() {
             startMatrixRain();
             isInMatrixMode = false;
             bodyElement.classList.remove('matrix-mode-active');
+            if (shouldEnterMatrixMode) {
+                enterMatrixMode({ requestFullscreen: true, updateSharedUrl: false, deferFullscreen: true });
+            }
             updateBodyPadding();
             if (e2eState.enabled) {
                 e2eState.ready = true;
@@ -5506,20 +5527,20 @@ void main() {
         function copyOperativeToClipboard(operative) {
             copyToClipboard(operative.value || operative.name);
         }
-        function copyToClipboard(text) {
+        function copyToClipboard(text, successMessage = `// EXTRACTED: "${text}" copied.`) {
              try {
                  // Use the modern clipboard API
                  navigator.clipboard.writeText(text).then(() => {
-                     showTemporaryMessage(`// EXTRACTED: "${text}" copied.`);
+                     showTemporaryMessage(successMessage);
                  }).catch(err => {
                      console.warn('// Clipboard API failed, falling back.', err);
-                     fallbackCopyToClipboard(text);
+                     fallbackCopyToClipboard(text, successMessage);
                  });
              } catch (e) {
-                 fallbackCopyToClipboard(text);
+                 fallbackCopyToClipboard(text, successMessage);
              }
         }
-        function fallbackCopyToClipboard(text) {
+        function fallbackCopyToClipboard(text, successMessage = `// EXTRACTED: "${text}" copied.`) {
             const textArea = document.createElement('textarea');
             textArea.value = text;
             textArea.style.position = 'fixed';
@@ -5532,7 +5553,7 @@ void main() {
             try {
                 const successful = document.execCommand('copy');
                 if (successful) {
-                    showTemporaryMessage(`// EXTRACTED: "${text}" copied.`);
+                    showTemporaryMessage(successMessage);
                 } else {
                     showTemporaryMessage('// Extraction failed.', 'error');
                 }
@@ -5583,17 +5604,42 @@ void main() {
         }
 
         // --- Matrix Mode Logic ---
-        function enterMatrixMode() {
+        function requestMatrixModeFullscreen({ deferOnFailure = false } = {}) {
+            if (document.fullscreenElement) {
+                isMatrixFullscreenPending = false;
+                return;
+            }
+            document.documentElement.requestFullscreen()
+                .then(() => {
+                    isMatrixFullscreenPending = false;
+                })
+                .catch(err => {
+                    if (deferOnFailure) {
+                        isMatrixFullscreenPending = true;
+                    } else {
+                        isMatrixFullscreenPending = false;
+                    }
+                    console.warn(`FS request failed: ${err.message}`);
+                });
+        }
+        function enterMatrixMode(options = {}) {
+            const requestFullscreen = options.requestFullscreen !== false;
+            const updateSharedUrl = options.updateSharedUrl !== false;
+            const deferFullscreen = options.deferFullscreen === true;
             if (isInMatrixMode) return; isInMatrixMode = true; console.log("// Entering Matrix Mode");
             if (managementPanel.classList.contains('visible')) { toggleManagementPanel(); }
-            if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(err => { console.warn(`FS request failed: ${err.message}`); }); }
+            if (requestFullscreen) { requestMatrixModeFullscreen({ deferOnFailure: deferFullscreen }); }
             bodyElement.classList.add('matrix-mode-active');
             enterMatrixBtn.textContent = '[M] Exit'; renderProgressBar();
             markCrtSnapshotDirty();
+            restartCrtStartupScreen();
             markCrtSnapshotDirtyDuringTransition(360);
+            if (updateSharedUrl) { updateURL(); }
         }
         function exitMatrixMode() {
             if (!isInMatrixMode) return; isInMatrixMode = false; console.log("// Exiting Matrix Mode");
+            isMatrixFullscreenPending = false;
+            suppressNextMatrixModeClick = false;
             if (document.fullscreenElement && document.exitFullscreen) { document.exitFullscreen().catch(err => { console.warn(`Exit FS Error: ${err.message}`); }); }
             bodyElement.classList.remove('matrix-mode-active');
             enterMatrixBtn.textContent = '[M] Matrix'; renderProgressBar();
@@ -5601,11 +5647,24 @@ void main() {
             menuToggleBtn.setAttribute('aria-expanded', 'false');
             markCrtSnapshotDirty();
             markCrtSnapshotDirtyDuringTransition(360);
+            updateURL();
         }
 
         function handleFullscreenChange() {
-            const isFullscreen = !!document.fullscreenElement; if (!isFullscreen && isInMatrixMode) { console.log("// FS exited externally, exiting Matrix Mode."); exitMatrixMode(); }
+            const isFullscreen = !!document.fullscreenElement; if (isFullscreen) { isMatrixFullscreenPending = false; }
+            if (!isFullscreen && isInMatrixMode && !isMatrixFullscreenPending) { console.log("// FS exited externally, exiting Matrix Mode."); exitMatrixMode(); }
             if (fullscreenBtn) { fullscreenBtn.textContent = isFullscreen ? '[FS] Exit' : '[FS] Full'; }
+        }
+        function handleDeferredMatrixFullscreenGesture(event) {
+            if (!isInMatrixMode || !isMatrixFullscreenPending || document.fullscreenElement) { return; }
+            if (event.type === 'keydown' && ['escape', 'm'].includes(event.key.toLowerCase())) { return; }
+            if (event.type === 'pointerdown') {
+                suppressNextMatrixModeClick = true;
+            }
+            requestMatrixModeFullscreen();
+        }
+        function copyBlankMatrixModeURL() {
+            copyToClipboard(buildBlankMatrixModeURL(), '// Blank Matrix mode URL copied.');
         }
         
         // --- Command Palette and Help Modal Logic ---
@@ -5618,6 +5677,7 @@ void main() {
             { name: "Toggle Rain Glyph Set", action: () => rainGlyphSetBtn.click(), shortcut: 'Y' },
             { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
             { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
+            { name: "Copy Blank Matrix Mode URL", action: copyBlankMatrixModeURL },
             { name: "Previous Operative", action: undoLastPick, shortcut: 'U' },
             { name: "Reboot System (Clear Picks)", action: rebootSystem, shortcut: 'R' },
             { name: "Open Help Manual", action: () => toggleHelpModal(true) },
@@ -6422,6 +6482,10 @@ void main() {
             }
 
             if (isInMatrixMode) {
+                if (suppressNextMatrixModeClick) {
+                    suppressNextMatrixModeClick = false;
+                    return;
+                }
                 exitMatrixMode();
             } else {
                 pickRandomName();
@@ -6494,6 +6558,8 @@ void main() {
         fullscreenBtn.addEventListener('click', toggleFullScreen);
         enterMatrixBtn.addEventListener('click', () => { if (isInMatrixMode) { exitMatrixMode(); } else { enterMatrixMode(); } });
         document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('pointerdown', handleDeferredMatrixFullscreenGesture, true);
+        document.addEventListener('keydown', handleDeferredMatrixFullscreenGesture, true);
         
         // Mode Button Listeners
         extractionModeBtn.addEventListener('click', () => {
