@@ -2338,6 +2338,7 @@ void main() {
             pointerId: null,
             target: null,
             activeRange: null,
+            pendingRange: null,
             activeModal: null,
             activeRosterItem: null,
             pressedTarget: null,
@@ -6074,6 +6075,30 @@ void main() {
                 range.dispatchEvent(new Event('change', { bubbles: true }));
             }
         }
+        function getRangeClickTarget(target, point) {
+            if (target instanceof HTMLInputElement && target.type === 'range' && !target.disabled) {
+                return target;
+            }
+            if (!(target instanceof Element)) { return null; }
+            if (target.closest('.setting-help-btn, .setting-help-popover, label[data-tooltip], button, textarea, select')) {
+                return null;
+            }
+            const row = target.closest('.mb-3');
+            const range = row?.querySelector('input[type="range"]');
+            if (!(range instanceof HTMLInputElement) || range.type !== 'range' || range.disabled) {
+                return null;
+            }
+            const rect = range.getBoundingClientRect();
+            const verticalSlop = 14;
+            const withinExpandedTrack = point.y >= rect.top - verticalSlop && point.y <= rect.bottom + verticalSlop;
+            return withinExpandedTrack ? range : null;
+        }
+        function handleRangeClickToSet(event) {
+            if (event.pointerType === 'touch' || event.button !== 0 || isCrtRoutingActive()) { return; }
+            const range = getRangeClickTarget(event.target, { x: event.clientX, y: event.clientY });
+            if (!range) { return; }
+            setRangeValueFromPoint(range, { x: event.clientX, y: event.clientY }, true);
+        }
         function getCrtClickableTarget(target) {
             if (!(target instanceof Element)) { return target; }
             return target.closest(`${CRT_INTERACTIVE_SELECTOR}, #clickTriggerArea`) || target;
@@ -6199,6 +6224,10 @@ void main() {
                 markCrtSnapshotDirty();
             }
             return didScroll;
+        }
+        function shouldDeferCrtTouchToScroll(target) {
+            if (!(target instanceof Element)) { return false; }
+            return !target.closest('.setting-help-btn, .drag-handle, #helpModalHeader, #commandPaletteHeader');
         }
         function startCrtModalDrag(target, point) {
             const header = target instanceof Element ? target.closest('#helpModalHeader, #commandPaletteHeader') : null;
@@ -6357,6 +6386,19 @@ void main() {
             crtEventState.didScroll = false;
             crtCanvas.setPointerCapture?.(event.pointerId);
 
+            if (event.pointerType === 'touch' && shouldDeferCrtTouchToScroll(sourceTarget)) {
+                const scrollTarget = getScrollableTargetFromElement(sourceTarget);
+                if (scrollTarget) {
+                    const rangeTarget = getCrtRangeTarget(target);
+                    crtEventState.scrollTarget = scrollTarget;
+                    if (rangeTarget) {
+                        crtEventState.pendingRange = rangeTarget;
+                        focusCrtTarget(rangeTarget);
+                    }
+                    return;
+                }
+            }
+
             const settingHelpTarget = getCrtSettingHelpTarget(sourceTarget);
             if (settingHelpTarget) {
                 crtEventState.target = settingHelpTarget;
@@ -6373,13 +6415,6 @@ void main() {
                 setRangeValueFromPoint(rangeTarget, point);
                 return;
             }
-            if (event.pointerType === 'touch') {
-                const scrollTarget = getScrollableTargetFromElement(sourceTarget);
-                if (scrollTarget) {
-                    crtEventState.scrollTarget = scrollTarget;
-                    return;
-                }
-            }
             if (startCrtModalDrag(target, point) || startCrtRosterDrag(sourceTarget, point)) {
                 return;
             }
@@ -6394,6 +6429,20 @@ void main() {
                 event.preventDefault();
                 const totalDeltaX = point.x - crtEventState.scrollStartX;
                 const totalDeltaY = point.y - crtEventState.scrollStartY;
+                if (crtEventState.pendingRange && !crtEventState.didScroll) {
+                    const absDeltaX = Math.abs(totalDeltaX);
+                    const absDeltaY = Math.abs(totalDeltaY);
+                    if (absDeltaX > CRT_TOUCH_SCROLL_THRESHOLD_PX || absDeltaY > CRT_TOUCH_SCROLL_THRESHOLD_PX) {
+                        if (absDeltaX > absDeltaY) {
+                            crtEventState.activeRange = crtEventState.pendingRange;
+                            crtEventState.pendingRange = null;
+                            crtEventState.scrollTarget = null;
+                            setRangeValueFromPoint(crtEventState.activeRange, point);
+                            return;
+                        }
+                        crtEventState.pendingRange = null;
+                    }
+                }
                 if (crtEventState.didScroll || Math.abs(totalDeltaX) > CRT_TOUCH_SCROLL_THRESHOLD_PX || Math.abs(totalDeltaY) > CRT_TOUCH_SCROLL_THRESHOLD_PX) {
                     const didScroll = scrollElementBy(
                         crtEventState.scrollTarget,
@@ -6440,7 +6489,10 @@ void main() {
             event.preventDefault();
             const point = screenPointToSourcePoint(event.clientX, event.clientY);
             if (crtEventState.scrollTarget) {
-                if (!crtEventState.didScroll) {
+                if (crtEventState.pendingRange) {
+                    setRangeValueFromPoint(crtEventState.pendingRange, point, true);
+                    crtEventState.pendingRange = null;
+                } else if (!crtEventState.didScroll) {
                     clickCrtTarget(crtEventState.target || getElementAtSourcePoint(point), point, event);
                 }
                 crtEventState.scrollTarget = null;
@@ -6458,6 +6510,7 @@ void main() {
             clearCrtPressedTarget();
             crtEventState.pointerId = null;
             crtEventState.target = null;
+            crtEventState.pendingRange = null;
             crtEventState.didScroll = false;
             crtCanvas.releasePointerCapture?.(event.pointerId);
         }
@@ -6470,7 +6523,7 @@ void main() {
                 removeRosterDragPreview();
             }
             clearCrtPressedTarget(true);
-            crtEventState = { pointerId: null, target: null, activeRange: null, activeModal: null, activeRosterItem: null, pressedTarget: null, pressedStartedAt: 0, scrollTarget: null, scrollStartX: 0, scrollStartY: 0, scrollLastX: 0, scrollLastY: 0, didScroll: false, lastCursor: crtEventState.lastCursor };
+            crtEventState = { pointerId: null, target: null, activeRange: null, pendingRange: null, activeModal: null, activeRosterItem: null, pressedTarget: null, pressedStartedAt: 0, scrollTarget: null, scrollStartX: 0, scrollStartY: 0, scrollLastX: 0, scrollLastY: 0, didScroll: false, lastCursor: crtEventState.lastCursor };
             draggedItemName = null;
             markCrtSnapshotDirty();
         }
@@ -6533,6 +6586,7 @@ void main() {
         document.addEventListener('keyup', handleManagedTextCaretInteraction, true);
         document.addEventListener('click', handleManagedTextCaretInteraction, true);
         managementPanel.addEventListener('scroll', () => syncManagedTextCaret(), { passive: true });
+        managementPanel.addEventListener('pointerdown', handleRangeClickToSet);
         
         // Settings Listeners
         bindNumericSettingControls();
