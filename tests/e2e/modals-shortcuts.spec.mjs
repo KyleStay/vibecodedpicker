@@ -1,5 +1,5 @@
 import { test, expect } from '../helpers/fixtures.mjs';
-import { openApp } from '../helpers/app.mjs';
+import { expectUrlToContain, getClipboardWrites, openApp } from '../helpers/app.mjs';
 import { openMenu } from '../helpers/roster.mjs';
 
 test.describe('modals, shortcuts, and fullscreen-backed modes', () => {
@@ -38,6 +38,31 @@ test.describe('modals, shortcuts, and fullscreen-backed modes', () => {
     await expect(page.locator('#commandPaletteOverlay')).not.toHaveClass(/visible/);
   });
 
+  test('command palette copies a blank Matrix mode URL', async ({ page }) => {
+    await openApp(page, {
+      title: 'Loaded Deck',
+      name: 'Switch',
+      alias: 'Operator',
+      brightness: 73,
+      'matrix-mode': 'on'
+    });
+
+    await page.keyboard.press('Control+/');
+    await page.locator('#commandPaletteInput').fill('Blank Matrix');
+    await page.keyboard.press('Enter');
+
+    const expectedUrl = new URL(page.url());
+    expectedUrl.search = '';
+    expectedUrl.hash = '';
+    expectedUrl.searchParams.set('matrix-mode', 'on');
+
+    await expect.poll(async () => {
+      const writes = await getClipboardWrites(page);
+      return writes.at(-1);
+    }).toBe(expectedUrl.toString());
+    await expect(page.locator('#commandPaletteOverlay')).not.toHaveClass(/visible/);
+  });
+
   test('single-key shortcuts toggle the expected modes', async ({ page }) => {
     await openApp(page, { crt: 'false' });
 
@@ -62,5 +87,47 @@ test.describe('modals, shortcuts, and fullscreen-backed modes', () => {
     await page.evaluate(() => document.exitFullscreen());
     await expect(page.locator('body')).not.toHaveClass(/matrix-mode-active/);
     await expect(page.locator('#enterMatrixBtn')).toHaveText('[M] Matrix');
+  });
+
+  test('matrix mode restarts the CRT screen startup', async ({ page }) => {
+    await openApp(page, { 'crt-startup-time': 9000 });
+
+    await expect.poll(() => page.evaluate(() => window.__VIBE_TEST__.getCrtStartupDebug().active)).toBe(false);
+
+    await page.keyboard.press('m');
+
+    const startupDebug = await page.evaluate(() => window.__VIBE_TEST__.getCrtStartupDebug());
+    expect(startupDebug.active).toBe(true);
+    expect(startupDebug.progress).toBeLessThan(1);
+  });
+
+  test('matrix mode is shareable through the URL', async ({ page }) => {
+    await openApp(page, { crt: 'false' });
+
+    await page.keyboard.press('m');
+    await expectUrlToContain(page, { 'matrix-mode': 'on' });
+
+    await page.reload();
+    await expect(page.locator('body')).toHaveClass(/matrix-mode-active/);
+    await expect(page.locator('#enterMatrixBtn')).toHaveText('[M] Exit');
+
+    await page.keyboard.press('m');
+    await expect.poll(() => new URL(page.url()).searchParams.has('matrix-mode')).toBe(false);
+    await expect(page.locator('body')).not.toHaveClass(/matrix-mode-active/);
+  });
+
+  test('shared matrix mode enters fullscreen on the first gesture when auto fullscreen is blocked', async ({ page }) => {
+    await page.addInitScript(() => {
+      window.__TEST_FULLSCREEN_REJECT_COUNT__ = 1;
+    });
+    await openApp(page, { crt: 'false', 'matrix-mode': 'on' });
+
+    await expect(page.locator('body')).toHaveClass(/matrix-mode-active/);
+
+    await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(false);
+    await page.mouse.click(20, 20);
+
+    await expect.poll(() => page.evaluate(() => !!document.fullscreenElement)).toBe(true);
+    await expect(page.locator('body')).toHaveClass(/matrix-mode-active/);
   });
 });
