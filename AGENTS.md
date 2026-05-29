@@ -49,15 +49,25 @@ CRT mode is a believable green phosphor display.
 
 Rain controls are grouped by what they affect: motion, perspective, texture, and CRT tube response. Each effects group has its own reset button, and Reset All Effects must leave roster and extraction state alone. Flat Grid Rain is the default; it forces the pre-distortion lanes into a uniform grid and collapses perspective-only controls. Organic perspective rain is the opt-in `rain-layout=organic` state, with legacy `flatGrid=false` links still accepted. Keep both modes aligned with renderer constants, URL state, shortcuts, and tests.
 
-## Required verification
+## Efficient verification
 
-- After any UI, interaction, URL/state, canvas, CRT, or visual change, run `npm run test:e2e`.
-- After intentional visual changes, run `npm run test:e2e:update-snapshots` and inspect the snapshot diff before finalizing.
-- For scoped changes, run the affected spec first, then the full suite before finalizing.
-- After any user-facing behavior, control, URL/state, visual, or help-text change, update the relevant Playwright tests in the same change.
-- After any user-facing behavior, control, shortcut, URL/state, or help-text change, update documentation in the same change. Treat in-app help text as documentation, not just `README.md`.
-- For visual effect tuning work, keep default-state snapshots and any high-signal non-default variants aligned with the intended public controls.
-- When changing default control values or visual timing profiles, update the default documentation language and the corresponding snapshot baselines in the same change.
+Run the smallest relevant Playwright slice first. The full suite is valuable, but it is intentionally broad and includes slow CRT and visual coverage, so do not use it as the default for every scoped edit.
+
+- `npm run test:e2e:quick` - shortcuts, picking, and roster workflows.
+- `npm run test:e2e:state` - URL persistence, settings, defaults, and reset behavior.
+- `npm run test:e2e:crt` - CRT-routed clicks, text input, sliders, and drag behavior.
+- `npm run test:e2e:performance` - renderer instrumentation and animation liveness.
+- `npm run test:e2e:visual` - layout snapshots and CRT rendering model checks.
+- `npm run test:e2e -- tests/e2e/roster.spec.mjs` - one specific spec.
+- `npm run test:e2e -- -g "reorders operatives"` - one matching test title.
+
+Escalate to `npm run test:e2e` when a change crosses multiple product areas, touches shared URL/state contracts, changes initialization, modifies test helpers/config, updates renderer defaults, or when a focused run fails in a way that might indicate wider fallout. Also run the full suite before release-style handoff when time allows.
+
+After intentional visual changes, run `npm run test:e2e:update-snapshots` and inspect the snapshot diff before finalizing.
+
+After any user-facing behavior, control, URL/state, visual, or help-text change, update the relevant Playwright tests in the same change. After any user-facing behavior, control, shortcut, URL/state, or help-text change, update documentation in the same change. Treat in-app help text as documentation, not just `README.md`.
+
+For visual effect tuning work, keep default-state snapshots and any high-signal non-default variants aligned with the intended public controls. When changing default control values or visual timing profiles, update the default documentation language and the corresponding snapshot baselines in the same change.
 
 ## Notes
 

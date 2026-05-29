@@ -4,6 +4,11 @@
   "type": "module",
   "scripts": {
     "test:e2e": "playwright test",
+    "test:e2e:quick": "playwright test tests/e2e/modals-shortcuts.spec.mjs tests/e2e/picking.spec.mjs tests/e2e/roster.spec.mjs",
+    "test:e2e:state": "playwright test tests/e2e/settings-url.spec.mjs",
+    "test:e2e:crt": "playwright test tests/e2e/crt-routing.spec.mjs",
+    "test:e2e:performance": "playwright test tests/e2e/performance.spec.mjs",
+    "test:e2e:visual": "playwright test tests/e2e/visual.spec.mjs",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:update-snapshots": "playwright test --update-snapshots",
     "test:e2e:install": "playwright install chromium"
