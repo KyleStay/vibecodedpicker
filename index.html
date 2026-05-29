@@ -99,6 +99,39 @@
             position: relative;
             /* padding-bottom applied dynamically via JS */
         }
+        #crtBootIndicator {
+            position: fixed;
+            right: 1.2rem;
+            bottom: 1.05rem;
+            z-index: 10000;
+            width: 0.46rem;
+            height: 0.46rem;
+            border-radius: 999px;
+            background: #b6a143;
+            box-shadow: 0 0 0.25rem rgba(182, 161, 67, 0.32);
+            opacity: 0;
+            pointer-events: none;
+        }
+        body.crt-preboot {
+            background: #000;
+        }
+        body.crt-preboot > :not(#crtBootIndicator) {
+            visibility: hidden !important;
+        }
+        body.crt-preboot #crtBootIndicator {
+            opacity: 1;
+            animation: crtBootStandbyPulse 1s ease-in-out infinite;
+        }
+        @keyframes crtBootStandbyPulse {
+            0%, 100% {
+                opacity: 0.38;
+                box-shadow: 0 0 0.16rem rgba(182, 161, 67, 0.22);
+            }
+            45% {
+                opacity: 0.96;
+                box-shadow: 0 0 0.46rem rgba(182, 161, 67, 0.52);
+            }
+        }
         /* Canvas for background digital rain */
         #matrixCanvas {
             position: fixed;
@@ -182,6 +215,17 @@
                 radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.08) 78%, rgba(0, 0, 0, 0.18) 100%),
                 linear-gradient(rgba(0, 0, 0, 0.025), rgba(255, 255, 255, 0.02));
             opacity: 0.42;
+        }
+        body.crt-preboot::before,
+        body.crt-preboot::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: 9998;
+            background: #000;
+            opacity: 1;
+            mix-blend-mode: normal;
+            pointer-events: none;
         }
         body.crt-mode :is(#mainDisplayContainer, #managementPanel, #undoBtn, #menuToggleBtn, .modal-content) {
             filter: var(--crt-ui-filter);
@@ -1104,7 +1148,7 @@
 
         /* Progress Bar Styles */
         #progressBarContainer {
-            position: fixed; bottom: 0; left: 0; width: 100%; padding: 0.5rem 1rem; z-index: 20; box-sizing: border-box; transition: opacity 0.3s ease-in-out;
+            position: fixed; bottom: 0; left: 0; width: 100%; padding: 0.5rem 1rem; z-index: 14; box-sizing: border-box; transition: opacity 0.3s ease-in-out;
         }
         body.crt-mode:not(.crt-unavailable) #progressBarContainer {
             left: var(--crt-safe-x);
@@ -1467,7 +1511,8 @@
         body.construct-mode #commandPaletteList::-webkit-scrollbar-corner { background: var(--construct-bg-darker); }
     </style>
 </head>
-<body class="">
+<body class="crt-preboot">
+    <div id="crtBootIndicator" role="status" aria-label="Preparing display"></div>
     <canvas id="matrixCanvas" aria-hidden="true"></canvas>
     <canvas id="crtCanvas" aria-hidden="true"></canvas>
     <div id="brightnessOverlay" aria-hidden="true"></div>
@@ -1613,6 +1658,13 @@
                             <span id="crtDistortionDriftValue" class="font-semibold text-sm">24%</span>
                         </label>
                         <input type="range" id="crtDistortionDriftSlider" min="0" max="100" step="1" value="24">
+                    </div>
+                    <div class="mb-3">
+                        <label for="crtStartupTimeSlider" class="flex justify-between items-center" data-tooltip="Tunes how long the initial CRT power-on takes after the app is ready. Lower values keep the picker practical; higher values make the wake-up more theatrical.">
+                            <span>// Startup Time:</span>
+                            <span id="crtStartupTimeValue" class="font-semibold text-sm">3.6s</span>
+                        </label>
+                        <input type="range" id="crtStartupTimeSlider" min="800" max="9000" step="100" value="3600">
                     </div>
                 </div>
                 <div class="settings-subgroup settings-subgroup-first">
@@ -1835,7 +1887,7 @@
                         <li>
                             <div>
                                 <span>Toggle CRT Mode</span>
-                                <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, and vignette.</p>
+                                <p class="text-sm opacity-70 mt-1">Adds curved-screen shader distortion, scanlines, glow, vignette, a standby preboot light, and a brief monochrome startup on initial CRT loads.</p>
                             </div>
                             <span><kbd>T</kbd></span>
                         </li>
@@ -1910,6 +1962,7 @@ uniform float u_syncRoll;
 uniform float u_jitter;
 uniform float u_distortionDrift;
 uniform float u_constructMode;
+uniform float u_bootProgress;
 
 vec2 curveRemapUV(vec2 uv, float fishbowlAmount) {
   uv = uv * 2.0 - 1.0;
@@ -1966,6 +2019,8 @@ float getScanlinePattern(float screenY, float scanlineAmount) {
 
 void main() {
   vec2 uv = vTexCoord;
+  float bootProgress = clamp(u_bootProgress, 0.0, 1.0);
+  float bootInstability = (1.0 - smoothstep(0.18, 1.0, bootProgress)) * (1.0 - u_constructMode);
   float distortionDrift = u_distortionDrift * (1.0 - u_constructMode);
   float driftRamp = smoothstep(0.15, 1.6, u_time);
   float driftClock = u_time * (0.16 + distortionDrift * 0.12);
@@ -1980,6 +2035,12 @@ void main() {
   float edgeZoom = 1.02 + (0.13 * activeFishbowl);
   remappedUV = (remappedUV - 0.5) / edgeZoom + 0.5;
   remappedUV.x += driftWander * 0.0011 * distortionDrift;
+  if (bootInstability > 0.001) {
+    float coldRoll = sin((uv.y * 130.0) + (u_time * 21.0)) * 0.45 + sin((uv.y * 34.0) - (u_time * 9.0)) * 0.35;
+    float verticalHold = sin((uv.x * 10.0) + (u_time * 5.6)) * 0.012 * bootInstability;
+    remappedUV.x += coldRoll * 0.0048 * bootInstability;
+    remappedUV.y += verticalHold;
+  }
   float jitterAmount = (u_jitter + distortionDrift * driftRamp * (0.08 + driftBreath * 0.34)) * (1.0 - u_constructMode);
   if (jitterAmount > 0.001) {
     float lineNoise = random(vec2(floor(gl_FragCoord.y * 0.32), floor(u_time * 24.0)));
@@ -2040,6 +2101,29 @@ void main() {
   color += noise;
   // Beam focus and chroma shape the phosphor spot above; scanlines, grille, and glass stay fixed on the CRT face.
   color *= scanline * grille * vignette * syncRoll;
+
+  if (bootProgress < 0.999) {
+    float horizontalOpen = smoothstep(0.02, 0.34, bootProgress);
+    float verticalOpen = smoothstep(0.18, 0.92, bootProgress);
+    float horizontalRadius = mix(0.026, 0.72, horizontalOpen);
+    float verticalRadius = mix(0.0015, 0.72, verticalOpen);
+    float horizontalMask = 1.0 - smoothstep(horizontalRadius, horizontalRadius + 0.035, abs(uv.x - 0.5));
+    float verticalMask = 1.0 - smoothstep(verticalRadius, verticalRadius + 0.052, abs(uv.y - 0.5));
+    float apertureMask = horizontalMask * verticalMask;
+    float coldFlicker = 0.72 + (0.28 * stableRandom(vec2(floor(u_time * 24.0), floor(gl_FragCoord.y * 0.18))));
+    float warmup = smoothstep(0.06, 0.96, bootProgress);
+    float ignitionPulse = exp(-pow((bootProgress - 0.17) / 0.055, 2.0));
+    float centerLine = exp(-pow((uv.y - 0.5) / 0.0065, 2.0)) * smoothstep(0.05, 0.28, bootProgress) * (1.0 - smoothstep(0.34, 0.72, bootProgress));
+    float centerDot = exp(-dot(uv - vec2(0.5), uv - vec2(0.5)) * 2200.0) * (1.0 - smoothstep(0.05, 0.24, bootProgress));
+    float ghostLine = exp(-pow((uv.y - (0.5 + sin(u_time * 8.5) * 0.018)) / 0.022, 2.0)) * (1.0 - smoothstep(0.28, 0.78, bootProgress));
+    float bootLuminance = dot(color, vec3(0.299, 0.587, 0.114));
+    vec3 monoPhosphor = vec3(bootLuminance * 0.10, bootLuminance * 1.32, bootLuminance * 0.055);
+    float monoRelease = smoothstep(0.78, 1.0, bootProgress);
+    color = mix(monoPhosphor, color, monoRelease);
+    color *= apertureMask * coldFlicker * (0.10 + (0.98 * warmup));
+    color += vec3(0.03, 1.0, 0.16) * ((centerLine * (0.42 + ignitionPulse * 1.8)) + (centerDot * 1.35) + (ghostLine * 0.10));
+    color *= 1.0 + (ignitionPulse * 0.55) - ((1.0 - warmup) * 0.14);
+  }
 
   gl_FragColor = vec4(color, 1.0);
 }
@@ -2141,6 +2225,8 @@ void main() {
         const crtJitterValue = document.getElementById('crtJitterValue');
         const crtDistortionDriftSlider = document.getElementById('crtDistortionDriftSlider');
         const crtDistortionDriftValue = document.getElementById('crtDistortionDriftValue');
+        const crtStartupTimeSlider = document.getElementById('crtStartupTimeSlider');
+        const crtStartupTimeValue = document.getElementById('crtStartupTimeValue');
 
         // Action Buttons (Inside Panel)
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -2203,6 +2289,7 @@ void main() {
         let currentCrtSyncRollPercent = 100;
         let currentCrtJitterPercent = 0;
         let currentCrtDistortionDriftPercent = 24;
+        let currentCrtStartupTimeMs = 3600;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
@@ -2227,6 +2314,9 @@ void main() {
         let crtUiSnapshotDirty = true;
         let crtTransitionRefreshFrameId = null;
         let crtTransitionRefreshEndTime = 0;
+        let crtStartupStartedAt = 0;
+        let crtStartupFrameId = null;
+        let crtStartupProgressOverride = null;
         let lastCrtFrameTime = 0;
         let framePerformanceMetrics = {
             rainUpdateMs: 0,
@@ -2370,6 +2460,9 @@ void main() {
         const MAX_CRT_SYNC_ROLL_PERCENT = 300;
         const DEFAULT_CRT_JITTER_PERCENT = 0;
         const DEFAULT_CRT_DISTORTION_DRIFT_PERCENT = 24;
+        const DEFAULT_CRT_STARTUP_TIME_MS = 3600;
+        const MIN_CRT_STARTUP_TIME_MS = 800;
+        const MAX_CRT_STARTUP_TIME_MS = 9000;
         const DEFAULT_RAIN_DEPTH_PERCENT = 50;
         const DEFAULT_RAIN_VARIETY_PERCENT = 50;
         const DEFAULT_LANE_DRIFT_PERCENT = 50;
@@ -2421,7 +2514,8 @@ void main() {
             { urlKey: 'crt-noise', legacyUrlKeys: ['crtNoise'], defaultValue: DEFAULT_CRT_NOISE_PERCENT, slider: crtNoiseSlider, apply: updateCrtNoiseDisplay, get: () => currentCrtNoisePercent, parse: parseIntegerSetting },
             { urlKey: 'crt-sync-roll', legacyUrlKeys: ['crtSyncRoll'], defaultValue: DEFAULT_CRT_SYNC_ROLL_PERCENT, slider: crtSyncRollSlider, apply: updateCrtSyncRollDisplay, get: () => currentCrtSyncRollPercent, parse: parseIntegerSetting },
             { urlKey: 'crt-jitter', legacyUrlKeys: ['crtJitter'], defaultValue: DEFAULT_CRT_JITTER_PERCENT, slider: crtJitterSlider, apply: updateCrtJitterDisplay, get: () => currentCrtJitterPercent, parse: parseIntegerSetting },
-            { urlKey: 'crt-distortion-drift', legacyUrlKeys: ['crtDistortionDrift'], defaultValue: DEFAULT_CRT_DISTORTION_DRIFT_PERCENT, slider: crtDistortionDriftSlider, apply: updateCrtDistortionDriftDisplay, get: () => currentCrtDistortionDriftPercent, parse: parseIntegerSetting }
+            { urlKey: 'crt-distortion-drift', legacyUrlKeys: ['crtDistortionDrift'], defaultValue: DEFAULT_CRT_DISTORTION_DRIFT_PERCENT, slider: crtDistortionDriftSlider, apply: updateCrtDistortionDriftDisplay, get: () => currentCrtDistortionDriftPercent, parse: parseIntegerSetting },
+            { urlKey: 'crt-startup-time', legacyUrlKeys: ['crtStartupTime'], defaultValue: DEFAULT_CRT_STARTUP_TIME_MS, slider: crtStartupTimeSlider, apply: updateCrtStartupTimeDisplay, get: () => currentCrtStartupTimeMs, parse: parseIntegerSetting }
         ];
         const e2eState = {
             enabled: E2E_URL_PARAMS.get('e2e') === '1',
@@ -2623,6 +2717,16 @@ void main() {
                 },
                 renderCrtTestPattern(patternName) {
                     renderCrtTestPatternForE2e(patternName);
+                },
+                setCrtStartupProgress(progress) {
+                    setCrtStartupProgressForE2e(progress);
+                },
+                getCrtStartupDebug() {
+                    return {
+                        progress: getCrtStartupProgress(),
+                        active: getCrtStartupProgress() < 1,
+                        durationMs: currentCrtStartupTimeMs
+                    };
                 },
                 measureCrtVerticalCarrierContrast() {
                     return measureCrtVerticalCarrierContrastForE2e();
@@ -2913,7 +3017,8 @@ void main() {
                     syncRoll: crtGl.getUniformLocation(crtProgram, 'u_syncRoll'),
                     jitter: crtGl.getUniformLocation(crtProgram, 'u_jitter'),
                     distortionDrift: crtGl.getUniformLocation(crtProgram, 'u_distortionDrift'),
-                    constructMode: crtGl.getUniformLocation(crtProgram, 'u_constructMode')
+                    constructMode: crtGl.getUniformLocation(crtProgram, 'u_constructMode'),
+                    bootProgress: crtGl.getUniformLocation(crtProgram, 'u_bootProgress')
                 };
 
                 crtReady = true;
@@ -2972,6 +3077,76 @@ void main() {
             bodyElement.style.setProperty('--crt-safe-x', `${safeX}px`);
             bodyElement.style.setProperty('--crt-safe-y', `${safeY}px`);
             markCrtSnapshotDirty();
+        }
+        function releaseCrtPrebootScreen() {
+            bodyElement.classList.remove('crt-preboot');
+        }
+        function shouldPlayInitialCrtStartup() {
+            if (!isCrtMode) { return false; }
+            if (!e2eState.enabled) { return true; }
+            return isURLValueOn(E2E_URL_PARAMS.get('e2eCrtBoot'));
+        }
+        function getCrtStartupProgress() {
+            if (crtStartupProgressOverride !== null) {
+                return clampUnit(crtStartupProgressOverride);
+            }
+            if (!crtStartupStartedAt) { return 1; }
+            return clampUnit((performance.now() - crtStartupStartedAt) / currentCrtStartupTimeMs);
+        }
+        function cancelCrtStartupRefresh() {
+            if (crtStartupFrameId !== null) {
+                cancelAnimationFrame(crtStartupFrameId);
+                crtStartupFrameId = null;
+            }
+        }
+        function completeCrtStartup() {
+            cancelCrtStartupRefresh();
+            crtStartupStartedAt = 0;
+            crtStartupProgressOverride = null;
+            bodyElement.classList.remove('crt-starting');
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function refreshCrtStartupFrame() {
+            crtStartupFrameId = null;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+            if (!isCrtMode || !crtReady || !crtCompositeAvailable) {
+                completeCrtStartup();
+                return;
+            }
+            if (getCrtStartupProgress() >= 1) {
+                completeCrtStartup();
+                return;
+            }
+            crtStartupFrameId = requestAnimationFrame(refreshCrtStartupFrame);
+        }
+        function startInitialCrtStartup() {
+            releaseCrtPrebootScreen();
+            crtStartupStartedAt = performance.now();
+            bodyElement.classList.add('crt-starting');
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+            crtStartupFrameId = requestAnimationFrame(refreshCrtStartupFrame);
+        }
+        function beginInitialCrtStartup() {
+            cancelCrtStartupRefresh();
+            crtStartupProgressOverride = null;
+            if (!shouldPlayInitialCrtStartup() || !crtReady || !crtCompositeAvailable) {
+                releaseCrtPrebootScreen();
+                crtStartupStartedAt = 0;
+                bodyElement.classList.remove('crt-starting');
+                return;
+            }
+            startInitialCrtStartup();
+        }
+        function setCrtStartupProgressForE2e(progress) {
+            if (!e2eState.enabled) { return; }
+            crtStartupProgressOverride = clampUnit(progress);
+            crtStartupStartedAt = performance.now() - (crtStartupProgressOverride * currentCrtStartupTimeMs);
+            bodyElement.classList.toggle('crt-starting', crtStartupProgressOverride < 1);
+            markCrtSnapshotDirty();
+            renderCurrentMatrixFrame();
         }
         function markCrtSnapshotDirty() {
             crtUiSnapshotDirty = true;
@@ -3791,6 +3966,7 @@ void main() {
             crtGl.uniform1f(crtUniforms.jitter, currentCrtJitterPercent / 100);
             crtGl.uniform1f(crtUniforms.distortionDrift, currentCrtDistortionDriftPercent / 100);
             crtGl.uniform1f(crtUniforms.constructMode, isConstructMode ? 1.0 : 0.0);
+            crtGl.uniform1f(crtUniforms.bootProgress, getCrtStartupProgress());
             crtGl.drawArrays(crtGl.TRIANGLES, 0, 6);
             lastCrtFrameTime = performance.now();
             framePerformanceMetrics.compositeMs = performance.now() - compositeStart;
@@ -4058,6 +4234,7 @@ void main() {
             currentCrtSyncRollPercent = DEFAULT_CRT_SYNC_ROLL_PERCENT;
             currentCrtJitterPercent = DEFAULT_CRT_JITTER_PERCENT;
             currentCrtDistortionDriftPercent = DEFAULT_CRT_DISTORTION_DRIFT_PERCENT;
+            currentCrtStartupTimeMs = DEFAULT_CRT_STARTUP_TIME_MS;
             isConstructMode = DEFAULT_CONSTRUCT_MODE;
             selectionHistory = [];
             pendingNextOperatives = [];
@@ -4198,6 +4375,7 @@ void main() {
             updateCrtSyncRollDisplay(currentCrtSyncRollPercent);
             updateCrtJitterDisplay(currentCrtJitterPercent);
             updateCrtDistortionDriftDisplay(currentCrtDistortionDriftPercent);
+            updateCrtStartupTimeDisplay(currentCrtStartupTimeMs);
             updateCrtMode();
 
             if (urlParams.has('theme') && urlParams.get('theme') === 'construct') {
@@ -4225,6 +4403,7 @@ void main() {
             checkEmptyStates();
             updateUndoButtonState();
             setupCanvas();
+            beginInitialCrtStartup();
             startMatrixRain();
             isInMatrixMode = false;
             bodyElement.classList.remove('matrix-mode-active');
@@ -4429,6 +4608,12 @@ void main() {
             markCrtSnapshotDirty();
             renderCrtFrame();
         }
+        function updateCrtStartupTimeDisplay(milliseconds) {
+            currentCrtStartupTimeMs = Math.max(MIN_CRT_STARTUP_TIME_MS, Math.min(MAX_CRT_STARTUP_TIME_MS, Math.round(milliseconds / 100) * 100));
+            if (crtStartupTimeSlider) crtStartupTimeSlider.value = currentCrtStartupTimeMs;
+            if (crtStartupTimeValue) crtStartupTimeValue.textContent = `${(currentCrtStartupTimeMs / 1000).toFixed(1)}s`;
+            markCrtSnapshotDirty();
+        }
         function syncEffectSubSettingsVisibility() {
             const isCrtVisible = isCrtMode;
             crtSubSettings.classList.toggle('hidden', !isCrtVisible);
@@ -4451,6 +4636,7 @@ void main() {
                 setupCrtRenderer();
             } else {
                 cancelCrtTransitionRefresh();
+                completeCrtStartup();
             }
             crtModeBtn.setAttribute('aria-pressed', isPressed);
             crtModeBtn.textContent = isPressed ? '[T] CRT Engaged' : '[T] Engage CRT';
@@ -4541,6 +4727,7 @@ void main() {
             updateCrtSyncRollDisplay(DEFAULT_CRT_SYNC_ROLL_PERCENT);
             updateCrtJitterDisplay(DEFAULT_CRT_JITTER_PERCENT);
             updateCrtDistortionDriftDisplay(DEFAULT_CRT_DISTORTION_DRIFT_PERCENT);
+            updateCrtStartupTimeDisplay(DEFAULT_CRT_STARTUP_TIME_MS);
             finishEffectReset({ ...options, announce: getResetAnnouncement(options, '// CRT tube effects reset.') });
         }
         function resetAllEffectsToDefaults() {

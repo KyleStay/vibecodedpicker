@@ -34,6 +34,7 @@ test.describe('settings and URL persistence', () => {
     await page.locator('#crtSyncRollSlider').fill('222');
     await page.locator('#crtJitterSlider').fill('28');
     await page.locator('#crtDistortionDriftSlider').fill('31');
+    await page.locator('#crtStartupTimeSlider').fill('7200');
     await page.locator('#brightnessSlider').blur();
 
     await expectUrlToContain(page, {
@@ -57,6 +58,7 @@ test.describe('settings and URL persistence', () => {
       'crt-sync-roll': 222,
       'crt-jitter': 28,
       'crt-distortion-drift': 31,
+      'crt-startup-time': 7200,
       'rain-layout': 'organic',
       extraction: 'on',
       theme: 'construct'
@@ -86,6 +88,8 @@ test.describe('settings and URL persistence', () => {
     await expect(page.locator('#crtSyncRollSlider')).toHaveValue('222');
     await expect(page.locator('#crtJitterSlider')).toHaveValue('28');
     await expect(page.locator('#crtDistortionDriftSlider')).toHaveValue('31');
+    await expect(page.locator('#crtStartupTimeSlider')).toHaveValue('7200');
+    await expect(page.locator('#crtStartupTimeValue')).toHaveText('7.2s');
   });
 
   test('CRT controls stay directly below Construct Mode', async ({ page }) => {
@@ -185,6 +189,7 @@ test.describe('settings and URL persistence', () => {
       crtSyncRoll: 222,
       crtJitter: 28,
       crtDistortionDrift: 31,
+      crtStartupTime: 7200,
       theme: 'construct'
     });
     await openMenu(page);
@@ -238,6 +243,7 @@ test.describe('settings and URL persistence', () => {
     await expect(page.locator('#crtSyncRollSlider')).toHaveValue('100');
     await expect(page.locator('#crtJitterSlider')).toHaveValue('0');
     await expect(page.locator('#crtDistortionDriftSlider')).toHaveValue('24');
+    await expect(page.locator('#crtStartupTimeSlider')).toHaveValue('3600');
     await expect(page.locator('#nameList .name-span')).toHaveText(rosterBefore);
     await expectUrlToContain(page, { extraction: 'on' });
     await expect(page.url()).not.toContain('brightness=');
@@ -245,6 +251,7 @@ test.describe('settings and URL persistence', () => {
     await expect(page.url()).not.toContain('rain-layout=');
     await expect(page.url()).not.toContain('theme=');
     await expect(page.url()).not.toContain('crt-distortion-drift=');
+    await expect(page.url()).not.toContain('crt-startup-time=');
     await expect(page.url()).not.toContain('crt=false');
   });
 
