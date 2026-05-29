@@ -47,7 +47,7 @@ Extraction mode changes what gets copied, not who the operative is. Aliases are 
 
 CRT mode is a believable green phosphor display.
 
-Rain controls are grouped by what they affect: motion, perspective, texture, and CRT tube response. Each effects group has its own reset button, and Reset All Effects must leave roster and extraction state alone. Flat Grid Rain is the default; it forces the pre-distortion lanes into a uniform grid and collapses perspective-only controls. Organic perspective rain is the opt-in `flatGrid=false` state. Keep both modes aligned with renderer constants, URL state, shortcuts, and tests.
+Rain controls are grouped by what they affect: motion, perspective, texture, and CRT tube response. Each effects group has its own reset button, and Reset All Effects must leave roster and extraction state alone. Flat Grid Rain is the default; it forces the pre-distortion lanes into a uniform grid and collapses perspective-only controls. Organic perspective rain is the opt-in `rain-layout=organic` state, with legacy `flatGrid=false` links still accepted. Keep both modes aligned with renderer constants, URL state, shortcuts, and tests.
 
 ## Required verification
 

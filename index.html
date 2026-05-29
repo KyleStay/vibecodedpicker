@@ -377,6 +377,12 @@
             box-shadow: none;
         }
         #menuToggleBtn.active { }
+        body.panel-open #menuToggleBtn {
+            background-color: rgba(0, 0, 0, 0.95);
+        }
+        body.construct-mode.panel-open #menuToggleBtn {
+            background-color: rgba(var(--construct-bg-rgb), 0.95);
+        }
         body.crt-mode:not(.crt-unavailable) #menuToggleBtn {
             top: calc(var(--menu-btn-top) + var(--crt-safe-y));
             right: calc(var(--menu-btn-right) + var(--crt-safe-x));
@@ -419,6 +425,11 @@
             border-color: var(--primary-color-dark);
             color: var(--primary-color-dark);
             text-shadow: none;
+        }
+        body.panel-open #undoBtn {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
         }
         .construct-mode #undoBtn:disabled { color: var(--construct-text-light); border-color: var(--construct-text-light); }
         body.crt-mode:not(.crt-unavailable) #undoBtn {
@@ -472,7 +483,9 @@
             color: var(--primary-color);
             transition: all 0.2s ease-in-out;
             text-shadow: 0 0 3px var(--primary-color);
-            padding: 0.5rem 0.5rem;
+            box-sizing: border-box;
+            min-height: 2.25rem;
+            padding: 0.42rem 0.65rem;
             border-radius: 0.25rem;
             cursor: pointer;
             text-align: center;
@@ -532,6 +545,8 @@
             display: flex;
             align-items: center;
             width: 100%;
+            gap: 0.55rem;
+            margin-bottom: 0.65rem;
         }
         .control-group button {
             flex-grow: 1;
@@ -547,7 +562,6 @@
             transition: all 0.2s ease-in-out;
             border: 1px solid rgba(var(--primary-color-rgb), 0.2);
             flex-shrink: 0; /* Prevent LED from shrinking */
-            margin-bottom: .75rem; /* line up with button */
         }
         .construct-mode .led-indicator { background-color: var(--construct-bg-darker); border-color: var(--primary-color-dark); box-shadow: inset 0 0 4px rgba(0,0,0,0.2); }
         .led-indicator.active {
@@ -568,6 +582,8 @@
         }
         #managementPanel .action-button-row button {
             width: 100%;
+            min-height: 2.25rem;
+            padding: 0.42rem 0.45rem;
             margin-bottom: 0;
         }
         #managementPanel .panel-section-static {
@@ -575,28 +591,36 @@
             padding-top: 0;
             margin-bottom: 1.35rem;
         }
-        /* Specific Layout/Overrides for Add/Reboot Buttons */
-        #managementPanel .panel-section-content button:not(.remove-name-btn):not(.control-group button) {
-            width: 100%; /* Make Add/Reboot full width */
-            padding: 0.5rem 1rem; /* Restore original padding if needed */
+        #managementPanel .action-button-row.panel-section-static {
+            padding-top: 4rem;
+        }
+        /* Specific Layout/Overrides for primary section action buttons */
+        #managementPanel .panel-section-content button:not(.remove-name-btn):not(.control-group button):not(.reset-effect-btn):not(#resetAllEffectsBtn) {
+            width: 100%;
+            padding: 0.45rem 0.65rem; /* Comfortable default without crowding the panel */
+            margin-bottom: 0.65rem;
         }
         #addNameBtn { border-width: 2px !important; } /* Make add button bolder */
         .construct-mode #addNameBtn { background-color: var(--primary-color); color: var(--construct-bg); border-color: var(--primary-color); }
         .construct-mode #addNameBtn:hover:not(:disabled) { background-color: var(--primary-color-dark); border-color: var(--primary-color-dark); }
-        #managementPanel .panel-section-content button:last-of-type:not(.remove-name-btn):not(.control-group button) {
+        #managementPanel .panel-section-content > button:last-child:not(.remove-name-btn):not(.reset-effect-btn):not(#resetAllEffectsBtn) {
             margin-bottom: 0; /* Remove margin from last button (Reboot) */
         }
         /* Remove Name Button ('X') - Keep specific small style */
         #managementPanel .remove-name-btn {
             border: 1px solid var(--primary-color-dark);
-            padding: 2px 4px;
+            min-height: 1.75rem;
+            padding: 0;
             line-height: 1;
             pointer-events: auto !important;
             opacity: 1 !important;
-            width: auto;
+            width: 1.75rem;
+            min-width: 1.75rem;
+            height: 1.75rem;
             flex: none;
-            margin-left: 0.5rem;
+            margin-left: 0;
             margin-bottom: 0;
+            justify-self: end;
             /* Use general hover/active state from above */
         }
         .construct-mode #managementPanel .remove-name-btn { border-color: var(--construct-text-light); color: var(--construct-text-light); }
@@ -605,7 +629,7 @@
         /* Input field styling */
         #managementPanel input[type="text"] {
             background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark); color: var(--font-color); font-family: var(--matrix-font);
-            caret-color: var(--primary-color); width: 100%; padding: 0.5rem; border-radius: 0.25rem; margin-bottom: 0.5rem;
+            box-sizing: border-box; caret-color: var(--primary-color); width: 100%; padding: 0.42rem 0.55rem; border-radius: 0.25rem; margin-bottom: 0.55rem;
         }
         body.crt-mode:not(.crt-unavailable) #managementPanel input[type="text"] { caret-color: transparent; }
         #managementPanel input[type="text"]::placeholder { color: rgba(var(--primary-color-rgb), 0.4); }
@@ -646,7 +670,6 @@
         #managementPanel label[data-tooltip] {
             position: relative;
             cursor: help;
-            padding-right: 1.7rem;
         }
         #managementPanel label[data-tooltip]::after {
             content: attr(data-tooltip);
@@ -683,14 +706,16 @@
             box-shadow: 0 4px 16px rgba(var(--construct-accent-rgb), 0.18);
         }
         .setting-help-btn {
-            position: absolute;
-            top: -0.1rem;
-            right: 0;
-            width: 1.25rem !important;
-            height: 1.25rem;
-            min-width: 1.25rem;
+            width: 1.35rem !important;
+            height: 1.35rem;
+            min-width: 1.35rem;
+            min-height: 1.35rem !important;
+            flex: none;
+            align-self: start;
+            justify-self: end;
             margin: 0 !important;
             padding: 0 !important;
+            border-width: 1px !important;
             border-radius: 999px !important;
             font-size: 0.76rem;
             line-height: 1;
@@ -720,7 +745,7 @@
             color: var(--construct-text);
         }
         /* Slider styling */
-        #managementPanel input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary-color); margin-top: 0.25rem; margin-bottom: 0.25rem; }
+        #managementPanel input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary-color); margin-top: 0.35rem; margin-bottom: 0.35rem; }
         #tailLengthReadout {
             border: 1px solid var(--primary-color-dark);
             border-radius: 0.25rem;
@@ -735,7 +760,19 @@
             background: rgba(var(--construct-accent-rgb), 0.055);
         }
         #managementPanel .mb-3:has(> label[data-tooltip]) {
-            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            column-gap: 0.45rem;
+            align-items: start;
+        }
+        #managementPanel .mb-3:has(> label[data-tooltip]) > label[data-tooltip] {
+            min-width: 0;
+            margin-bottom: 0.12rem;
+        }
+        #managementPanel .mb-3:has(> label[data-tooltip]) > input[type="range"],
+        #managementPanel .mb-3:has(> label[data-tooltip]) > #tailLengthReadout,
+        #managementPanel .mb-3:has(> label[data-tooltip]) > .setting-help-popover {
+            grid-column: 1 / -1;
         }
         /* Panel Sections for better structure and scrolling */
         .panel-section {
@@ -755,7 +792,7 @@
             width: 100%;
             margin-bottom: 0 !important;
             justify-content: space-between !important;
-            padding: 0.6rem 0.75rem !important;
+            padding: 0.5rem 0.65rem !important;
             background: rgba(var(--primary-color-rgb), 0.08);
             font-size: 1.02rem;
             font-weight: 700;
@@ -785,7 +822,7 @@
             overflow: hidden;
             border: 1px solid rgba(var(--primary-color-rgb), 0.42);
             border-radius: 0.3rem;
-            padding: 0.85rem 0.85rem 0.7rem;
+            padding: 0.75rem 0.75rem 0.65rem;
             background:
                 linear-gradient(180deg, rgba(var(--primary-color-rgb), 0.08), rgba(var(--primary-color-rgb), 0.025)),
                 rgba(0, 0, 0, 0.22);
@@ -825,7 +862,20 @@
             border-top: 1px solid rgba(var(--primary-color-rgb), 0.2);
         }
         .effects-reset-all {
+            display: flex;
+            justify-content: flex-end;
             margin: 0.75rem 0 0.25rem;
+        }
+        #managementPanel .effects-reset-all #resetAllEffectsBtn {
+            width: auto;
+            min-width: 0;
+            min-height: 1.9rem;
+            flex: none;
+            margin-bottom: 0;
+            padding: 0.34rem 0.65rem;
+            border-width: 1px;
+            font-size: 0.82rem;
+            line-height: 1.15;
         }
         .settings-subgroup-header {
             display: flex;
@@ -839,10 +889,11 @@
         }
         #managementPanel .settings-subgroup-header .reset-effect-btn {
             width: auto;
-            min-width: 5.2rem;
+            min-width: 4rem;
+            min-height: 1.75rem;
             flex: none;
             margin-bottom: 0;
-            padding: 0.3rem 0.55rem;
+            padding: 0.26rem 0.55rem;
             border-width: 1px;
             font-size: 0.76rem;
             line-height: 1.1;
@@ -867,17 +918,20 @@
         }
         .construct-mode #managementPanel .list-container { border-color: var(--construct-bg-darker); background-color: rgba(var(--construct-bg-rgb), 0.3); }
         #managementPanel #nameList {
-            padding-right: 0;
+            margin: 0;
+            padding: 0;
+            list-style: none;
         }
         #managementPanel .name-item {
             background-color: transparent; border-bottom: 1px dashed var(--primary-color-dark); padding: 0.5rem 0.25rem; color: var(--font-color);
             transition: all 0.3s ease-out; opacity: 1; transform: translateX(0); display: flex; flex-direction: column; /* Changed to column */
-            cursor: grab; margin-bottom: 0.25rem;
+            cursor: default; margin-bottom: 0.25rem;
         }
         .construct-mode #managementPanel .name-item { border-bottom-color: var(--construct-bg-darker); }
         #managementPanel .name-item .name-row {
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: 1.5rem minmax(0, 1fr) 1.75rem;
+            column-gap: 0.35rem;
             align-items: center;
             min-width: 0;
             width: 100%;
@@ -885,16 +939,18 @@
         #managementPanel .name-item .name-span {
             display: block;
             min-width: 0;
+            margin-right: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             cursor: text;
+            line-height: 1.2;
         }
         #managementPanel .name-item .name-edit-input {
-            flex: 1 1 auto;
             min-width: 0;
             font-size: 0.95rem;
             padding: 0.2rem 0.4rem;
+            margin-right: 0;
             margin-bottom: 0;
         }
         #managementPanel .name-item .value-row {
@@ -905,12 +961,25 @@
             padding: 0.25rem 0.5rem;
             margin-bottom: 0;
         }
+        #managementPanel #nameList.extraction-mode .name-item {
+            position: relative;
+            padding-left: 1.95rem;
+        }
+        #managementPanel #nameList.extraction-mode .name-row {
+            grid-template-columns: minmax(0, 1fr) 1.75rem;
+        }
+        #managementPanel #nameList.extraction-mode .drag-handle {
+            position: absolute;
+            left: 0.15rem;
+            top: 0.35rem;
+            margin-right: 0;
+        }
         #managementPanel .name-item:last-child { border-bottom: none; margin-bottom: 0; }
         #managementPanel .name-item.removing {
             transition: opacity 0.3s ease-out, transform 0.3s ease-out, height 0.3s ease-out, padding 0.3s ease-out, margin 0.3s ease-out;
             opacity: 0; transform: translateX(-20px); cursor: default; height: 0; padding-top: 0; padding-bottom: 0; margin-bottom: 0; border: none; overflow: hidden;
         }
-        #managementPanel .name-item-selected { opacity: 0.4; color: rgba(var(--primary-color-rgb), 0.4); pointer-events: none; cursor: default; }
+        #managementPanel .name-item-selected { opacity: 0.4; color: rgba(var(--primary-color-rgb), 0.4); cursor: default; }
         .construct-mode #managementPanel .name-item-selected { color: var(--construct-text-light); }
         #managementPanel .name-item-selected .name-span { text-decoration: line-through; }
         /* Drag & Drop Styles */
@@ -918,14 +987,90 @@
         .construct-mode #managementPanel .name-item.dragging { background-color: var(--construct-bg-darker); }
         #managementPanel .name-item.drag-over { border-top: 2px solid var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.1); }
         .construct-mode #managementPanel .name-item.drag-over { border-top-color: var(--primary-color); background-color: rgba(var(--primary-color-rgb), 0.2); }
+        body > .name-item.roster-drag-preview {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 10050;
+            pointer-events: none;
+            margin: 0;
+            opacity: 0.92;
+            display: flex;
+            flex-direction: column;
+            padding: 0.5rem 0.25rem;
+            box-sizing: border-box;
+            color: var(--font-color);
+            background-color: rgba(0, 18, 0, 0.92);
+            border: 1px solid var(--primary-color);
+            box-shadow: 0 0 12px rgba(var(--primary-color-rgb), 0.45);
+            cursor: grabbing;
+            transition: none;
+            will-change: transform;
+        }
+        body > .name-item.roster-drag-preview .name-row {
+            display: grid;
+            grid-template-columns: 1.5rem minmax(0, 1fr) 1.75rem;
+            column-gap: 0.35rem;
+            align-items: center;
+            width: 100%;
+            min-width: 0;
+        }
+        body > .name-item.roster-drag-preview .name-span {
+            display: block;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            line-height: 1.2;
+        }
+        body > .name-item.roster-drag-preview .value-row {
+            margin-top: 0.5rem;
+        }
+        body > .name-item.roster-drag-preview .value-row.hidden,
+        body > .name-item.roster-drag-preview .name-edit-input.hidden {
+            display: none;
+        }
+        body > .name-item.roster-drag-preview .value-row input {
+            width: 100%;
+            font-size: 0.8rem;
+            padding: 0.25rem 0.5rem;
+            margin-bottom: 0;
+            box-sizing: border-box;
+        }
+        body > .name-item.roster-drag-preview .drag-handle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.5rem;
+            height: 1.5rem;
+            background-image:
+                linear-gradient(rgba(var(--primary-color-rgb), 0.8), rgba(var(--primary-color-rgb), 0.8)),
+                linear-gradient(rgba(var(--primary-color-rgb), 0.8), rgba(var(--primary-color-rgb), 0.8)),
+                linear-gradient(rgba(var(--primary-color-rgb), 0.8), rgba(var(--primary-color-rgb), 0.8));
+            background-repeat: no-repeat;
+            background-size: 1rem 2px;
+            background-position:
+                center calc(50% - 0.22rem),
+                center center,
+                center calc(50% + 0.22rem);
+        }
+        body > .name-item.roster-drag-preview .remove-name-btn {
+            width: 1.75rem;
+            height: 1.75rem;
+            justify-self: end;
+        }
+        .construct-mode > .name-item.roster-drag-preview {
+            background-color: var(--construct-bg-darker);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(var(--construct-accent-rgb), 0.16);
+        }
         #managementPanel .drag-handle {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 1rem;
-            height: 1rem;
+            width: 1.5rem;
+            height: 1.5rem;
             flex: 0 0 auto;
-            margin-right: 0.35rem;
             cursor: grab;
             touch-action: none;
             user-select: none;
@@ -935,7 +1080,7 @@
                 linear-gradient(rgba(var(--primary-color-rgb), 0.8), rgba(var(--primary-color-rgb), 0.8)),
                 linear-gradient(rgba(var(--primary-color-rgb), 0.8), rgba(var(--primary-color-rgb), 0.8));
             background-repeat: no-repeat;
-            background-size: 100% 2px;
+            background-size: 1rem 2px;
             background-position:
                 center calc(50% - 0.22rem),
                 center center,
@@ -1237,6 +1382,9 @@
                 gap: 0.5rem;
                 padding-top: 3rem;
             }
+            #managementPanel .action-button-row.panel-section-static {
+                padding-top: 3rem;
+            }
 
             #progressBarContainer { padding: 0.25rem 0.5rem; }
         }
@@ -1418,14 +1566,14 @@
                         <input type="range" id="crtVignetteSlider" min="0" max="100" step="1" value="40">
                     </div>
                     <div class="mb-3">
-                        <label for="crtBeamFocusSlider" class="flex justify-between items-center" data-tooltip="Sharpens or softens the phosphor beam; lower values smear glyphs horizontally.">
+                        <label for="crtBeamFocusSlider" class="flex justify-between items-center" data-tooltip="Sharpens or softens the phosphor beam; lower values smear glyphs horizontally without changing aperture grille clarity.">
                             <span>// Beam Focus:</span>
                             <span id="crtBeamFocusValue" class="font-semibold text-sm">72%</span>
                         </label>
                         <input type="range" id="crtBeamFocusSlider" min="0" max="100" step="1" value="72">
                     </div>
                     <div class="mb-3">
-                        <label for="crtScanlinesSlider" class="flex justify-between items-center" data-tooltip="Controls horizontal scanline contrast across the CRT image.">
+                        <label for="crtScanlinesSlider" class="flex justify-between items-center" data-tooltip="Controls fixed horizontal raster-line contrast across the CRT face.">
                             <span>// Scanlines:</span>
                             <span id="crtScanlinesValue" class="font-semibold text-sm">62%</span>
                         </label>
@@ -1439,7 +1587,7 @@
                         <input type="range" id="crtGrilleSlider" min="0" max="100" step="1" value="44">
                     </div>
                     <div class="mb-3">
-                        <label for="crtNoiseSlider" class="flex justify-between items-center" data-tooltip="Adds signal grain and shimmer to the CRT composite.">
+                        <label for="crtNoiseSlider" class="flex justify-between items-center" data-tooltip="Adds signal grain before the CRT face, so grille and glass still shape it.">
                             <span>// Signal Noise:</span>
                             <span id="crtNoiseValue" class="font-semibold text-sm">14%</span>
                         </label>
@@ -1448,9 +1596,9 @@
                     <div class="mb-3">
                         <label for="crtSyncRollSlider" class="flex justify-between items-center" data-tooltip="Introduces a slow vertical sync wave; higher values make the image feel less stable.">
                             <span>// Vertical Sync Roll:</span>
-                            <span id="crtSyncRollValue" class="font-semibold text-sm">6%</span>
+                            <span id="crtSyncRollValue" class="font-semibold text-sm">100%</span>
                         </label>
-                        <input type="range" id="crtSyncRollSlider" min="0" max="100" step="1" value="6">
+                        <input type="range" id="crtSyncRollSlider" min="0" max="300" step="1" value="100">
                     </div>
                     <div class="mb-3">
                         <label for="crtJitterSlider" class="flex justify-between items-center" data-tooltip="Adds horizontal line wobble; higher values make rows swim side to side.">
@@ -1458,6 +1606,13 @@
                             <span id="crtJitterValue" class="font-semibold text-sm">0%</span>
                         </label>
                         <input type="range" id="crtJitterSlider" min="0" max="100" step="1" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="crtDistortionDriftSlider" class="flex justify-between items-center" data-tooltip="Lets jitter, tube bend, noise, and sync instability wander over time; set to 0% for a fully steady signal.">
+                            <span>// Distortion Drift:</span>
+                            <span id="crtDistortionDriftValue" class="font-semibold text-sm">24%</span>
+                        </label>
+                        <input type="range" id="crtDistortionDriftSlider" min="0" max="100" step="1" value="24">
                     </div>
                 </div>
                 <div class="settings-subgroup settings-subgroup-first">
@@ -1528,6 +1683,10 @@
                     <div class="settings-subgroup-header">
                         <h3>Rain Texture</h3>
                         <button id="resetRainTextureEffectsBtn" class="reset-effect-btn" type="button" data-reset-scope="rainTexture">Reset</button>
+                    </div>
+                    <div class="control-group">
+                        <button id="rainGlyphSetBtn" aria-pressed="true">[Y] Expanded Glyphs</button>
+                        <div id="rainGlyphSetLed" class="led-indicator active" aria-hidden="true"></div>
                     </div>
                     <div class="mb-3">
                         <label for="rainVarietySlider" class="flex justify-between items-center" data-tooltip="Adds per-column entropy to fall speed, brightness, tail length, dropouts, glyph flips, and rare sleeper streams.">
@@ -1687,6 +1846,13 @@
                             </div>
                             <span><kbd>G</kbd></span>
                         </li>
+                        <li>
+                            <div>
+                                <span>Toggle Rain Glyph Set</span>
+                                <p class="text-sm opacity-70 mt-1">Switches between the original Matrix code alphabet and the expanded multilingual symbol feed.</p>
+                            </div>
+                            <span><kbd>Y</kbd></span>
+                        </li>
                          <li>
                             <div>
                                 <span>Toggle Fullscreen</span>
@@ -1742,18 +1908,23 @@ uniform float u_grille;
 uniform float u_noise;
 uniform float u_syncRoll;
 uniform float u_jitter;
+uniform float u_distortionDrift;
 uniform float u_constructMode;
 
-vec2 curveRemapUV(vec2 uv) {
+vec2 curveRemapUV(vec2 uv, float fishbowlAmount) {
   uv = uv * 2.0 - 1.0;
   vec2 curvature = vec2(3.15);
   vec2 offset = abs(uv.yx) / curvature;
-  uv = uv + uv * offset * offset * u_fishbowl;
+  uv = uv + uv * offset * offset * fishbowlAmount;
   return uv * 0.5 + 0.5;
 }
 
 float random(vec2 co) {
   return fract(sin(dot(co.xy, vec2(12.9898, 78.233)) + u_time) * 43758.5453);
+}
+
+float stableRandom(vec2 co) {
+  return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
 vec4 sampleMatrixColor(vec2 sampleUV) {
@@ -1780,12 +1951,36 @@ vec3 sampleFocusedColor(vec2 sampleUV, vec2 pixelStep, float focusAmount) {
   return mix(centerColor, center + (horizontal * (0.17 + softness * 0.05)), softness);
 }
 
+float getApertureGrillePattern(float screenX) {
+  float x_lines = sin(screenX * PI * 0.92);
+  x_lines = (x_lines * 0.5 + 0.5) * 0.72 + 0.28;
+  float fineSlot = smoothstep(0.08, 0.42, abs(fract(screenX / 3.0) - 0.5) * 2.0);
+  return mix(pow(x_lines, 0.82), 0.74 + fineSlot * 0.26, 0.45);
+}
+
+float getScanlinePattern(float screenY, float scanlineAmount) {
+  float lineCount = mix(300.0, 560.0, clamp(scanlineAmount, 0.0, 1.0));
+  float yLines = sin((screenY / max(u_resolution.y, 1.0)) * lineCount * PI * 2.0);
+  return (yLines * 0.5 + 0.5) * 0.85 + 0.15;
+}
+
 void main() {
   vec2 uv = vTexCoord;
-  vec2 remappedUV = curveRemapUV(uv);
-  float edgeZoom = 1.02 + (0.13 * u_fishbowl);
+  float distortionDrift = u_distortionDrift * (1.0 - u_constructMode);
+  float driftRamp = smoothstep(0.15, 1.6, u_time);
+  float driftClock = u_time * (0.16 + distortionDrift * 0.12);
+  float driftStep = floor(driftClock);
+  float driftBlend = smoothstep(0.0, 1.0, fract(driftClock));
+  float driftTargetA = (stableRandom(vec2(driftStep, 5.31)) * 2.0) - 1.0;
+  float driftTargetB = (stableRandom(vec2(driftStep + 1.0, 5.31)) * 2.0) - 1.0;
+  float driftWander = mix(driftTargetA, driftTargetB, driftBlend) * driftRamp;
+  float driftBreath = (0.5 + (0.5 * sin((u_time * (0.72 + distortionDrift * 0.45)) + stableRandom(vec2(driftStep, 9.17)) * PI * 2.0))) * driftRamp;
+  float activeFishbowl = clamp(u_fishbowl + distortionDrift * 0.045 * driftWander, 0.0, 1.0);
+  vec2 remappedUV = curveRemapUV(uv, activeFishbowl);
+  float edgeZoom = 1.02 + (0.13 * activeFishbowl);
   remappedUV = (remappedUV - 0.5) / edgeZoom + 0.5;
-  float jitterAmount = u_jitter * (1.0 - u_constructMode);
+  remappedUV.x += driftWander * 0.0011 * distortionDrift;
+  float jitterAmount = (u_jitter + distortionDrift * driftRamp * (0.08 + driftBreath * 0.34)) * (1.0 - u_constructMode);
   if (jitterAmount > 0.001) {
     float lineNoise = random(vec2(floor(gl_FragCoord.y * 0.32), floor(u_time * 24.0)));
     float wave = sin((remappedUV.y * 28.0) + (u_time * 1.7)) * 0.45 + sin((remappedUV.y * 83.0) - (u_time * 3.1)) * 0.16;
@@ -1802,39 +1997,39 @@ void main() {
   float focusAmount = clamp(u_beamFocus, 0.0, 1.0);
   float chroma = 0.00025 * crtIntensity * (1.0 - u_constructMode);
   vec3 focusedBase = sampleFocusedColor(remappedUV, texelStep, focusAmount);
+  vec3 focusedRed = sampleFocusedColor(remappedUV + vec2(chroma, 0.0), texelStep, focusAmount);
+  vec3 focusedBlue = sampleFocusedColor(remappedUV - vec2(chroma, 0.0), texelStep, focusAmount);
   vec4 baseColor = vec4(
-    mix(focusedBase.r, sampleCombinedColor(remappedUV + vec2(chroma, 0.0)).r, 0.55),
+    mix(focusedBase.r, focusedRed.r, 0.55),
     focusedBase.g,
-    mix(focusedBase.b, sampleCombinedColor(remappedUV - vec2(chroma, 0.0)).b, 0.55),
+    mix(focusedBase.b, focusedBlue.b, 0.55),
     1.0
   );
   vec3 rawColor = sampleCombinedColor(remappedUV);
   float luminance = dot(rawColor, vec3(0.299, 0.587, 0.114));
   float constructLeadMask = 1.0 - smoothstep(0.02, 0.35, luminance);
 
-  float line_count = mix(300.0, 560.0, clamp(u_scanlines, 0.0, 1.0));
-  float y_lines = sin(remappedUV.y * line_count * PI * 2.0);
-  y_lines = (y_lines * 0.5 + 0.5) * 0.85 + 0.15;
-
-  float x_lines = sin(gl_FragCoord.x * PI * 0.92);
-  x_lines = (x_lines * 0.5 + 0.5) * 0.72 + 0.28;
-  float fineSlot = smoothstep(0.08, 0.42, abs(fract(gl_FragCoord.x / 3.0) - 0.5) * 2.0);
-
   float scanlineStrength = u_scanlines * crtIntensity;
-  float scanline = mix(1.0, pow(y_lines, mix(0.95, 0.46, u_scanlines)), scanlineStrength);
+  float scanlinePattern = getScanlinePattern(gl_FragCoord.y, u_scanlines);
+  float scanline = mix(1.0, pow(scanlinePattern, mix(0.95, 0.46, u_scanlines)), scanlineStrength);
   scanline = mix(scanline, mix(1.0, scanline, 0.5), u_constructMode);
-  float grillePattern = mix(pow(x_lines, 0.82), 0.74 + fineSlot * 0.26, 0.45);
-  float grille = mix(1.0, grillePattern, u_grille * crtIntensity * (1.0 - u_constructMode * 0.45));
-  float vignetteMask = smoothstep(0.86, 0.10, distance(remappedUV, vec2(0.5)));
+  float grillePattern = getApertureGrillePattern(gl_FragCoord.x);
+  float grilleStrength = u_grille * crtIntensity * (1.0 - u_constructMode * 0.45);
+  float grille = mix(1.0, grillePattern, grilleStrength);
+  float vignetteMask = smoothstep(0.86, 0.10, distance(uv, vec2(0.5)));
   float vignetteStrength = mix(u_vignette, u_vignette * 0.45, u_constructMode);
   float vignette = max(0.0, 1.0 - ((1.0 - vignetteMask) * vignetteStrength));
-  float noise = (random(gl_FragCoord.xy) - 0.5) * (0.012 + 0.095 * u_noise) * crtIntensity;
+  float activeNoise = clamp(u_noise + distortionDrift * driftRamp * (0.025 + driftBreath * 0.055), 0.0, 1.0);
+  float noise = (random(gl_FragCoord.xy) - 0.5) * (0.012 + 0.095 * activeNoise) * crtIntensity;
+  float syncRollBase = clamp(u_syncRoll, 0.0, 3.0);
+  float syncRollDrift = distortionDrift * driftRamp * (0.018 + driftBreath * 0.05);
+  float syncRollAmount = syncRollBase >= 1.0 ? syncRollBase : clamp(syncRollBase + syncRollDrift, 0.0, 1.0);
   float syncRoll = 1.0;
-  if (u_syncRoll > 0.001) {
-    float rollY = fract(remappedUV.y - (u_time * (0.07 + u_syncRoll * 0.28)));
+  if (syncRollAmount > 0.001) {
+    float rollY = fract(remappedUV.y - (u_time * (0.07 + syncRollAmount * 0.28)));
     float rollBand = 1.0 - smoothstep(0.0, 0.20, abs(rollY - 0.11));
     float rollLine = 1.0 - smoothstep(0.0, 0.035, abs(rollY - 0.018));
-    syncRoll = 1.0 + (rollBand * 0.12 * u_syncRoll) - (rollLine * 0.32 * u_syncRoll);
+    syncRoll = 1.0 + (rollBand * 0.12 * syncRollAmount) - (rollLine * 0.32 * syncRollAmount);
   }
 
   vec3 matrixTrailColor = baseColor.rgb * (1.4 + 1.2 * u_intensity);
@@ -1842,9 +2037,9 @@ void main() {
   vec3 trailColor = mix(matrixTrailColor, constructTrailColor, u_constructMode);
   vec3 constructLeadColor = vec3(0.015, 0.015, 0.015);
   vec3 color = mix(trailColor, constructLeadColor, constructLeadMask * u_constructMode);
-  color *= scanline * grille * vignette * syncRoll;
-
   color += noise;
+  // Beam focus and chroma shape the phosphor spot above; scanlines, grille, and glass stay fixed on the CRT face.
+  color *= scanline * grille * vignette * syncRoll;
 
   gl_FragColor = vec4(color, 1.0);
 }
@@ -1918,6 +2113,8 @@ void main() {
         const leaderHeatValue = document.getElementById('leaderHeatValue');
         const glyphMutationSlider = document.getElementById('glyphMutationSlider');
         const glyphMutationValue = document.getElementById('glyphMutationValue');
+        const rainGlyphSetBtn = document.getElementById('rainGlyphSetBtn');
+        const rainGlyphSetLed = document.getElementById('rainGlyphSetLed');
         const resetAllEffectsBtn = document.getElementById('resetAllEffectsBtn');
         const resetEffectBtns = Array.from(document.querySelectorAll('.reset-effect-btn[data-reset-scope]'));
         const panelSectionToggles = Array.from(document.querySelectorAll('.panel-section-toggle'));
@@ -1942,6 +2139,8 @@ void main() {
         const crtSyncRollValue = document.getElementById('crtSyncRollValue');
         const crtJitterSlider = document.getElementById('crtJitterSlider');
         const crtJitterValue = document.getElementById('crtJitterValue');
+        const crtDistortionDriftSlider = document.getElementById('crtDistortionDriftSlider');
+        const crtDistortionDriftValue = document.getElementById('crtDistortionDriftValue');
 
         // Action Buttons (Inside Panel)
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -1972,6 +2171,9 @@ void main() {
         let pointerDragPointerId = null;
         let pointerDragStartX = 0;
         let pointerDragStartY = 0;
+        let rosterDragPreviewElement = null;
+        let rosterDragPreviewOffsetX = 0;
+        let rosterDragPreviewOffsetY = 0;
         let pointerDragHasStarted = false;
         let currentBrightnessPercent = 100;
         let currentRainFPS = 10;
@@ -1986,6 +2188,7 @@ void main() {
         let currentGapDensityPercent = 50;
         let currentLeaderHeatPercent = 50;
         let currentGlyphMutationPercent = 50;
+        let currentRainGlyphSet = 'expanded';
         let rainAnimationId = null;
         let isAnimationPaused = false;
         let isInMatrixMode = false;
@@ -1997,8 +2200,9 @@ void main() {
         let currentCrtScanlinesPercent = 62;
         let currentCrtGrillePercent = 44;
         let currentCrtNoisePercent = 14;
-        let currentCrtSyncRollPercent = 6;
+        let currentCrtSyncRollPercent = 100;
         let currentCrtJitterPercent = 0;
+        let currentCrtDistortionDriftPercent = 24;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
@@ -2032,6 +2236,7 @@ void main() {
         };
         let pendingModalOpenTimeoutId = null;
         let matrixRenderStyles = null;
+        let sanitizedMatrixExpandedGlyphs = null;
         let trailFillStyleCache = [];
         let trailOpacityCache = [];
         let urlUpdateTimerId = null;
@@ -2055,7 +2260,85 @@ void main() {
         };
 
         // --- Constants ---
-        const MATRIX_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const MATRIX_ORIGINAL_CHARS = "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const MATRIX_ASCII_GLYPHS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const MATRIX_WORLD_GLYPHS = [
+            "アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン",
+            "あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをん",
+            "가나다라마바사아자차카타파하",
+            "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ",
+            "АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЮЯ",
+            "אבגדהוזחטיכלמנסעפצקרשת",
+            "ابتثجحخدذرزسشصضطظعغفقكلمنهوي",
+            "कखगघचछजझटठडढणतथदधनपफबभमयरलवशषसह",
+            "กขคงจฉชซญฎฏฐฑฒณดตถทธนบปผฝพฟภมยรลวศษสหฬอฮ",
+            "∴∵∞≈≠≤≥±÷×∑∏√∆∇∫∂µΩλπφψθ⌁⌬⌘⌗⌯⍟◇◆◈◌◍◎◉◐◑◒◓●○"
+        ].join("");
+        const MATRIX_SPECIAL_GLYPHS = [
+            "☺☻♥♦♣♠•◘○◙♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼",
+            "¡¢£¤¥¦¨©ª«¬®¯°²³´µ·¸¹º»¼½¾¿",
+            "┌┐└┘├┤┬┴┼─│╔╗╚╝╠╣╦╩╬═║╒╕╘╛╞╡╤╧╪╱╲╳",
+            "▀▄█▌▐░▒▓■□▪▫▭▮▯▰▱◆◇◈◊●◌◍◎◉◐◑◒◓◢◣◤◥",
+            "☜☞☝☟☠☡☢☣☤☥☧☩☫☬☭☮☯☰☱☲☳☴☵☶☷",
+            "✁✂✃✄☎☏✆✇✈✉✎✐✑✒✓✔✕✖✚✜✠✢✣✤✥✦✧",
+            "✩✪✫✬✭✮✯✰✱✲✳✴✵✶✷✸✹✺✻✼✽✾✿❀❁❂❃❄❅❆❇❈❉❊❋",
+            "❖❘❙❚❯❮❰❱❲❳❬❭❪❫❴❵❶❷❸❹❺❻❼❽❾❿",
+            "⌂⌐⌠⌡⌘⌚⌛⌜⌝⌞⌟⌧⌫⌦⌨⌬⌭⌮⌯⌰⌱⌲⌳⌴⌵⌶⌷⌸⌹⌺⌻⌼⌽⌾⌿⍀⍁⍂⍃⍄⍟",
+            "⎇⎈⎋⎌⎍⎎⎏⎐⎔⎚⎯⏎⏏⏚⏛⏣⏥⏧⏻⏼⏽⏾",
+            "⠁⠂⠄⠈⠐⠠⡀⢀⣀⣿⣿⣦⣤⣶⠿⡿⢿⣻⣽⣾"
+        ].join("");
+        const MATRIX_GLOBAL_SCRIPT_GLYPHS = [
+            "ÁÀÂÄÃÅĀĂĄÆÇĆĈĊČÐÉÈÊËĒĔĖĘĚĜĞĠĢĦÍÌÎÏĨĪĬĮİĲĴĶŁĽĹĻŃÑŅŇŊÓÒÔÖÕŌŎŐŒØŔŖŘŚŜŞŠȘŦŤŢȚÚÙÛÜŨŪŬŮŰŲŴÝŶŸŹŻŽÞ",
+            "ƁƂƄƆƇƉƊƋƎƏƐƑƓƔƖƘƜƝƟƠƢƤƦƧƩƬƮƯƱƲƷǄǇǊǍǏǑǓǕǗǙǛǞǠǢǤǦǨǪǬǮȜȢȤȦȨȪȬȮȰȲ",
+            "一丁七万丈三上下不与世中丸主久之也了予事二五井亜交人今介仏令以休会伝体何作使侍元光入全八公六兵具円再冂写冬冴出刀分切初判前力加助化北十千午半南卜卦卩厂原友口古右名君和品土地堂士夏夕外多夜夢大天太夫女子学宇宙守安宛定宝実宮家宿寺小山川工左巫己市帝年広店府度庭弁式弓引弟強彡形彳御心忍志思性悪愛成我戸手才文斗新方日明星春昭時晶月有木本札朱来東林森楔業楽機止正武歯水氷永江河法波海火炎無然父片牛王玉生田由甲申男界白百的目矢石神祭福禾空立竹米糸紅素終羊羽耳聖肉自至舟艮色艸花草虫血行西見角言語谷豆貝赤走足身車辛辰迷道金針門間雨電青非音風飛食首馬骨高鬼魚鳥鹿麦黄黒龍",
+            "⼀⼁⼂⼃⼄⼅⼆⼇⼈⼉⼊⼋⼌⼍⼎⼏⼐⼑⼒⼓⼔⼕⼖⼗⼘⼙⼚⼛⼜⼝⼞⼟⼠⼡⼢⼣⼤⼥⼦⼧⼨⼩⼪⼫⼭⼮⼯⼰⼱⼲⼳⼴⼵⼶⼷⼸⼹⼺⼻⼼⼽⼾⼿⽀⽁⽂⽃⽄⽅⽆⽇⽈⽉⽊⽋⽌⽍⽎⽏⽐⽑⽒⽓⽔⽕⽖⽗⽘⽙⽚⽛⽜⽝⽞⽟⽠⽡⽢⽣⽤⽥⽦⽧⽨⽩⽪⽫⽬⽭⽮⽯⽰⽱⽲⽳⽴⽵⽶⽷⽸⽹⽺⽻⽼⽽⽾⽿⾁⾂⾃⾄⾅⾆⾇⾈⾉⾊⾋⾌⾍⾎⾏⾐⾒⾓⾔⾕⾖⾗⾘⾙⾚⾛⾜⾝⾞⾟⾠⾡⾢⾣⾤⾥⾦⾧⾨⾩⾪⾫⾬⾭⾮⾯⾰⾱⾳⾵⾶⾷⾸⾹⾺⾻⾼⾽⾾⾿⿀⿁⿂⿃⿄⿅⿆⿇⿈⿉⿊⿋⿌⿍⿎⿏⿐⿑⿒⿓⿔⿕",
+            "ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙㄚㄛㄜㄝㄞㄟㄠㄡㄢㄣㄤㄥㄦㄧㄨㄩ",
+            "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔՕՖաբգդեզէըթժիլխծկհձղճմյնշոչպջռսվտրցւփքօֆ",
+            "ႠႡႢႣႤႥႦႧႨႩႪႫႬႭႮႯႰႱႲႳႴႵႶႷႸႹႺႻႼႽႾႿაბგდევზთიკლმნოპჟრსტუფქღყშჩცძწჭხჯჰ",
+            "ሀሁሂሃሄህሆለሉሊላሌልሎመሙሚማሜምሞሠሡሢሣሤሥሦረሩሪራሬርሮሰሱሲሳሴስሶቀቁቂቃቄቅቆበቡቢባቤብቦተቱቲታቴትቶኀኁኂኃኄኅኆነኑኒናኔንኖአኡኢኣኤእኦከኩኪካኬክኮወዉዊዋዌውዎዘዙዚዛዜዝዞየዩዪያዬይዮደዱዲዳዴድዶገጉጊጋጌግጎጠጡጢጣጤጥጦጰጱጲጳጴጵጶፀፁፂፃፄፅፆፈፉፊፋፌፍፎፐፑፒፓፔፕፖ",
+            "ᎠᎡᎢᎣᎤᎥᎦᎧᎨᎩᎪᎫᎬᎭᎮᎯᎰᎱᎲᎳᎴᎵᎶᎷᎸᎹᎺᎻᎼᎽᎾᎿᏀᏁᏂᏃᏄᏅᏆᏇᏈᏉᏊᏋᏌᏍᏎᏏᏐᏑᏒᏓᏔᏕᏖᏗᏘᏙᏚᏛᏜᏝᏞᏟᏠᏡᏢᏣᏤᏥᏦᏧᏨᏩᏪᏫᏬᏭᏮᏯᏰᏱᏲᏳᏴ",
+            "ᐁᐃᐅᐊᐋᐯᐱᐳᐸᐹᑌᑎᑐᑕᑖᑫᑭᑯᑲᑳᒉᒋᒍᒐᒑᒣᒥᒧᒪᒫᓀᓂᓄᓇᓈᓭᓯᓱᓴᓵᔦᔨᔪᔭᔮᕃᕆᕈᕋᕚᕓᕕᕗᕙᕛᕞᕠᕤᕦᕧᕨᕩᕪᕭᕮᕯᕰᕱᕲᕴᕵᕶᕷᕸᕹᕺᕻᕼᕽᕾᕿᖀᖁᖂᖃᖄᖅ",
+            "ⴰⴱⴲⴳⴴⴵⴶⴷⴸⴹⴺⴻⴼⴽⴾⴿⵀⵁⵂⵃⵄⵅⵆⵇⵈⵉⵊⵋⵌⵍⵎⵏⵐⵑⵒⵓⵔⵕⵖⵗⵘⵙⵚⵛⵜⵝⵞⵟⵠⵡⵢⵣⵤⵥⵦⵧ",
+            "ߊߋߌߍߎߏߐߒߓߔߕߖߗߘߙߚߛߜߝߞߟߠߡߢߣߤߥߦߧߨߩ",
+            "𞤀𞤁𞤂𞤃𞤄𞤅𞤆𞤇𞤈𞤉𞤊𞤋𞤌𞤍𞤎𞤏𞤐𞤑𞤒𞤓𞤔𞤕𞤖𞤗𞤘𞤙𞤚𞤛𞤜𞤝𞤞𞤟𞤠𞤢𞤣𞤤𞤥𞤦𞤧𞤨𞤩𞤪𞤫𞤬𞤭𞤮𞤯𞤰𞤱𞤲𞤳𞤴𞤵𞤶𞤷𞤸𞤹𞤺𞤻𞤼𞤽𞤾𞤿𞥀𞥁",
+            "ꔀꔁꔂꔃꔄꔅꔆꔇꔈꔉꔊꔋꔌꔍꔎꔏꔐꔑꔒꔓꔔꔕꔖꔗꔘꔙꔚꔛꔜꔝꔞꔟꔠꔡꔢꔣꔤꔥꔦꔧꔨꔩꔪꔫꔬꔭꔮꔯꔰꔱꔲꔳꔴꔵꔶꔷꔸꔹꔺꔻꔼꔽꔾꔿꕀꕁꕂꕃꕄꕅꕆꕇꕈꕉꕊꕋꕌꕍꕎꕏꕐꕑꕒꕓꕔꕕꕖꕗꕘꕙꕚꕛꕜꕝꕞꕟꕠꕡꕢꕣꕤꕥꕦ",
+            "অআইঈউঊঋএঐওঔকখগঘঙচছজঝঞটঠডঢণতথদধনপফবভমযরলশষসহ",
+            "ਅਆਇਈਉਊਏਐਓਔਕਖਗਘਙਚਛਜਝਞਟਠਡਢਣਤਥਦਧਨਪਫਬਭਮਯਰਲਵਸਹੜ",
+            "અઆઇઈઉઊઋએઐઓઔકખગઘઙચછજઝઞટઠડઢણતથદધનપફબભમયરલવશષસહળ",
+            "ଅଆଇଈଉଊଋଏଐଓଔକଖଗଘଙଚଛଜଝଞଟଠଡଢଣତଥଦଧନପଫବଭମଯରଲଳଵଶଷସହ",
+            "அஆஇஈஉஊஎஏஐஒஓஔகஙசஜஞடணதநனபமயரலளழவஷஸஹ",
+            "అఆఇఈఉఊఋఎఏఐఒఓఔకఖగఘఙచఛజఝఞటఠడఢణతథదధనపఫబభమయరలవశషసహళ",
+            "ಅಆಇಈಉಊಋಎಏಐಒಓಔಕಖಗಘಙಚಛಜಝಞಟಠಡಢಣತಥದಧನಪಫಬಭಮಯರಲವಶಷಸಹಳ",
+            "അആഇഈഉഊഋഎഏഐഒഓഔകഖഗഘങചഛജഝഞടഠഡഢണതഥദധനപഫബഭമയരലവശഷസഹളഴറ",
+            "අආඇඈඉඊඋඌඑඒඓඔඕඖකඛගඝඟචඡජඣඤටඨඩඪණතථදධනපඵබභමයරලවශෂසහළෆ",
+            "ກຂຄງຈສຊຍດຕຖທນບປຜຝພຟມຢຣລວຫອຮະາເແໂໃໄ",
+            "កខគឃងចឆជឈញដឋឌឍណតថទធនបផពភមយរលវសហឡអឥឦឧឩឪឫឬឭឮឯឰឱឲឳ",
+            "ကခဂဃငစဆဇဈညဋဌဍဎဏတထဒဓနပဖဗဘမယရလဝသဟဠအဣဤဥဦဧဩဪဿ",
+            "ཀཁགངཅཆཇཉཏཐདནཔཕབམཙཚཛཝཞཟའཡརལཤསཧཨཪཫཬ",
+            "⍺⍵⍴⍳⍟⍙⍚⍜⍝⍞⍠⍣⍤⍥⍨⍪⍬⍭⍮⍯⍰⍱⍲⍴⍵⌈⌊⌿⍀⊖⊢⊣⊤⊥",
+            "∀∁∂∃∄∅∆∇∈∉∋∌∎∏∐∑−∓∔∕∖∗∘∙√∛∜∝∟∠∡∢∣∤∥∦∧∨∩∪∫∮∴∵∶∷∸∹∺∻∼∽∾≀≁≂≃≄≅≆≇≈≉≊≋≌≍≎≏≐≑≒≓≔≕≖≗≘≙≚≛≜≝≞≟≠≡≢≤≥≦≧≨≩≪≫⊂⊃⊄⊅⊆⊇⊕⊖⊗⊘⊙⊚⊛⊜⊝⊞⊟⊠⊡",
+            "╭╮╯╰╱╲╳╴╵╶╷╸╹╺╻╼╽╾╿▁▂▃▄▅▆▇█▉▊▋▌▍▎▏▔▕▖▗▘▙▚▛▜▝▞▟"
+        ].join("");
+        const MATRIX_PICTOGRAPH_GLYPHS = [
+            "♔", "♕", "♖", "♗", "♘", "♙", "♚", "♛", "♜", "♝", "♞", "♟", "♤", "♡", "♢", "♧",
+            "♩", "♪", "♫", "♬", "♭", "♮", "♯", "♲", "♳", "♴", "♵", "♶", "♷", "♸", "♹", "♺",
+            "⚐", "⚑", "⚘", "⚚", "⚞", "⚟", "⚭", "⚮", "⚯", "⚲", "⚳", "⚴", "⚵", "⚶", "⚷", "⚸",
+            "⚹", "⚺", "⚻", "⚼", "⚿", "⛢", "⛣", "⛤", "⛥", "⛦", "⛧", "⛨", "⛭", "⟐", "⟑", "⟒",
+            "⟓", "⟔", "⟕", "⟠", "⟡", "⟢", "⟣", "⟤", "⟥", "⟦", "⟧", "⟨", "⟩", "⟪", "⟫", "⟬",
+            "⟭", "⟮", "⟯", "⦀", "⦁", "⦂", "⦃", "⦄", "⦅", "⦆", "⦇", "⦈", "⦉", "⦊", "⦋", "⦌",
+            "⦍", "⦎", "⦏", "⦐", "⦑", "⦒", "⦓", "⦔", "⦕", "⦖", "⦗", "⦘", "⧫", "⧬", "⧭", "⧮",
+            "⧯", "⧰", "⧱", "⧲", "⧳", "⧴", "⧵", "⧶", "⧷", "⧸", "⧹", "⧺", "⧻", "⧼", "⧽", "⧾"
+        ];
+        const MATRIX_ASCII_REPEAT = Math.ceil((MATRIX_WORLD_GLYPHS.length + MATRIX_SPECIAL_GLYPHS.length + MATRIX_GLOBAL_SCRIPT_GLYPHS.length + MATRIX_PICTOGRAPH_GLYPHS.length) / MATRIX_ASCII_GLYPHS.length);
+        const MATRIX_ORIGINAL_GLYPHS = Array.from(MATRIX_ORIGINAL_CHARS);
+        const MATRIX_EXPANDED_GLYPHS = [
+            ...Array.from(MATRIX_ASCII_GLYPHS.repeat(MATRIX_ASCII_REPEAT)),
+            ...Array.from(MATRIX_WORLD_GLYPHS),
+            ...Array.from(MATRIX_SPECIAL_GLYPHS),
+            ...Array.from(MATRIX_GLOBAL_SCRIPT_GLYPHS),
+            ...MATRIX_PICTOGRAPH_GLYPHS
+        ];
+        const MATRIX_CHARS = MATRIX_EXPANDED_GLYPHS;
         const TYPING_INTERVAL_MS = 10;
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
@@ -2083,8 +2366,10 @@ void main() {
         const DEFAULT_CRT_SCANLINES_PERCENT = 62;
         const DEFAULT_CRT_GRILLE_PERCENT = 44;
         const DEFAULT_CRT_NOISE_PERCENT = 14;
-        const DEFAULT_CRT_SYNC_ROLL_PERCENT = 6;
+        const DEFAULT_CRT_SYNC_ROLL_PERCENT = 100;
+        const MAX_CRT_SYNC_ROLL_PERCENT = 300;
         const DEFAULT_CRT_JITTER_PERCENT = 0;
+        const DEFAULT_CRT_DISTORTION_DRIFT_PERCENT = 24;
         const DEFAULT_RAIN_DEPTH_PERCENT = 50;
         const DEFAULT_RAIN_VARIETY_PERCENT = 50;
         const DEFAULT_LANE_DRIFT_PERCENT = 50;
@@ -2092,6 +2377,7 @@ void main() {
         const DEFAULT_GAP_DENSITY_PERCENT = 50;
         const DEFAULT_LEADER_HEAT_PERCENT = 50;
         const DEFAULT_GLYPH_MUTATION_PERCENT = 50;
+        const DEFAULT_RAIN_GLYPH_SET = 'expanded';
         const MIN_TRAIL_LENGTH = 20;
         const MIN_COLUMN_TRAIL_LENGTH = 8;
         const MAX_TRAIL_LENGTH = 400;
@@ -2118,23 +2404,24 @@ void main() {
         const NUMERIC_SETTINGS = [
             { urlKey: 'brightness', defaultValue: DEFAULT_BRIGHTNESS_PERCENT, slider: brightnessSlider, apply: updateBrightness, get: () => currentBrightnessPercent, parse: parseIntegerSetting },
             { urlKey: 'speed', defaultValue: DEFAULT_RAIN_FPS, slider: speedSlider, apply: handleSpeedChange, get: () => currentRainFPS, parse: parseIntegerSetting },
-            { urlKey: 'fontSize', defaultValue: DEFAULT_FONT_SIZE, slider: fontSizeSlider, apply: handleFontSizeChange, get: () => currentFontSize, parse: parseIntegerSetting },
-            { urlKey: 'tailCurve', defaultValue: DEFAULT_TAIL_CURVE_PERCENT, slider: tailCurveSlider, apply: updateTailCurveDisplay, get: () => currentTailCurvePercent, parse: parseIntegerSetting },
-            { urlKey: 'tailFloor', defaultValue: DEFAULT_TAIL_FLOOR_PERCENT, slider: tailFloorSlider, apply: updateTailFloorDisplay, get: () => currentTailFloorPercent, parse: parseIntegerSetting },
-            { urlKey: 'rainDepth', defaultValue: DEFAULT_RAIN_DEPTH_PERCENT, slider: rainDepthSlider, apply: handleRainDepthChange, get: () => currentRainDepthPercent, parse: parseIntegerSetting, relevant: () => !isFlatGridMode },
-            { urlKey: 'rainVariety', defaultValue: DEFAULT_RAIN_VARIETY_PERCENT, slider: rainVarietySlider, apply: handleRainVarietyChange, get: () => currentRainVarietyPercent, parse: parseIntegerSetting },
-            { urlKey: 'laneDrift', defaultValue: DEFAULT_LANE_DRIFT_PERCENT, slider: laneDriftSlider, apply: handleLaneDriftChange, get: () => currentLaneDriftPercent, parse: parseIntegerSetting, relevant: () => !isFlatGridMode },
-            { urlKey: 'gapDensity', defaultValue: DEFAULT_GAP_DENSITY_PERCENT, slider: gapDensitySlider, apply: handleGapDensityChange, get: () => currentGapDensityPercent, parse: parseIntegerSetting },
-            { urlKey: 'leaderHeat', defaultValue: DEFAULT_LEADER_HEAT_PERCENT, slider: leaderHeatSlider, apply: handleLeaderHeatChange, get: () => currentLeaderHeatPercent, parse: parseIntegerSetting },
-            { urlKey: 'glyphMutation', defaultValue: DEFAULT_GLYPH_MUTATION_PERCENT, slider: glyphMutationSlider, apply: updateGlyphMutationDisplay, get: () => currentGlyphMutationPercent, parse: parseIntegerSetting },
-            { urlKey: 'crtFishbowl', defaultValue: DEFAULT_CRT_FISHBOWL_PERCENT, slider: crtFishbowlSlider, apply: updateCrtFishbowlDisplay, get: () => currentCrtFishbowlPercent, parse: parseIntegerSetting },
-            { urlKey: 'crtVignette', defaultValue: DEFAULT_CRT_VIGNETTE_PERCENT, slider: crtVignetteSlider, apply: updateCrtVignetteDisplay, get: () => currentCrtVignettePercent, parse: parseIntegerSetting },
-            { urlKey: 'crtBeamFocus', defaultValue: DEFAULT_CRT_BEAM_FOCUS_PERCENT, slider: crtBeamFocusSlider, apply: updateCrtBeamFocusDisplay, get: () => currentCrtBeamFocusPercent, parse: parseIntegerSetting },
-            { urlKey: 'crtScanlines', defaultValue: DEFAULT_CRT_SCANLINES_PERCENT, slider: crtScanlinesSlider, apply: updateCrtScanlinesDisplay, get: () => currentCrtScanlinesPercent, parse: parseIntegerSetting },
-            { urlKey: 'crtGrille', defaultValue: DEFAULT_CRT_GRILLE_PERCENT, slider: crtGrilleSlider, apply: updateCrtGrilleDisplay, get: () => currentCrtGrillePercent, parse: parseIntegerSetting },
-            { urlKey: 'crtNoise', defaultValue: DEFAULT_CRT_NOISE_PERCENT, slider: crtNoiseSlider, apply: updateCrtNoiseDisplay, get: () => currentCrtNoisePercent, parse: parseIntegerSetting },
-            { urlKey: 'crtSyncRoll', defaultValue: DEFAULT_CRT_SYNC_ROLL_PERCENT, slider: crtSyncRollSlider, apply: updateCrtSyncRollDisplay, get: () => currentCrtSyncRollPercent, parse: parseIntegerSetting },
-            { urlKey: 'crtJitter', defaultValue: DEFAULT_CRT_JITTER_PERCENT, slider: crtJitterSlider, apply: updateCrtJitterDisplay, get: () => currentCrtJitterPercent, parse: parseIntegerSetting }
+            { urlKey: 'font-size', legacyUrlKeys: ['fontSize'], defaultValue: DEFAULT_FONT_SIZE, slider: fontSizeSlider, apply: handleFontSizeChange, get: () => currentFontSize, parse: parseIntegerSetting },
+            { urlKey: 'tail-curve', legacyUrlKeys: ['tailCurve'], defaultValue: DEFAULT_TAIL_CURVE_PERCENT, slider: tailCurveSlider, apply: updateTailCurveDisplay, get: () => currentTailCurvePercent, parse: parseIntegerSetting },
+            { urlKey: 'tail-floor', legacyUrlKeys: ['tailFloor'], defaultValue: DEFAULT_TAIL_FLOOR_PERCENT, slider: tailFloorSlider, apply: updateTailFloorDisplay, get: () => currentTailFloorPercent, parse: parseIntegerSetting },
+            { urlKey: 'rain-depth', legacyUrlKeys: ['rainDepth'], defaultValue: DEFAULT_RAIN_DEPTH_PERCENT, slider: rainDepthSlider, apply: handleRainDepthChange, get: () => currentRainDepthPercent, parse: parseIntegerSetting, relevant: () => !isFlatGridMode },
+            { urlKey: 'rain-variety', legacyUrlKeys: ['rainVariety'], defaultValue: DEFAULT_RAIN_VARIETY_PERCENT, slider: rainVarietySlider, apply: handleRainVarietyChange, get: () => currentRainVarietyPercent, parse: parseIntegerSetting },
+            { urlKey: 'lane-drift', legacyUrlKeys: ['laneDrift'], defaultValue: DEFAULT_LANE_DRIFT_PERCENT, slider: laneDriftSlider, apply: handleLaneDriftChange, get: () => currentLaneDriftPercent, parse: parseIntegerSetting, relevant: () => !isFlatGridMode },
+            { urlKey: 'gap-density', legacyUrlKeys: ['gapDensity'], defaultValue: DEFAULT_GAP_DENSITY_PERCENT, slider: gapDensitySlider, apply: handleGapDensityChange, get: () => currentGapDensityPercent, parse: parseIntegerSetting },
+            { urlKey: 'leader-heat', legacyUrlKeys: ['leaderHeat'], defaultValue: DEFAULT_LEADER_HEAT_PERCENT, slider: leaderHeatSlider, apply: handleLeaderHeatChange, get: () => currentLeaderHeatPercent, parse: parseIntegerSetting },
+            { urlKey: 'glyph-mutation', legacyUrlKeys: ['glyphMutation'], defaultValue: DEFAULT_GLYPH_MUTATION_PERCENT, slider: glyphMutationSlider, apply: updateGlyphMutationDisplay, get: () => currentGlyphMutationPercent, parse: parseIntegerSetting },
+            { urlKey: 'crt-fishbowl', legacyUrlKeys: ['crtFishbowl'], defaultValue: DEFAULT_CRT_FISHBOWL_PERCENT, slider: crtFishbowlSlider, apply: updateCrtFishbowlDisplay, get: () => currentCrtFishbowlPercent, parse: parseIntegerSetting },
+            { urlKey: 'crt-vignette', legacyUrlKeys: ['crtVignette'], defaultValue: DEFAULT_CRT_VIGNETTE_PERCENT, slider: crtVignetteSlider, apply: updateCrtVignetteDisplay, get: () => currentCrtVignettePercent, parse: parseIntegerSetting },
+            { urlKey: 'crt-beam-focus', legacyUrlKeys: ['crtBeamFocus'], defaultValue: DEFAULT_CRT_BEAM_FOCUS_PERCENT, slider: crtBeamFocusSlider, apply: updateCrtBeamFocusDisplay, get: () => currentCrtBeamFocusPercent, parse: parseIntegerSetting },
+            { urlKey: 'crt-scanlines', legacyUrlKeys: ['crtScanlines'], defaultValue: DEFAULT_CRT_SCANLINES_PERCENT, slider: crtScanlinesSlider, apply: updateCrtScanlinesDisplay, get: () => currentCrtScanlinesPercent, parse: parseIntegerSetting },
+            { urlKey: 'crt-grille', legacyUrlKeys: ['crtGrille'], defaultValue: DEFAULT_CRT_GRILLE_PERCENT, slider: crtGrilleSlider, apply: updateCrtGrilleDisplay, get: () => currentCrtGrillePercent, parse: parseIntegerSetting },
+            { urlKey: 'crt-noise', legacyUrlKeys: ['crtNoise'], defaultValue: DEFAULT_CRT_NOISE_PERCENT, slider: crtNoiseSlider, apply: updateCrtNoiseDisplay, get: () => currentCrtNoisePercent, parse: parseIntegerSetting },
+            { urlKey: 'crt-sync-roll', legacyUrlKeys: ['crtSyncRoll'], defaultValue: DEFAULT_CRT_SYNC_ROLL_PERCENT, slider: crtSyncRollSlider, apply: updateCrtSyncRollDisplay, get: () => currentCrtSyncRollPercent, parse: parseIntegerSetting },
+            { urlKey: 'crt-jitter', legacyUrlKeys: ['crtJitter'], defaultValue: DEFAULT_CRT_JITTER_PERCENT, slider: crtJitterSlider, apply: updateCrtJitterDisplay, get: () => currentCrtJitterPercent, parse: parseIntegerSetting },
+            { urlKey: 'crt-distortion-drift', legacyUrlKeys: ['crtDistortionDrift'], defaultValue: DEFAULT_CRT_DISTORTION_DRIFT_PERCENT, slider: crtDistortionDriftSlider, apply: updateCrtDistortionDriftDisplay, get: () => currentCrtDistortionDriftPercent, parse: parseIntegerSetting }
         ];
         const e2eState = {
             enabled: E2E_URL_PARAMS.get('e2e') === '1',
@@ -2193,6 +2480,129 @@ void main() {
             e2eState.scene = sceneName || null;
             renderCurrentMatrixFrame();
         }
+        function renderCrtTestPatternForE2e(patternName = 'green-field') {
+            if (!e2eState.enabled) { return; }
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (patternName === 'green-field') {
+                ctx.fillStyle = 'rgb(0, 255, 65)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            } else if (patternName === 'black-field') {
+                ctx.fillStyle = 'rgb(0, 0, 0)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            if (crtUiCtx) {
+                crtUiCtx.clearRect(0, 0, crtUiCanvas.width, crtUiCanvas.height);
+                ensureCrtTextureSize();
+                if (crtGl && crtUiTexture && crtUiCanvas.width > 0 && crtUiCanvas.height > 0) {
+                    crtGl.activeTexture(crtGl.TEXTURE1);
+                    crtGl.bindTexture(crtGl.TEXTURE_2D, crtUiTexture);
+                    crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, crtUiCanvas);
+                }
+                crtUiSnapshotDirty = false;
+            }
+            renderCrtFrame();
+        }
+        function measureCrtVerticalCarrierContrastForE2e() {
+            if (!e2eState.enabled || !crtGl || !crtCanvas.width || !crtCanvas.height) { return null; }
+            const width = crtCanvas.width;
+            const height = crtCanvas.height;
+            const xStart = Math.floor(width * 0.2);
+            const xEnd = Math.ceil(width * 0.8);
+            const rows = [
+                Math.floor(height * 0.42),
+                Math.floor(height * 0.5),
+                Math.floor(height * 0.58)
+            ];
+            const pixels = new Uint8Array(width * 4);
+            let luminanceTotal = 0;
+            let adjacentDiffTotal = 0;
+            let sampleCount = 0;
+            let diffCount = 0;
+            rows.forEach((row) => {
+                crtGl.readPixels(0, row, width, 1, crtGl.RGBA, crtGl.UNSIGNED_BYTE, pixels);
+                let previousLuminance = null;
+                for (let x = xStart; x < xEnd; x++) {
+                    const offset = x * 4;
+                    const luminance = (pixels[offset] * 0.299) + (pixels[offset + 1] * 0.587) + (pixels[offset + 2] * 0.114);
+                    luminanceTotal += luminance;
+                    sampleCount += 1;
+                    if (previousLuminance !== null) {
+                        adjacentDiffTotal += Math.abs(luminance - previousLuminance);
+                        diffCount += 1;
+                    }
+                    previousLuminance = luminance;
+                }
+            });
+            const averageLuminance = sampleCount > 0 ? luminanceTotal / sampleCount : 0;
+            const averageAdjacentDiff = diffCount > 0 ? adjacentDiffTotal / diffCount : 0;
+            return {
+                averageLuminance,
+                adjacentContrast: averageLuminance > 0 ? averageAdjacentDiff / averageLuminance : 0
+            };
+        }
+        function measureCrtHorizontalCarrierContrastForE2e() {
+            if (!e2eState.enabled || !crtGl || !crtCanvas.width || !crtCanvas.height) { return null; }
+            const width = crtCanvas.width;
+            const height = crtCanvas.height;
+            const yStart = Math.floor(height * 0.2);
+            const yEnd = Math.ceil(height * 0.8);
+            const columnsToSample = [
+                Math.floor(width * 0.42),
+                Math.floor(width * 0.5),
+                Math.floor(width * 0.58)
+            ];
+            const pixels = new Uint8Array(height * 4);
+            let luminanceTotal = 0;
+            let adjacentDiffTotal = 0;
+            let sampleCount = 0;
+            let diffCount = 0;
+            columnsToSample.forEach((column) => {
+                crtGl.readPixels(column, 0, 1, height, crtGl.RGBA, crtGl.UNSIGNED_BYTE, pixels);
+                let previousLuminance = null;
+                for (let y = yStart; y < yEnd; y++) {
+                    const offset = y * 4;
+                    const luminance = (pixels[offset] * 0.299) + (pixels[offset + 1] * 0.587) + (pixels[offset + 2] * 0.114);
+                    luminanceTotal += luminance;
+                    sampleCount += 1;
+                    if (previousLuminance !== null) {
+                        adjacentDiffTotal += Math.abs(luminance - previousLuminance);
+                        diffCount += 1;
+                    }
+                    previousLuminance = luminance;
+                }
+            });
+            const averageLuminance = sampleCount > 0 ? luminanceTotal / sampleCount : 0;
+            const averageAdjacentDiff = diffCount > 0 ? adjacentDiffTotal / diffCount : 0;
+            return {
+                averageLuminance,
+                adjacentContrast: averageLuminance > 0 ? averageAdjacentDiff / averageLuminance : 0
+            };
+        }
+        function measureCrtRegionLuminanceForE2e(rect = {}) {
+            if (!e2eState.enabled || !crtGl || !crtCanvas.width || !crtCanvas.height) { return null; }
+            const width = crtCanvas.width;
+            const height = crtCanvas.height;
+            const x = Math.max(0, Math.min(width - 1, Math.floor((rect.x ?? 0) * width)));
+            const y = Math.max(0, Math.min(height - 1, Math.floor((rect.y ?? 0) * height)));
+            const rectWidth = Math.max(1, Math.min(width - x, Math.floor((rect.width ?? 0.1) * width)));
+            const rectHeight = Math.max(1, Math.min(height - y, Math.floor((rect.height ?? 0.1) * height)));
+            const pixels = new Uint8Array(rectWidth * rectHeight * 4);
+            crtGl.readPixels(x, y, rectWidth, rectHeight, crtGl.RGBA, crtGl.UNSIGNED_BYTE, pixels);
+            let luminanceTotal = 0;
+            const sampleCount = rectWidth * rectHeight;
+            for (let index = 0; index < sampleCount; index++) {
+                const offset = index * 4;
+                luminanceTotal += (pixels[offset] * 0.299) + (pixels[offset + 1] * 0.587) + (pixels[offset + 2] * 0.114);
+            }
+            return {
+                averageLuminance: sampleCount > 0 ? luminanceTotal / sampleCount : 0
+            };
+        }
         function exposeE2eApi() {
             if (!e2eState.enabled) { return; }
             window.__VIBE_TEST__ = {
@@ -2210,6 +2620,18 @@ void main() {
                 },
                 renderFrame() {
                     renderCurrentMatrixFrame();
+                },
+                renderCrtTestPattern(patternName) {
+                    renderCrtTestPatternForE2e(patternName);
+                },
+                measureCrtVerticalCarrierContrast() {
+                    return measureCrtVerticalCarrierContrastForE2e();
+                },
+                measureCrtHorizontalCarrierContrast() {
+                    return measureCrtHorizontalCarrierContrastForE2e();
+                },
+                measureCrtRegionLuminance(rect) {
+                    return measureCrtRegionLuminanceForE2e(rect);
                 },
                 getPerformanceMetrics() {
                     return { ...framePerformanceMetrics };
@@ -2490,6 +2912,7 @@ void main() {
                     noise: crtGl.getUniformLocation(crtProgram, 'u_noise'),
                     syncRoll: crtGl.getUniformLocation(crtProgram, 'u_syncRoll'),
                     jitter: crtGl.getUniformLocation(crtProgram, 'u_jitter'),
+                    distortionDrift: crtGl.getUniformLocation(crtProgram, 'u_distortionDrift'),
                     constructMode: crtGl.getUniformLocation(crtProgram, 'u_constructMode')
                 };
 
@@ -3058,6 +3481,17 @@ void main() {
             const parsed = parseFloat(value);
             return Number.isFinite(parsed) ? parsed : null;
         }
+        function getURLParamValue(urlParams, urlKey, legacyUrlKeys = []) {
+            const keys = [urlKey, ...legacyUrlKeys];
+            const foundKey = keys.find((key) => urlParams.has(key));
+            return foundKey ? urlParams.get(foundKey) : null;
+        }
+        function isURLValueOn(value) {
+            return ['1', 'true', 'yes', 'on', 'enabled'].includes(String(value).toLowerCase());
+        }
+        function isURLValueOff(value) {
+            return ['0', 'false', 'no', 'off', 'disabled'].includes(String(value).toLowerCase());
+        }
         function centeredPercentFactor(percent) {
             return Math.max(0, percent / 50);
         }
@@ -3074,8 +3508,9 @@ void main() {
         }
         function applyNumericSettingsFromURL(urlParams) {
             NUMERIC_SETTINGS.forEach((setting) => {
-                if (!urlParams.has(setting.urlKey)) { return; }
-                const parsedValue = setting.parse(urlParams.get(setting.urlKey));
+                const rawValue = getURLParamValue(urlParams, setting.urlKey, setting.legacyUrlKeys);
+                if (rawValue === null) { return; }
+                const parsedValue = setting.parse(rawValue);
                 if (parsedValue === null) { return; }
                 setting.apply(parsedValue);
             });
@@ -3133,6 +3568,54 @@ void main() {
         }
         function getGlitchFlipChance() {
             return DEFAULT_GLITCH_FLIP_CHANCE * centeredPercentFactor(currentGlyphMutationPercent);
+        }
+        function glyphRendersAsMonochrome(glyph) {
+            const testCanvas = document.createElement('canvas');
+            const testCtx = testCanvas.getContext('2d', { willReadFrequently: true });
+            if (!testCtx) { return true; }
+            testCanvas.width = 48;
+            testCanvas.height = 48;
+            testCtx.clearRect(0, 0, testCanvas.width, testCanvas.height);
+            testCtx.font = `32px ${getComputedStyle(bodyElement).fontFamily}`;
+            testCtx.textBaseline = 'top';
+            testCtx.fillStyle = 'rgb(0, 255, 0)';
+            testCtx.fillText(glyph, 4, 4);
+            const { data } = testCtx.getImageData(0, 0, testCanvas.width, testCanvas.height);
+            for (let index = 0; index < data.length; index += 4) {
+                if (data[index + 3] > 12 && (data[index] > 10 || data[index + 2] > 10)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        function getExpandedMatrixGlyphs() {
+            if (!sanitizedMatrixExpandedGlyphs) {
+                sanitizedMatrixExpandedGlyphs = MATRIX_EXPANDED_GLYPHS.filter(glyphRendersAsMonochrome);
+                if (sanitizedMatrixExpandedGlyphs.length < MATRIX_ORIGINAL_GLYPHS.length) {
+                    sanitizedMatrixExpandedGlyphs = MATRIX_EXPANDED_GLYPHS;
+                }
+            }
+            return sanitizedMatrixExpandedGlyphs;
+        }
+        function getActiveMatrixGlyphs() {
+            return currentRainGlyphSet === 'original' ? MATRIX_ORIGINAL_GLYPHS : getExpandedMatrixGlyphs();
+        }
+        function getRandomMatrixGlyph() {
+            const glyphs = getActiveMatrixGlyphs();
+            return glyphs[Math.floor(getRandomValue() * glyphs.length)] || MATRIX_ORIGINAL_GLYPHS[0] || '0';
+        }
+        function refreshActiveTrailGlyphs({ force = false } = {}) {
+            const activeGlyphs = new Set(getActiveMatrixGlyphs());
+            trails.forEach((trail) => {
+                if (!Array.isArray(trail)) { return; }
+                trail.forEach((trailItem) => {
+                    if (!trailItem || (!force && activeGlyphs.has(trailItem.char))) { return; }
+                    trailItem.char = getRandomMatrixGlyph();
+                    trailItem.flipped = true;
+                    trailItem.lastFlipTime = Date.now();
+                    trailItem.shimmerBrightness = getRandomValue();
+                });
+            });
         }
         function getTrailOpacity(trailIndex) {
             return trailOpacityCache[trailIndex] ?? 0;
@@ -3306,6 +3789,7 @@ void main() {
             crtGl.uniform1f(crtUniforms.noise, currentCrtNoisePercent / 100);
             crtGl.uniform1f(crtUniforms.syncRoll, currentCrtSyncRollPercent / 100);
             crtGl.uniform1f(crtUniforms.jitter, currentCrtJitterPercent / 100);
+            crtGl.uniform1f(crtUniforms.distortionDrift, currentCrtDistortionDriftPercent / 100);
             crtGl.uniform1f(crtUniforms.constructMode, isConstructMode ? 1.0 : 0.0);
             crtGl.drawArrays(crtGl.TRIANGLES, 0, 6);
             lastCrtFrameTime = performance.now();
@@ -3331,7 +3815,7 @@ void main() {
                 const drop = drops[i];
                 const profile = columnProfiles[i] || null;
                 if (now - drop.lastUpdateTime >= drop.delay) {
-                    const newLeaderChar = MATRIX_CHARS[Math.floor(getRandomValue() * MATRIX_CHARS.length)]; if (!trails[i]) trails[i] = [];
+                    const newLeaderChar = getRandomMatrixGlyph(); if (!trails[i]) trails[i] = [];
                     trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now, gapSeed: getRandomValue() });
                     const columnTrailLength = getColumnTrailLength(profile);
                     if (trails[i].length > columnTrailLength) { trails[i].pop(); }
@@ -3355,7 +3839,7 @@ void main() {
                         const glyphOpacity = getColumnGlyphOpacity(profile, k);
                         const canFlipTrailGlyph = k > 0 && (!trailItem.lastFlipTime || now - trailItem.lastFlipTime >= (profile?.flipCooldownMs || GLITCH_FLIP_COOLDOWN_MS));
                         if (canFlipTrailGlyph && getRandomValue() < glitchFlipChance * (profile?.flipChanceScale || 1)) {
-                            let flippedChar; do { flippedChar = MATRIX_CHARS[Math.floor(getRandomValue() * MATRIX_CHARS.length)]; } while (flippedChar === trailItem.char && MATRIX_CHARS.length > 1);
+                            let flippedChar; do { flippedChar = getRandomMatrixGlyph(); } while (flippedChar === trailItem.char && getActiveMatrixGlyphs().length > 1);
                             trailItem.char = flippedChar; trailItem.flipped = true; trailItem.lastFlipTime = now;
                             trailItem.shimmerBrightness = getRandomValue();
                         }
@@ -3435,7 +3919,30 @@ void main() {
                 value: op.value || ''
             })));
         }
+        function appendRosterToURLParams(params) {
+            allNames.forEach((operative) => {
+                params.append('name', operative.name);
+                params.append('alias', operative.value || '');
+            });
+        }
+        function parseNamedRosterFromURL(urlParams) {
+            const names = urlParams.getAll('name').map(name => name.trim());
+            if (names.length === 0) { return null; }
+            const aliases = urlParams.getAll('alias');
+            return names.map((name, index) => {
+                if (!name) { return null; }
+                return {
+                    name,
+                    value: aliases[index] || '',
+                    selected: false
+                };
+            }).filter(Boolean);
+        }
         function parseRosterFromURL(urlParams) {
+            const namedRoster = parseNamedRosterFromURL(urlParams);
+            if (namedRoster) {
+                return namedRoster;
+            }
             if (urlParams.has('roster')) {
                 try {
                     const parsedRoster = JSON.parse(urlParams.get('roster') || '[]');
@@ -3471,7 +3978,7 @@ void main() {
                 if (e2eState.seed !== E2E_DEFAULT_SEED) { params.set('e2eSeed', String(e2eState.seed)); }
                 if (e2eState.scene) { params.set('e2eScene', e2eState.scene); }
             }
-            if (allNames.length > 0) { params.set('roster', serializeRosterForURL()); }
+            if (allNames.length > 0) { appendRosterToURLParams(params); }
             if (currentTitle) { params.set('title', currentTitle); }
             NUMERIC_SETTINGS.forEach((setting) => {
                 if (setting.relevant && !setting.relevant()) { return; }
@@ -3480,9 +3987,10 @@ void main() {
                     params.set(setting.urlKey, String(currentValue));
                 }
             });
-            if (isFlatGridMode !== DEFAULT_FLAT_GRID_MODE) { params.set('flatGrid', String(isFlatGridMode)); }
-            if (isExtractionMode) { params.set('extract', 'true'); }
-            if (!isCrtMode) { params.set('crt', 'false'); }
+            if (isFlatGridMode !== DEFAULT_FLAT_GRID_MODE) { params.set('rain-layout', isFlatGridMode ? 'flat' : 'organic'); }
+            if (currentRainGlyphSet !== DEFAULT_RAIN_GLYPH_SET) { params.set('rain-glyphs', currentRainGlyphSet); }
+            if (isExtractionMode) { params.set('extraction', 'on'); }
+            if (!isCrtMode) { params.set('crt-effect', 'off'); }
             if (isConstructMode) { params.set('theme', 'construct'); }
 
             const queryString = params.toString();
@@ -3538,6 +4046,7 @@ void main() {
             currentGapDensityPercent = DEFAULT_GAP_DENSITY_PERCENT;
             currentLeaderHeatPercent = DEFAULT_LEADER_HEAT_PERCENT;
             currentGlyphMutationPercent = DEFAULT_GLYPH_MUTATION_PERCENT;
+            currentRainGlyphSet = DEFAULT_RAIN_GLYPH_SET;
             isExtractionMode = false;
             isCrtMode = DEFAULT_CRT_MODE;
             currentCrtFishbowlPercent = DEFAULT_CRT_FISHBOWL_PERCENT;
@@ -3548,6 +4057,7 @@ void main() {
             currentCrtNoisePercent = DEFAULT_CRT_NOISE_PERCENT;
             currentCrtSyncRollPercent = DEFAULT_CRT_SYNC_ROLL_PERCENT;
             currentCrtJitterPercent = DEFAULT_CRT_JITTER_PERCENT;
+            currentCrtDistortionDriftPercent = DEFAULT_CRT_DISTORTION_DRIFT_PERCENT;
             isConstructMode = DEFAULT_CONSTRUCT_MODE;
             selectionHistory = [];
             pendingNextOperatives = [];
@@ -3600,17 +4110,28 @@ void main() {
                 }
             }
             updateTailFloorDisplay(currentTailFloorPercent);
-            if (urlParams.has('extract')) {
-                isExtractionMode = urlParams.get('extract') === 'true';
+            const rainGlyphSetParam = getURLParamValue(urlParams, 'rain-glyphs', ['glyphs', 'glyphSet']);
+            if (rainGlyphSetParam !== null) {
+                const normalizedGlyphSet = String(rainGlyphSetParam).toLowerCase();
+                currentRainGlyphSet = ['original', 'classic', 'legacy'].includes(normalizedGlyphSet) ? 'original' : DEFAULT_RAIN_GLYPH_SET;
             }
-            if (urlParams.has('flatGrid')) {
+            updateRainGlyphSetButton();
+            const extractionParam = getURLParamValue(urlParams, 'extraction', ['extract']);
+            if (extractionParam !== null) {
+                isExtractionMode = isURLValueOn(extractionParam);
+            }
+            const rainLayoutParam = getURLParamValue(urlParams, 'rain-layout');
+            if (rainLayoutParam !== null) {
+                isFlatGridMode = String(rainLayoutParam).toLowerCase() !== 'organic';
+            } else if (urlParams.has('flatGrid')) {
                 isFlatGridMode = urlParams.get('flatGrid') === 'true';
             }
             updateExtractionButton();
             updateExtractionUIVisibility();
 
-            if (urlParams.has('crt')) {
-                isCrtMode = urlParams.get('crt') !== 'false';
+            const crtEffectParam = getURLParamValue(urlParams, 'crt-effect', ['crt']);
+            if (crtEffectParam !== null) {
+                isCrtMode = !isURLValueOff(crtEffectParam);
             }
             if (urlParams.has('crtFishbowl')) {
                 const fishbowlParam = parseInt(urlParams.get('crtFishbowl'), 10);
@@ -3650,7 +4171,7 @@ void main() {
             }
             if (urlParams.has('crtSyncRoll')) {
                 const syncRollParam = parseInt(urlParams.get('crtSyncRoll'), 10);
-                if (!isNaN(syncRollParam) && syncRollParam >= 0 && syncRollParam <= 100) {
+                if (!isNaN(syncRollParam) && syncRollParam >= 0 && syncRollParam <= MAX_CRT_SYNC_ROLL_PERCENT) {
                     currentCrtSyncRollPercent = syncRollParam;
                 }
             }
@@ -3676,6 +4197,7 @@ void main() {
             updateCrtNoiseDisplay(currentCrtNoisePercent);
             updateCrtSyncRollDisplay(currentCrtSyncRollPercent);
             updateCrtJitterDisplay(currentCrtJitterPercent);
+            updateCrtDistortionDriftDisplay(currentCrtDistortionDriftPercent);
             updateCrtMode();
 
             if (urlParams.has('theme') && urlParams.get('theme') === 'construct') {
@@ -3842,6 +4364,22 @@ void main() {
             if (glyphMutationValue) glyphMutationValue.textContent = `${currentGlyphMutationPercent}%`;
             markCrtSnapshotDirty();
         }
+        function updateRainGlyphSetButton() {
+            const isExpanded = currentRainGlyphSet !== 'original';
+            currentRainGlyphSet = isExpanded ? 'expanded' : 'original';
+            rainGlyphSetBtn.setAttribute('aria-pressed', isExpanded);
+            rainGlyphSetBtn.textContent = isExpanded ? '[Y] Expanded Glyphs' : '[Y] Original Glyphs';
+            rainGlyphSetBtn.classList.toggle('active', isExpanded);
+            rainGlyphSetLed.classList.toggle('active', isExpanded);
+            markCrtSnapshotDirty();
+        }
+        function handleRainGlyphSetChange(glyphSet) {
+            currentRainGlyphSet = glyphSet === 'original' ? 'original' : 'expanded';
+            updateRainGlyphSetButton();
+            refreshActiveTrailGlyphs({ force: true });
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
         function updateCrtBeamFocusDisplay(percent) {
             currentCrtBeamFocusPercent = Math.max(0, Math.min(100, Math.round(percent)));
             if (crtBeamFocusSlider) crtBeamFocusSlider.value = currentCrtBeamFocusPercent;
@@ -3871,7 +4409,7 @@ void main() {
             renderCrtFrame();
         }
         function updateCrtSyncRollDisplay(percent) {
-            currentCrtSyncRollPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            currentCrtSyncRollPercent = Math.max(0, Math.min(MAX_CRT_SYNC_ROLL_PERCENT, Math.round(percent)));
             if (crtSyncRollSlider) crtSyncRollSlider.value = currentCrtSyncRollPercent;
             if (crtSyncRollValue) crtSyncRollValue.textContent = `${currentCrtSyncRollPercent}%`;
             markCrtSnapshotDirty();
@@ -3881,6 +4419,13 @@ void main() {
             currentCrtJitterPercent = Math.max(0, Math.min(100, Math.round(percent)));
             if (crtJitterSlider) crtJitterSlider.value = currentCrtJitterPercent;
             if (crtJitterValue) crtJitterValue.textContent = `${currentCrtJitterPercent}%`;
+            markCrtSnapshotDirty();
+            renderCrtFrame();
+        }
+        function updateCrtDistortionDriftDisplay(percent) {
+            currentCrtDistortionDriftPercent = Math.max(0, Math.min(100, Math.round(percent)));
+            if (crtDistortionDriftSlider) crtDistortionDriftSlider.value = currentCrtDistortionDriftPercent;
+            if (crtDistortionDriftValue) crtDistortionDriftValue.textContent = `${currentCrtDistortionDriftPercent}%`;
             markCrtSnapshotDirty();
             renderCrtFrame();
         }
@@ -3982,6 +4527,7 @@ void main() {
             updateGapDensityDisplay(DEFAULT_GAP_DENSITY_PERCENT);
             updateLeaderHeatDisplay(DEFAULT_LEADER_HEAT_PERCENT);
             updateGlyphMutationDisplay(DEFAULT_GLYPH_MUTATION_PERCENT);
+            handleRainGlyphSetChange(DEFAULT_RAIN_GLYPH_SET);
             refreshRainColumnProfiles();
             finishEffectReset({ ...options, announce: getResetAnnouncement(options, '// Rain texture reset.') });
         }
@@ -3994,6 +4540,7 @@ void main() {
             updateCrtNoiseDisplay(DEFAULT_CRT_NOISE_PERCENT);
             updateCrtSyncRollDisplay(DEFAULT_CRT_SYNC_ROLL_PERCENT);
             updateCrtJitterDisplay(DEFAULT_CRT_JITTER_PERCENT);
+            updateCrtDistortionDriftDisplay(DEFAULT_CRT_DISTORTION_DRIFT_PERCENT);
             finishEffectReset({ ...options, announce: getResetAnnouncement(options, '// CRT tube effects reset.') });
         }
         function resetAllEffectsToDefaults() {
@@ -4031,6 +4578,7 @@ void main() {
         }
         function updateExtractionUIVisibility() {
             newValueWrapper.classList.toggle('hidden', !isExtractionMode);
+            nameListElement.classList.toggle('extraction-mode', isExtractionMode);
             // PERFORMANCE: Instead of re-rendering, just toggle visibility on existing items
             document.querySelectorAll('#nameList .value-row').forEach(row => {
                 row.classList.toggle('hidden', !isExtractionMode);
@@ -4354,9 +4902,9 @@ void main() {
             valueRow.appendChild(valueInput);
             li.appendChild(valueRow);
 
+            dragHandle.draggable = false;
+            dragHandle.addEventListener('pointerdown', handleReorderHandlePointerDown);
             if (!operative.selected) {
-                dragHandle.draggable = false;
-                dragHandle.addEventListener('pointerdown', handleReorderHandlePointerDown);
                 nameSpan.addEventListener('click', () => startInlineNameEdit(li, operative.name));
                 nameSpan.addEventListener('keydown', (event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -4462,7 +5010,8 @@ void main() {
             const listRect = nameListElement.getBoundingClientRect();
             const isNearListX = clientX >= listRect.left - 24 && clientX <= listRect.right + 24;
             if (!isNearListX) { return null; }
-            const items = Array.from(nameListElement.querySelectorAll('.name-item:not(.name-item-selected)'))
+            const items = Array.from(nameListElement.querySelectorAll('.name-item'))
+                .filter(item => !item.classList.contains('roster-drag-preview'))
                 .filter(item => item !== activeItem);
             let nearestItem = null;
             let nearestDistance = Infinity;
@@ -4478,8 +5027,41 @@ void main() {
             }
             return nearestDistance <= 48 ? nearestItem : null;
         }
+        function moveRosterDragPreview(clientX, clientY) {
+            if (!rosterDragPreviewElement) { return; }
+            rosterDragPreviewElement.style.transform = `translate(${clientX - rosterDragPreviewOffsetX}px, ${clientY - rosterDragPreviewOffsetY}px)`;
+        }
+        function removeRosterDragPreview() {
+            if (rosterDragPreviewElement) {
+                rosterDragPreviewElement.remove();
+            }
+            rosterDragPreviewElement = null;
+            rosterDragPreviewOffsetX = 0;
+            rosterDragPreviewOffsetY = 0;
+        }
+        function showRosterDragPreview(itemElement, clientX, clientY) {
+            if (!(itemElement instanceof HTMLElement)) { return; }
+            removeRosterDragPreview();
+            const rect = itemElement.getBoundingClientRect();
+            const preview = itemElement.cloneNode(true);
+            preview.classList.remove('dragging', 'drag-over');
+            preview.classList.add('roster-drag-preview');
+            preview.removeAttribute('data-name');
+            preview.setAttribute('aria-hidden', 'true');
+            preview.querySelectorAll('input, button, .drag-handle, .name-span').forEach((element) => {
+                element.setAttribute('tabindex', '-1');
+                if ('disabled' in element) { element.disabled = true; }
+            });
+            preview.style.width = `${rect.width}px`;
+            rosterDragPreviewElement = preview;
+            rosterDragPreviewOffsetX = clientX - rect.left;
+            rosterDragPreviewOffsetY = clientY - rect.top;
+            document.body.appendChild(preview);
+            moveRosterDragPreview(clientX, clientY);
+        }
         function resetPointerReorderState() {
             document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
+            removeRosterDragPreview();
             pointerDraggedItem = null;
             pointerDragTargetItem = null;
             pointerDragPointerId = null;
@@ -4487,11 +5069,15 @@ void main() {
         }
         function handleReorderHandlePointerMove(e) {
             if (pointerDragPointerId !== e.pointerId || !pointerDraggedItem) { return; }
+            moveRosterDragPreview(e.clientX, e.clientY);
             const dragDistance = Math.hypot(e.clientX - pointerDragStartX, e.clientY - pointerDragStartY);
             if (!pointerDragHasStarted) {
                 if (dragDistance < 6) { return; }
                 pointerDragHasStarted = true;
                 pointerDraggedItem.classList.add('dragging');
+                if (!rosterDragPreviewElement) {
+                    showRosterDragPreview(pointerDraggedItem, e.clientX, e.clientY);
+                }
             }
             document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
             const targetItem = getReorderTargetItemFromPoint(e.clientX, e.clientY, pointerDraggedItem);
@@ -4528,7 +5114,7 @@ void main() {
         function handleReorderHandlePointerDown(e) {
             if (e.button !== 0) { return; }
             const sourceHandle = e.currentTarget instanceof Element ? e.currentTarget : null;
-            const sourceLi = sourceHandle?.closest('.name-item:not(.name-item-selected)');
+            const sourceLi = sourceHandle?.closest('.name-item');
             if (!sourceLi) { return; }
             resetPointerReorderState();
             pointerDraggedItem = sourceLi;
@@ -4536,6 +5122,8 @@ void main() {
             pointerDragPointerId = e.pointerId;
             pointerDragStartX = e.clientX;
             pointerDragStartY = e.clientY;
+            sourceLi.classList.add('dragging');
+            showRosterDragPreview(sourceLi, e.clientX, e.clientY);
             if (sourceHandle.setPointerCapture) {
                 sourceHandle.setPointerCapture(e.pointerId);
             }
@@ -4650,7 +5238,6 @@ void main() {
                     itemElement.querySelector('.name-span')?.setAttribute('tabindex', '-1');
                     itemElement.querySelector('.remove-name-btn')?.setAttribute('disabled', 'true');
                     itemElement.querySelector('.value-row input')?.setAttribute('disabled', 'true');
-                    itemElement.querySelector('.drag-handle')?.removeEventListener('pointerdown', handleReorderHandlePointerDown);
                 }
 
             } else {
@@ -4773,6 +5360,7 @@ void main() {
         function toggleManagementPanel() {
             if (isInMatrixMode) { return; }
             const isVisible = managementPanel.classList.toggle('visible');
+            bodyElement.classList.toggle('panel-open', isVisible);
             menuToggleBtn.innerHTML = isVisible ? '✕' : '☰';
             menuToggleBtn.classList.toggle('active', isVisible);
             menuToggleBtn.setAttribute('aria-expanded', isVisible);
@@ -4840,6 +5428,7 @@ void main() {
             { name: "Toggle Extraction Mode", action: () => extractionModeBtn.click(), shortcut: 'E' },
             { name: "Toggle CRT Mode", action: () => crtModeBtn.click(), shortcut: 'T' },
             { name: "Toggle Flat Grid Rain", action: () => flatGridModeBtn.click(), shortcut: 'G' },
+            { name: "Toggle Rain Glyph Set", action: () => rainGlyphSetBtn.click(), shortcut: 'Y' },
             { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
             { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
             { name: "Previous Operative", action: undoLastPick, shortcut: 'U' },
@@ -4969,6 +5558,7 @@ void main() {
             clearPendingModalOpen();
             managementPanel.style.transition = 'none';
             managementPanel.classList.remove('visible');
+            bodyElement.classList.remove('panel-open');
             menuToggleBtn.innerHTML = '☰';
             menuToggleBtn.classList.remove('active');
             menuToggleBtn.setAttribute('aria-expanded', 'false');
@@ -5377,7 +5967,9 @@ void main() {
         function resolveCrtRosterHandleTarget(target, point = null) {
             const directHandle = target instanceof Element ? target.closest('.drag-handle') : null;
             if (directHandle instanceof HTMLElement) { return directHandle; }
-            const item = target instanceof Element ? target.closest('.name-item:not(.name-item-selected)') : null;
+            const item = target instanceof Element ? target.closest('.name-item') : null;
+            const nonDragTarget = target instanceof Element ? target.closest('.name-span, .name-edit-input, .value-row, input, button') : null;
+            if (nonDragTarget) { return null; }
             const handle = item?.querySelector('.drag-handle');
             if (!(handle instanceof HTMLElement) || !point) { return null; }
             const rect = handle.getBoundingClientRect();
@@ -5410,7 +6002,7 @@ void main() {
             if (!withinLabelX) { return null; }
             if (handle instanceof HTMLElement) {
                 const handleRect = handle.getBoundingClientRect();
-                if (point.x <= handleRect.right + 12) { return null; }
+                if (point.x >= handleRect.left && point.x <= handleRect.right && point.y >= handleRect.top && point.y <= handleRect.bottom) { return null; }
             }
             if (removeButton instanceof HTMLElement) {
                 const removeRect = removeButton.getBoundingClientRect();
@@ -5420,11 +6012,12 @@ void main() {
         }
         function startCrtRosterDrag(target, point = null) {
             const handle = resolveCrtRosterHandleTarget(target, point);
-            const item = handle?.closest('.name-item:not(.name-item-selected)');
+            const item = handle?.closest('.name-item');
             if (!item) { return false; }
             crtEventState.activeRosterItem = item;
             draggedItemName = item.dataset.name;
             item.classList.add('dragging');
+            showRosterDragPreview(item, point?.x ?? 0, point?.y ?? 0);
             markCrtSnapshotDirty();
             return true;
         }
@@ -5440,6 +6033,7 @@ void main() {
         }
         function updateCrtRosterDrag(point) {
             if (!crtEventState.activeRosterItem) { return; }
+            moveRosterDragPreview(point.x, point.y);
             document.querySelectorAll('.name-item.drag-over').forEach(item => item.classList.remove('drag-over'));
             const targetItem = getReorderTargetItemFromPoint(point.x, point.y, crtEventState.activeRosterItem);
             if (targetItem && targetItem !== crtEventState.activeRosterItem) {
@@ -5452,6 +6046,7 @@ void main() {
             if (!activeItem) { return; }
             const targetItem = getReorderTargetItemFromPoint(point.x, point.y, activeItem);
             document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
+            removeRosterDragPreview();
             if (targetItem && targetItem !== activeItem && draggedItemName) {
                 reorderOperativeByName(draggedItemName, targetItem.dataset.name);
             }
@@ -5585,7 +6180,8 @@ void main() {
                 updateCrtRosterDrag(point);
                 return;
             }
-            const target = getCrtClickableTarget(getElementAtSourcePoint(point));
+            const sourceTarget = getElementAtSourcePoint(point);
+            const target = resolveCrtRosterHandleTarget(sourceTarget, point) || getCrtClickableTarget(sourceTarget);
             const cursor = target instanceof Element ? (window.getComputedStyle(target).cursor || 'default') : 'default';
             if (crtEventState.lastCursor !== cursor) {
                 crtCanvas.style.cursor = cursor;
@@ -5624,6 +6220,7 @@ void main() {
             }
             if (crtEventState.activeRosterItem) {
                 document.querySelectorAll('.name-item.dragging, .name-item.drag-over').forEach(item => item.classList.remove('dragging', 'drag-over'));
+                removeRosterDragPreview();
             }
             clearCrtPressedTarget(true);
             crtEventState = { pointerId: null, target: null, activeRange: null, activeModal: null, activeRosterItem: null, pressedTarget: null, pressedStartedAt: 0, scrollTarget: null, scrollStartX: 0, scrollStartY: 0, scrollLastX: 0, scrollLastY: 0, didScroll: false, lastCursor: crtEventState.lastCursor };
@@ -5724,6 +6321,12 @@ void main() {
             updateFlatGridButton();
             refreshRainColumnProfiles();
             showTemporaryMessage(`// Flat Grid Rain ${isFlatGridMode ? 'Engaged' : 'Disengaged'}.`);
+            updateURL();
+        });
+        rainGlyphSetBtn.addEventListener('click', () => {
+            const nextGlyphSet = currentRainGlyphSet === 'original' ? 'expanded' : 'original';
+            handleRainGlyphSetChange(nextGlyphSet);
+            showTemporaryMessage(`// Rain glyph set: ${currentRainGlyphSet}.`);
             updateURL();
         });
         crtModeBtn.addEventListener('click', () => {
@@ -5837,6 +6440,7 @@ void main() {
                      case 'e': extractionModeBtn.click(); break;
                      case 't': crtModeBtn.click(); break;
                      case 'g': flatGridModeBtn.click(); break;
+                     case 'y': rainGlyphSetBtn.click(); break;
                      case 'f': toggleFullScreen(); break;
                      case 'm': enterMatrixBtn.click(); break;
                      case 'u': undoLastPick(); break;

@@ -31,32 +31,34 @@ test.describe('settings and URL persistence', () => {
     await page.locator('#crtScanlinesSlider').fill('82');
     await page.locator('#crtGrilleSlider').fill('74');
     await page.locator('#crtNoiseSlider').fill('36');
-    await page.locator('#crtSyncRollSlider').fill('22');
+    await page.locator('#crtSyncRollSlider').fill('222');
     await page.locator('#crtJitterSlider').fill('28');
+    await page.locator('#crtDistortionDriftSlider').fill('31');
     await page.locator('#brightnessSlider').blur();
 
     await expectUrlToContain(page, {
       brightness: 73,
       speed: 22,
-      fontSize: 18,
-      tailCurve: 35,
-      tailFloor: 4,
-      rainDepth: 68,
-      rainVariety: 74,
-      laneDrift: 61,
-      gapDensity: 57,
-      leaderHeat: 83,
-      glyphMutation: 29,
-      crtFishbowl: 18,
-      crtVignette: 52,
-      crtBeamFocus: 41,
-      crtScanlines: 82,
-      crtGrille: 74,
-      crtNoise: 36,
-      crtSyncRoll: 22,
-      crtJitter: 28,
-      flatGrid: 'false',
-      extract: 'true',
+      'font-size': 18,
+      'tail-curve': 35,
+      'tail-floor': 4,
+      'rain-depth': 68,
+      'rain-variety': 74,
+      'lane-drift': 61,
+      'gap-density': 57,
+      'leader-heat': 83,
+      'glyph-mutation': 29,
+      'crt-fishbowl': 18,
+      'crt-vignette': 52,
+      'crt-beam-focus': 41,
+      'crt-scanlines': 82,
+      'crt-grille': 74,
+      'crt-noise': 36,
+      'crt-sync-roll': 222,
+      'crt-jitter': 28,
+      'crt-distortion-drift': 31,
+      'rain-layout': 'organic',
+      extraction: 'on',
       theme: 'construct'
     });
     await expect(page.url()).not.toContain('crt=false');
@@ -81,8 +83,9 @@ test.describe('settings and URL persistence', () => {
     await expect(page.locator('#crtScanlinesSlider')).toHaveValue('82');
     await expect(page.locator('#crtGrilleSlider')).toHaveValue('74');
     await expect(page.locator('#crtNoiseSlider')).toHaveValue('36');
-    await expect(page.locator('#crtSyncRollSlider')).toHaveValue('22');
+    await expect(page.locator('#crtSyncRollSlider')).toHaveValue('222');
     await expect(page.locator('#crtJitterSlider')).toHaveValue('28');
+    await expect(page.locator('#crtDistortionDriftSlider')).toHaveValue('31');
   });
 
   test('CRT controls stay directly below Construct Mode', async ({ page }) => {
@@ -179,8 +182,9 @@ test.describe('settings and URL persistence', () => {
       crtScanlines: 82,
       crtGrille: 74,
       crtNoise: 36,
-      crtSyncRoll: 22,
+      crtSyncRoll: 222,
       crtJitter: 28,
+      crtDistortionDrift: 31,
       theme: 'construct'
     });
     await openMenu(page);
@@ -202,16 +206,16 @@ test.describe('settings and URL persistence', () => {
     await expectUrlToContain(page, {
       brightness: 73,
       speed: 22,
-      fontSize: 18,
-      rainDepth: 68,
-      flatGrid: 'false',
-      extract: 'true',
+      'font-size': 18,
+      'rain-depth': 68,
+      'rain-layout': 'organic',
+      extraction: 'on',
       theme: 'construct'
     });
-    await expect(page.url()).not.toContain('rainVariety=');
-    await expect(page.url()).not.toContain('gapDensity=');
-    await expect(page.url()).not.toContain('leaderHeat=');
-    await expect(page.url()).not.toContain('glyphMutation=');
+    await expect(page.url()).not.toContain('rain-variety=');
+    await expect(page.url()).not.toContain('gap-density=');
+    await expect(page.url()).not.toContain('leader-heat=');
+    await expect(page.url()).not.toContain('glyph-mutation=');
 
     await page.locator('#resetAllEffectsBtn').scrollIntoViewIfNeeded();
     await page.locator('#resetAllEffectsBtn').click();
@@ -231,14 +235,16 @@ test.describe('settings and URL persistence', () => {
     await expect(page.locator('#crtScanlinesSlider')).toHaveValue('62');
     await expect(page.locator('#crtGrilleSlider')).toHaveValue('44');
     await expect(page.locator('#crtNoiseSlider')).toHaveValue('14');
-    await expect(page.locator('#crtSyncRollSlider')).toHaveValue('6');
+    await expect(page.locator('#crtSyncRollSlider')).toHaveValue('100');
     await expect(page.locator('#crtJitterSlider')).toHaveValue('0');
+    await expect(page.locator('#crtDistortionDriftSlider')).toHaveValue('24');
     await expect(page.locator('#nameList .name-span')).toHaveText(rosterBefore);
-    await expectUrlToContain(page, { extract: 'true' });
+    await expectUrlToContain(page, { extraction: 'on' });
     await expect(page.url()).not.toContain('brightness=');
     await expect(page.url()).not.toContain('speed=');
-    await expect(page.url()).not.toContain('flatGrid=');
+    await expect(page.url()).not.toContain('rain-layout=');
     await expect(page.url()).not.toContain('theme=');
+    await expect(page.url()).not.toContain('crt-distortion-drift=');
     await expect(page.url()).not.toContain('crt=false');
   });
 
@@ -254,13 +260,13 @@ test.describe('settings and URL persistence', () => {
     await expect(page.locator('#gapDensitySlider')).toBeEnabled();
     await expect(page.locator('#leaderHeatSlider')).toBeEnabled();
     await expect(page.locator('#glyphMutationSlider')).toBeEnabled();
-    await expect(page.url()).not.toContain('flatGrid=');
+    await expect(page.url()).not.toContain('rain-layout=');
 
     await page.locator('#rainVarietySlider').fill('77');
     await expectUrlToContain(page, {
-      rainVariety: 77
+      'rain-variety': 77
     });
-    await expect(page.url()).not.toContain('flatGrid=');
+    await expect(page.url()).not.toContain('rain-layout=');
     const flatProfiles = await page.evaluate(() => window.__VIBE_TEST__.getRainColumnProfiles());
     const sampledFlatProfiles = flatProfiles.slice(0, 12);
     expect(sampledFlatProfiles.every((profile) => profile.xOffset === 0 && profile.driftAmount === 0)).toBe(true);
@@ -278,20 +284,20 @@ test.describe('settings and URL persistence', () => {
     await page.locator('#rainDepthSlider').fill('82');
     await page.locator('#laneDriftSlider').fill('69');
     await expectUrlToContain(page, {
-      flatGrid: 'false',
-      rainDepth: 82,
-      rainVariety: 77,
-      laneDrift: 69
+      'rain-layout': 'organic',
+      'rain-depth': 82,
+      'rain-variety': 77,
+      'lane-drift': 69
     });
 
     await page.locator('#flatGridModeBtn').click();
     await expect(page.locator('#flatGridModeBtn')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('#rainPerspectiveControls')).toBeHidden();
-    await expect(page.url()).not.toContain('rainDepth=');
-    await expect(page.url()).not.toContain('laneDrift=');
-    await expect(page.url()).not.toContain('flatGrid=');
+    await expect(page.url()).not.toContain('rain-depth=');
+    await expect(page.url()).not.toContain('lane-drift=');
+    await expect(page.url()).not.toContain('rain-layout=');
     await expectUrlToContain(page, {
-      rainVariety: 77
+      'rain-variety': 77
     });
 
     await page.reload();

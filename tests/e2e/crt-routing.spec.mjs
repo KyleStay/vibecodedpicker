@@ -108,14 +108,37 @@ test.describe('CRT interaction routing', () => {
 
     await dragThroughCrt(
       page,
-      page.locator('li[data-name="Oracle"] .drag-handle'),
-      page.locator('li[data-name="Neo"]')
+      page.locator('li[data-name="Trinity"] .drag-handle'),
+      page.locator('li[data-name="Neo"]'),
+      { targetPosition: { x: 24, y: 4 } }
     );
 
-    await expectRosterOrder(page, ['Oracle', 'Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Cypher']);
+    await expectRosterOrder(page, ['Trinity', 'Neo', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher']);
     await page.reload();
     await waitForAppReady(page);
-    await expectRosterOrder(page, ['Oracle', 'Neo', 'Trinity', 'Morpheus', 'Agent Smith', 'Cypher']);
+    await expectRosterOrder(page, ['Trinity', 'Neo', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher']);
+  });
+
+  test('drag handle reorders a selected operative in CRT mode', async ({ page }) => {
+    test.slow();
+    await openApp(page, { crt: 'true', names: 'Alpha|A,Beta|B,Gamma|G' });
+    await openMenuThroughCrt(page);
+
+    await page.locator('li[data-name="Beta"]').evaluate((item) => {
+      item.classList.add('name-item-selected');
+      item.querySelector('.name-span')?.classList.add('line-through');
+    });
+    await page.evaluate(() => window.__VIBE_TEST__.renderFrame());
+
+    await expect(page.locator('li[data-name="Beta"]')).toHaveClass(/name-item-selected/);
+    await dragThroughCrt(
+      page,
+      page.locator('li[data-name="Beta"] .drag-handle'),
+      page.locator('li[data-name="Alpha"]'),
+      { targetPosition: { x: 24, y: 4 } }
+    );
+
+    await expectRosterOrder(page, ['Beta', 'Alpha', 'Gamma']);
   });
 
   test('drag handle reorders operatives in CRT mode with extraction engaged', async ({ page }) => {
@@ -127,7 +150,8 @@ test.describe('CRT interaction routing', () => {
     await dragThroughCrt(
       page,
       page.locator('li[data-name="Trinity"] .drag-handle'),
-      page.locator('li[data-name="Neo"]')
+      page.locator('li[data-name="Neo"]'),
+      { targetPosition: { x: 24, y: 4 } }
     );
 
     await expectRosterOrder(page, ['Trinity', 'Neo', 'Morpheus', 'Agent Smith', 'Oracle', 'Cypher']);
