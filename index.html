@@ -2374,6 +2374,9 @@ void main() {
         let matrixRainAtlasKey = '';
         let matrixRainAtlasEntries = new Map();
         let matrixRainVertexCapacity = 0;
+        let matrixRainVertexData = new Float32Array(0);
+        let matrixRainBufferFloatCapacity = 0;
+        let matrixRainVertexWriteIndex = 0;
         let lastCrtFrameTime = 0;
         let framePerformanceMetrics = {
             rainUpdateMs: 0,
@@ -2550,6 +2553,7 @@ void main() {
         const CRT_ADAPTIVE_SOURCE_SCALE_HUGE = 0.5;
         const MATRIX_RAIN_VERTEX_STRIDE = 8;
         const MATRIX_RAIN_VERTICES_PER_GLYPH = 6;
+        const MAX_RAIN_CATCH_UP_STEPS_PER_FRAME = 6;
         const MAX_FPS_PERCENT_OFFSET = 0.90;
         const CRT_FISHBOWL_MULTIPLIER = 1.85;
         const CRT_VIGNETTE_MULTIPLIER = 1.7;
@@ -4235,7 +4239,29 @@ void main() {
             matrixRainAtlasKey = nextKey;
             return matrixRainAtlasEntries.size > 0;
         }
-        function appendMatrixRainGlyph(vertices, glyph, x, y, fontScale, sourceScaleX, sourceScaleY, rgb, alpha) {
+        function ensureMatrixRainVertexCapacity(glyphCapacity) {
+            const requiredLength = Math.ceil(Math.max(0, glyphCapacity)) * MATRIX_RAIN_VERTICES_PER_GLYPH * MATRIX_RAIN_VERTEX_STRIDE;
+            if (matrixRainVertexData.length >= requiredLength) { return; }
+            let nextLength = Math.max(
+                MATRIX_RAIN_VERTICES_PER_GLYPH * MATRIX_RAIN_VERTEX_STRIDE * 128,
+                matrixRainVertexData.length || 0
+            );
+            while (nextLength < requiredLength) {
+                nextLength *= 2;
+            }
+            matrixRainVertexData = new Float32Array(nextLength);
+        }
+        function writeMatrixRainVertex(x, y, u, v, r, g, b, a) {
+            matrixRainVertexData[matrixRainVertexWriteIndex++] = x;
+            matrixRainVertexData[matrixRainVertexWriteIndex++] = y;
+            matrixRainVertexData[matrixRainVertexWriteIndex++] = u;
+            matrixRainVertexData[matrixRainVertexWriteIndex++] = v;
+            matrixRainVertexData[matrixRainVertexWriteIndex++] = r;
+            matrixRainVertexData[matrixRainVertexWriteIndex++] = g;
+            matrixRainVertexData[matrixRainVertexWriteIndex++] = b;
+            matrixRainVertexData[matrixRainVertexWriteIndex++] = a;
+        }
+        function appendMatrixRainGlyph(glyph, x, y, fontScale, sourceScaleX, sourceScaleY, rgb, alpha) {
             const entry = matrixRainAtlasEntries.get(glyph);
             if (!entry || alpha <= 0) { return; }
             const scaledCellWidth = entry.cellSize * fontScale * sourceScaleX;
@@ -4250,16 +4276,54 @@ void main() {
             const g = (rgb?.[1] ?? 255) / 255;
             const b = (rgb?.[2] ?? 20) / 255;
             const a = clampUnit(alpha);
-            vertices.push(
-                x0, y0, entry.u0, entry.v0, r, g, b, a,
-                x1, y0, entry.u1, entry.v0, r, g, b, a,
-                x0, y1, entry.u0, entry.v1, r, g, b, a,
-                x0, y1, entry.u0, entry.v1, r, g, b, a,
-                x1, y0, entry.u1, entry.v0, r, g, b, a,
-                x1, y1, entry.u1, entry.v1, r, g, b, a
-            );
+            writeMatrixRainVertex(x0, y0, entry.u0, entry.v0, r, g, b, a);
+            writeMatrixRainVertex(x1, y0, entry.u1, entry.v0, r, g, b, a);
+            writeMatrixRainVertex(x0, y1, entry.u0, entry.v1, r, g, b, a);
+            writeMatrixRainVertex(x0, y1, entry.u0, entry.v1, r, g, b, a);
+            writeMatrixRainVertex(x1, y0, entry.u1, entry.v0, r, g, b, a);
+            writeMatrixRainVertex(x1, y1, entry.u1, entry.v1, r, g, b, a);
         }
-        function renderGpuMatrixRainFrame(now) {
+        function advanceRainColumnStep(columnIndex, drop, profile, now) {
+            const newLeaderChar = getRandomMatrixGlyph();
+            if (!trails[columnIndex]) { trails[columnIndex] = []; }
+            trails[columnIndex].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now, gapSeed: getRandomValue(), shimmerBrightness: getRandomShimmerBrightness(), shimmerPulseTrailIndex: 0 });
+            const columnTrailLength = getColumnTrailLength(profile);
+            if (trails[columnIndex].length > columnTrailLength) { trails[columnIndex].pop(); }
+            drop.y++;
+            if (drop.y * currentFontSize > canvas.height && getRandomValue() > 0.975) {
+                drop.y = 0;
+                trails[columnIndex] = [];
+                if (profile) {
+                    profile.delayRoll = getRandomValue();
+                }
+                drop.delay = calculateColumnDelay(currentRainFPS, profile);
+            }
+        }
+        function advanceRainColumn(columnIndex, now, allowCatchUp = false) {
+            const drop = drops[columnIndex];
+            const profile = columnProfiles[columnIndex] || null;
+            if (!drop || now - drop.lastUpdateTime < drop.delay) {
+                return profile;
+            }
+
+            if (!allowCatchUp || drop.lastUpdateTime <= 0) {
+                advanceRainColumnStep(columnIndex, drop, profile, now);
+                drop.lastUpdateTime = now;
+                return profile;
+            }
+
+            let steps = 0;
+            while (now - drop.lastUpdateTime >= drop.delay && steps < MAX_RAIN_CATCH_UP_STEPS_PER_FRAME) {
+                advanceRainColumnStep(columnIndex, drop, profile, now);
+                drop.lastUpdateTime += drop.delay;
+                steps++;
+            }
+            if (steps >= MAX_RAIN_CATCH_UP_STEPS_PER_FRAME && now - drop.lastUpdateTime >= drop.delay) {
+                drop.lastUpdateTime = now;
+            }
+            return profile;
+        }
+        function renderGpuMatrixRainFrame(now, options = {}) {
             if (!shouldUseGpuMatrixRain() || !ensureMatrixRainGlyphAtlas()) { return false; }
             if (!matrixRenderStyles) {
                 refreshMatrixRenderStyles();
@@ -4271,37 +4335,22 @@ void main() {
             const shimmerPulseChance = getShimmerPulseChance();
             const sourceScaleX = crtSourceCanvas.width / Math.max(1, canvas.width);
             const sourceScaleY = crtSourceCanvas.height / Math.max(1, canvas.height);
-            const vertices = [];
+            const allowCatchUp = options.allowCatchUp === true;
+            matrixRainVertexWriteIndex = 0;
+            ensureMatrixRainVertexCapacity(drops.length * (getActiveTrailLength() + 1));
             const trailRgb = matrixRenderStyles.trailRgb;
 
             for (let i = 0; i < drops.length; i++) {
                 const drop = drops[i];
-                const profile = columnProfiles[i] || null;
-                if (now - drop.lastUpdateTime >= drop.delay) {
-                    const newLeaderChar = getRandomMatrixGlyph();
-                    if (!trails[i]) { trails[i] = []; }
-                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now, gapSeed: getRandomValue(), shimmerBrightness: getRandomShimmerBrightness(), shimmerPulseTrailIndex: 0 });
-                    const columnTrailLength = getColumnTrailLength(profile);
-                    if (trails[i].length > columnTrailLength) { trails[i].pop(); }
-                    drop.y++;
-                    if (drop.y * currentFontSize > canvas.height && getRandomValue() > 0.975) {
-                        drop.y = 0;
-                        trails[i] = [];
-                        if (profile) {
-                            profile.delayRoll = getRandomValue();
-                        }
-                        drop.delay = calculateColumnDelay(currentRainFPS, profile);
-                    }
-                    drop.lastUpdateTime = now;
-                }
+                const profile = advanceRainColumn(i, now, allowCatchUp);
                 if (!trails[i]) { continue; }
                 const fontScale = isFlatGridMode ? 1 : (profile?.depth ? RAIN_DEPTH_PROFILES[profile.depth].scale : 1);
+                const trailXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now);
                 for (let k = 0; k < trails[i].length; k++) {
                     const trailItem = trails[i][k];
                     const trailYPos = (drop.y - k) * currentFontSize;
                     if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) { continue; }
                     if (!shouldRenderTrailItem(profile, k, trailItem)) { continue; }
-                    const trailXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now);
                     const glyphOpacity = getColumnGlyphOpacity(profile, k);
                     const canFlipTrailGlyph = k > 0 && (!trailItem.lastFlipTime || now - trailItem.lastFlipTime >= (profile?.flipCooldownMs || GLITCH_FLIP_COOLDOWN_MS));
                     if (canFlipTrailGlyph && getRandomValue() < glitchFlipChance * (profile?.flipChanceScale || 1)) {
@@ -4322,13 +4371,12 @@ void main() {
                     const shimmerBrightness = getTrailItemShimmerBrightness(trailItem);
                     const trailAlpha = getShimmeredTrailAlpha((trailOpacityCache[k] ?? 0) * glyphOpacity, shimmerBrightness, k, glyphOpacity, trailItem.shimmerPulseTrailIndex);
                     const shimmerRgb = applyGreenChannelShimmer(trailRgb, shimmerBrightness);
-                    appendMatrixRainGlyph(vertices, trailItem.char, trailXPos, trailYPos, fontScale, sourceScaleX, sourceScaleY, shimmerRgb, trailAlpha);
+                    appendMatrixRainGlyph(trailItem.char, trailXPos, trailYPos, fontScale, sourceScaleX, sourceScaleY, shimmerRgb, trailAlpha);
                 }
                 if (trails[i][0]) {
-                    const leaderXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now);
                     const leaderYPos = drop.y * currentFontSize;
                     if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) {
-                        appendMatrixRainGlyph(vertices, trails[i][0].char, leaderXPos, leaderYPos, fontScale, sourceScaleX, sourceScaleY, trailRgb, getColumnGlyphOpacity(profile, 0));
+                        appendMatrixRainGlyph(trails[i][0].char, trailXPos, leaderYPos, fontScale, sourceScaleX, sourceScaleY, trailRgb, getColumnGlyphOpacity(profile, 0));
                     }
                 }
             }
@@ -4343,8 +4391,8 @@ void main() {
             gl.clearColor(bgRgb[0] / 255, bgRgb[1] / 255, bgRgb[2] / 255, 1);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
-            if (vertices.length > 0) {
-                const glyphCount = vertices.length / (MATRIX_RAIN_VERTEX_STRIDE * MATRIX_RAIN_VERTICES_PER_GLYPH);
+            if (matrixRainVertexWriteIndex > 0) {
+                const glyphCount = matrixRainVertexWriteIndex / (MATRIX_RAIN_VERTEX_STRIDE * MATRIX_RAIN_VERTICES_PER_GLYPH);
                 if (glyphCount > matrixRainVertexCapacity) {
                     matrixRainVertexCapacity = glyphCount;
                 }
@@ -4354,7 +4402,11 @@ void main() {
                 gl.uniform1i(matrixRainUniforms.glyphAtlas, 2);
                 gl.uniform2f(matrixRainUniforms.resolution, crtSourceCanvas.width, crtSourceCanvas.height);
                 gl.bindBuffer(gl.ARRAY_BUFFER, matrixRainVertexBuffer);
-                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW);
+                if (matrixRainBufferFloatCapacity < matrixRainVertexData.length) {
+                    gl.bufferData(gl.ARRAY_BUFFER, matrixRainVertexData.byteLength, gl.STREAM_DRAW);
+                    matrixRainBufferFloatCapacity = matrixRainVertexData.length;
+                }
+                gl.bufferSubData(gl.ARRAY_BUFFER, 0, matrixRainVertexData.subarray(0, matrixRainVertexWriteIndex));
                 const stride = MATRIX_RAIN_VERTEX_STRIDE * 4;
                 gl.enableVertexAttribArray(matrixRainAttributeLocations.position);
                 gl.vertexAttribPointer(matrixRainAttributeLocations.position, 2, gl.FLOAT, false, stride, 0);
@@ -4364,7 +4416,7 @@ void main() {
                 gl.vertexAttribPointer(matrixRainAttributeLocations.color, 4, gl.FLOAT, false, stride, 4 * 4);
                 gl.enable(gl.BLEND);
                 gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-                gl.drawArrays(gl.TRIANGLES, 0, vertices.length / MATRIX_RAIN_VERTEX_STRIDE);
+                gl.drawArrays(gl.TRIANGLES, 0, matrixRainVertexWriteIndex / MATRIX_RAIN_VERTEX_STRIDE);
                 gl.disable(gl.BLEND);
             }
 
@@ -4440,17 +4492,18 @@ void main() {
             lastCrtFrameTime = performance.now();
             framePerformanceMetrics.compositeMs = performance.now() - compositeStart;
         }
-        function drawMatrixRain() {
+        function drawMatrixRain(options = {}) {
             const frameStart = performance.now();
             if (!matrixRenderStyles) {
                 refreshMatrixRenderStyles();
             }
-            if (shouldUseGpuMatrixRain() && renderGpuMatrixRainFrame(Date.now())) {
+            const now = options.now || Date.now();
+            const allowCatchUp = options.allowCatchUp === true;
+            if (shouldUseGpuMatrixRain() && renderGpuMatrixRainFrame(now, { allowCatchUp })) {
                 return;
             }
             crtMatrixTextureFromGpu = false;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
-            const now = Date.now();
             const glitchFlipChance = getGlitchFlipChance();
             const shimmerPulseChance = getShimmerPulseChance();
 
@@ -4463,29 +4516,13 @@ void main() {
 
             for (let i = 0; i < drops.length; i++) {
                 const drop = drops[i];
-                const profile = columnProfiles[i] || null;
-                if (now - drop.lastUpdateTime >= drop.delay) {
-                    const newLeaderChar = getRandomMatrixGlyph(); if (!trails[i]) trails[i] = [];
-                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now, gapSeed: getRandomValue(), shimmerBrightness: getRandomShimmerBrightness(), shimmerPulseTrailIndex: 0 });
-                    const columnTrailLength = getColumnTrailLength(profile);
-                    if (trails[i].length > columnTrailLength) { trails[i].pop(); }
-                    drop.y++;
-                    if (drop.y * currentFontSize > canvas.height && getRandomValue() > 0.975) {
-                        drop.y = 0;
-                        trails[i] = [];
-                        if (profile) {
-                            profile.delayRoll = getRandomValue();
-                        }
-                        drop.delay = calculateColumnDelay(currentRainFPS, profile); // Randomize speed on reset
-                    }
-                    drop.lastUpdateTime = now;
-                }
+                const profile = advanceRainColumn(i, now, allowCatchUp);
                 if (trails[i]) {
                     setMatrixContextFontForProfile(ctx, profile);
+                    const trailXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now);
                     for (let k = 0; k < trails[i].length; k++) {
                         let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
                         if (!shouldRenderTrailItem(profile, k, trailItem)) { continue; }
-                        const trailXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now);
                         const glyphOpacity = getColumnGlyphOpacity(profile, k);
                         const canFlipTrailGlyph = k > 0 && (!trailItem.lastFlipTime || now - trailItem.lastFlipTime >= (profile?.flipCooldownMs || GLITCH_FLIP_COOLDOWN_MS));
                         if (canFlipTrailGlyph && getRandomValue() < glitchFlipChance * (profile?.flipChanceScale || 1)) {
@@ -4506,11 +4543,11 @@ void main() {
                         });
                     }
                     if (trails[i][0]) {
-                        const leaderXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now); const leaderYPos = drop.y * currentFontSize;
+                        const leaderYPos = drop.y * currentFontSize;
                         if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) {
                             const leaderOpacity = getColumnGlyphOpacity(profile, 0);
                             const leadRgb = getColumnLeaderRgb(profile, 0);
-                            drawMatrixHighlightGlyph(trails[i][0].char, leaderXPos, leaderYPos, 'leader', 0, [], {
+                            drawMatrixHighlightGlyph(trails[i][0].char, trailXPos, leaderYPos, 'leader', 0, [], {
                                 fillActive: true,
                                 opacityMultiplier: leaderOpacity,
                                 leadRgb
@@ -4532,20 +4569,28 @@ void main() {
                 renderCurrentMatrixFrame();
                 return;
             }
-            if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); } let lastFrameTime = 0;
+            if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); }
+            let lastRainFrameTime = 0;
+            let lastCrtCompositeFrameTime = 0;
             function animateRain(currentTime) {
                 if (isAnimationPaused) {
                     rainAnimationId = null;
                     return;
                 }
                 rainAnimationId = requestAnimationFrame(animateRain); 
-                const deltaTime = currentTime - lastFrameTime;
-                if (deltaTime >= ANIMATION_FRAME_DELAY) {
-                    try { drawMatrixRain(); lastFrameTime = currentTime - (deltaTime % ANIMATION_FRAME_DELAY); }
+                const useSmoothCrtComposite = isCrtMode && crtReady && crtCompositeAvailable;
+                const rainFrameDelay = useSmoothCrtComposite ? CRT_FRAME_DELAY : ANIMATION_FRAME_DELAY;
+                const rainDeltaTime = currentTime - lastRainFrameTime;
+                const crtCompositeDeltaTime = currentTime - lastCrtCompositeFrameTime;
+                if (rainDeltaTime >= rainFrameDelay) {
+                    try { drawMatrixRain({ now: Date.now(), allowCatchUp: useSmoothCrtComposite }); lastRainFrameTime = currentTime - (rainDeltaTime % rainFrameDelay); }
                     catch(error) { console.error("Error during drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
-                    if (!isCrtMode || (currentTime - lastCrtFrameTime) >= CRT_FRAME_DELAY) {
-                        renderCrtFrame();
-                    }
+                }
+                if (useSmoothCrtComposite && crtCompositeDeltaTime >= ANIMATION_FRAME_DELAY) {
+                    renderCrtFrame();
+                    lastCrtCompositeFrameTime = currentTime - (crtCompositeDeltaTime % ANIMATION_FRAME_DELAY);
+                } else if (!useSmoothCrtComposite && rainDeltaTime >= rainFrameDelay) {
+                    renderCrtFrame();
                 }
             }
             if (canvas.width > 0 && canvas.height > 0) { rainAnimationId = requestAnimationFrame(animateRain); } else { console.warn("// Canvas dimensions not ready."); }
