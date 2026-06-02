@@ -2511,6 +2511,7 @@ void main() {
         const SHIMMER_MIN_BRIGHTNESS = 0.58;
         const SHIMMER_MAX_BRIGHTNESS = 2.2;
         const SHIMMER_DEFAULT_BRIGHTNESS = 1;
+        const SHIMMER_TRANSITION_MS = 260;
         const RAIN_DEPTH_PROFILES = {
             back: { scale: 0.78, opacity: 0.34, speed: 0.62, flip: 0.5 },
             mid: { scale: 0.92, opacity: 0.72, speed: 0.95, flip: 1.0 },
@@ -3005,10 +3006,29 @@ void main() {
         function getRandomBrightShimmerBrightness() {
             return createShimmerBrightnessFromRoll(0.5 + (getRandomValue() * 0.5));
         }
-        function getTrailItemShimmerBrightness(trailItem) {
+        function easeInOutUnit(value) {
+            const t = clampUnit(value);
+            return t * t * (3 - (2 * t));
+        }
+        function setTrailItemShimmerBrightness(trailItem, brightness, now, shimmerPulseTrailIndex = null) {
+            if (!trailItem) { return; }
+            const nextBrightness = Number.isFinite(brightness)
+                ? Math.max(SHIMMER_MIN_BRIGHTNESS, Math.min(SHIMMER_MAX_BRIGHTNESS, brightness))
+                : SHIMMER_DEFAULT_BRIGHTNESS;
+            trailItem.shimmerFromBrightness = getTrailItemShimmerBrightness(trailItem, now);
+            trailItem.shimmerBrightness = nextBrightness;
+            trailItem.shimmerStartedAt = now;
+            trailItem.shimmerPulseTrailIndex = shimmerPulseTrailIndex;
+        }
+        function getTrailItemShimmerBrightness(trailItem, now = Date.now()) {
             const brightness = trailItem?.shimmerBrightness ?? SHIMMER_DEFAULT_BRIGHTNESS;
             if (!Number.isFinite(brightness)) { return SHIMMER_DEFAULT_BRIGHTNESS; }
-            return Math.max(SHIMMER_MIN_BRIGHTNESS, Math.min(SHIMMER_MAX_BRIGHTNESS, brightness));
+            const targetBrightness = Math.max(SHIMMER_MIN_BRIGHTNESS, Math.min(SHIMMER_MAX_BRIGHTNESS, brightness));
+            const fromBrightness = Number.isFinite(trailItem?.shimmerFromBrightness) ? trailItem.shimmerFromBrightness : targetBrightness;
+            const startedAt = Number.isFinite(trailItem?.shimmerStartedAt) ? trailItem.shimmerStartedAt : null;
+            if (startedAt === null) { return targetBrightness; }
+            const progress = easeInOutUnit((now - startedAt) / SHIMMER_TRANSITION_MS);
+            return fromBrightness + ((targetBrightness - fromBrightness) * progress);
         }
         function getShimmerBrightAmount(shimmerBrightness) {
             return clampUnit((shimmerBrightness - SHIMMER_DEFAULT_BRIGHTNESS) / (SHIMMER_MAX_BRIGHTNESS - SHIMMER_DEFAULT_BRIGHTNESS));
@@ -4032,8 +4052,7 @@ void main() {
                     trailItem.char = getRandomMatrixGlyph();
                     trailItem.flipped = true;
                     trailItem.lastFlipTime = Date.now();
-                    trailItem.shimmerBrightness = getRandomShimmerBrightness();
-                    trailItem.shimmerPulseTrailIndex = 0;
+                    setTrailItemShimmerBrightness(trailItem, getRandomShimmerBrightness(), trailItem.lastFlipTime, 0);
                 });
             });
         }
@@ -4286,7 +4305,9 @@ void main() {
         function advanceRainColumnStep(columnIndex, drop, profile, now) {
             const newLeaderChar = getRandomMatrixGlyph();
             if (!trails[columnIndex]) { trails[columnIndex] = []; }
-            trails[columnIndex].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now, gapSeed: getRandomValue(), shimmerBrightness: getRandomShimmerBrightness(), shimmerPulseTrailIndex: 0 });
+            const newTrailItem = { char: newLeaderChar, flipped: false, updateTimestamp: now, gapSeed: getRandomValue(), shimmerBrightness: SHIMMER_DEFAULT_BRIGHTNESS, shimmerFromBrightness: SHIMMER_DEFAULT_BRIGHTNESS, shimmerStartedAt: now, shimmerPulseTrailIndex: 0 };
+            setTrailItemShimmerBrightness(newTrailItem, getRandomShimmerBrightness(), now, 0);
+            trails[columnIndex].unshift(newTrailItem);
             const columnTrailLength = getColumnTrailLength(profile);
             if (trails[columnIndex].length > columnTrailLength) { trails[columnIndex].pop(); }
             drop.y++;
@@ -4336,13 +4357,14 @@ void main() {
             const sourceScaleX = crtSourceCanvas.width / Math.max(1, canvas.width);
             const sourceScaleY = crtSourceCanvas.height / Math.max(1, canvas.height);
             const allowCatchUp = options.allowCatchUp === true;
+            const advanceRows = options.advanceRows !== false;
             matrixRainVertexWriteIndex = 0;
             ensureMatrixRainVertexCapacity(drops.length * (getActiveTrailLength() + 1));
             const trailRgb = matrixRenderStyles.trailRgb;
 
             for (let i = 0; i < drops.length; i++) {
                 const drop = drops[i];
-                const profile = advanceRainColumn(i, now, allowCatchUp);
+                const profile = advanceRows ? advanceRainColumn(i, now, allowCatchUp) : (columnProfiles[i] || null);
                 if (!trails[i]) { continue; }
                 const fontScale = isFlatGridMode ? 1 : (profile?.depth ? RAIN_DEPTH_PROFILES[profile.depth].scale : 1);
                 const trailXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now);
@@ -4352,7 +4374,7 @@ void main() {
                     if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) { continue; }
                     if (!shouldRenderTrailItem(profile, k, trailItem)) { continue; }
                     const glyphOpacity = getColumnGlyphOpacity(profile, k);
-                    const canFlipTrailGlyph = k > 0 && (!trailItem.lastFlipTime || now - trailItem.lastFlipTime >= (profile?.flipCooldownMs || GLITCH_FLIP_COOLDOWN_MS));
+                    const canFlipTrailGlyph = advanceRows && k > 0 && (!trailItem.lastFlipTime || now - trailItem.lastFlipTime >= (profile?.flipCooldownMs || GLITCH_FLIP_COOLDOWN_MS));
                     if (canFlipTrailGlyph && getRandomValue() < glitchFlipChance * (profile?.flipChanceScale || 1)) {
                         let flippedChar;
                         do {
@@ -4361,14 +4383,12 @@ void main() {
                         trailItem.char = flippedChar;
                         trailItem.flipped = true;
                         trailItem.lastFlipTime = now;
-                        trailItem.shimmerBrightness = getRandomShimmerBrightness();
-                        trailItem.shimmerPulseTrailIndex = k;
+                        setTrailItemShimmerBrightness(trailItem, getRandomShimmerBrightness(), now, k);
                     } else if (canFlipTrailGlyph && getRandomValue() < shimmerPulseChance * (profile?.flipChanceScale || 1)) {
                         trailItem.lastFlipTime = now;
-                        trailItem.shimmerBrightness = getRandomBrightShimmerBrightness();
-                        trailItem.shimmerPulseTrailIndex = k;
+                        setTrailItemShimmerBrightness(trailItem, getRandomBrightShimmerBrightness(), now, k);
                     }
-                    const shimmerBrightness = getTrailItemShimmerBrightness(trailItem);
+                    const shimmerBrightness = getTrailItemShimmerBrightness(trailItem, now);
                     const trailAlpha = getShimmeredTrailAlpha((trailOpacityCache[k] ?? 0) * glyphOpacity, shimmerBrightness, k, glyphOpacity, trailItem.shimmerPulseTrailIndex);
                     const shimmerRgb = applyGreenChannelShimmer(trailRgb, shimmerBrightness);
                     appendMatrixRainGlyph(trailItem.char, trailXPos, trailYPos, fontScale, sourceScaleX, sourceScaleY, shimmerRgb, trailAlpha);
@@ -4499,7 +4519,8 @@ void main() {
             }
             const now = options.now || Date.now();
             const allowCatchUp = options.allowCatchUp === true;
-            if (shouldUseGpuMatrixRain() && renderGpuMatrixRainFrame(now, { allowCatchUp })) {
+            const advanceRows = options.advanceRows !== false;
+            if (shouldUseGpuMatrixRain() && renderGpuMatrixRainFrame(now, { allowCatchUp, advanceRows })) {
                 return;
             }
             crtMatrixTextureFromGpu = false;
@@ -4516,7 +4537,7 @@ void main() {
 
             for (let i = 0; i < drops.length; i++) {
                 const drop = drops[i];
-                const profile = advanceRainColumn(i, now, allowCatchUp);
+                const profile = advanceRows ? advanceRainColumn(i, now, allowCatchUp) : (columnProfiles[i] || null);
                 if (trails[i]) {
                     setMatrixContextFontForProfile(ctx, profile);
                     const trailXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now);
@@ -4524,18 +4545,16 @@ void main() {
                         let trailItem = trails[i][k]; const trailYPos = (drop.y - k) * currentFontSize; if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) continue;
                         if (!shouldRenderTrailItem(profile, k, trailItem)) { continue; }
                         const glyphOpacity = getColumnGlyphOpacity(profile, k);
-                        const canFlipTrailGlyph = k > 0 && (!trailItem.lastFlipTime || now - trailItem.lastFlipTime >= (profile?.flipCooldownMs || GLITCH_FLIP_COOLDOWN_MS));
+                        const canFlipTrailGlyph = advanceRows && k > 0 && (!trailItem.lastFlipTime || now - trailItem.lastFlipTime >= (profile?.flipCooldownMs || GLITCH_FLIP_COOLDOWN_MS));
                         if (canFlipTrailGlyph && getRandomValue() < glitchFlipChance * (profile?.flipChanceScale || 1)) {
                             let flippedChar; do { flippedChar = getRandomMatrixGlyph(); } while (flippedChar === trailItem.char && getActiveMatrixGlyphs().length > 1);
                             trailItem.char = flippedChar; trailItem.flipped = true; trailItem.lastFlipTime = now;
-                            trailItem.shimmerBrightness = getRandomShimmerBrightness();
-                            trailItem.shimmerPulseTrailIndex = k;
+                            setTrailItemShimmerBrightness(trailItem, getRandomShimmerBrightness(), now, k);
                         } else if (canFlipTrailGlyph && getRandomValue() < shimmerPulseChance * (profile?.flipChanceScale || 1)) {
                             trailItem.lastFlipTime = now;
-                            trailItem.shimmerBrightness = getRandomBrightShimmerBrightness();
-                            trailItem.shimmerPulseTrailIndex = k;
+                            setTrailItemShimmerBrightness(trailItem, getRandomBrightShimmerBrightness(), now, k);
                         }
-                        const shimmerBrightness = getTrailItemShimmerBrightness(trailItem);
+                        const shimmerBrightness = getTrailItemShimmerBrightness(trailItem, now);
                         const shimmerOpacity = getShimmeredTrailAlpha((trailOpacityCache[k] ?? 0) * glyphOpacity, shimmerBrightness, k, glyphOpacity, trailItem.shimmerPulseTrailIndex);
                         drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'trail', k, [], {
                             opacityMultiplier: shimmerOpacity,
@@ -4582,11 +4601,16 @@ void main() {
                 const rainFrameDelay = useSmoothCrtComposite ? CRT_FRAME_DELAY : ANIMATION_FRAME_DELAY;
                 const rainDeltaTime = currentTime - lastRainFrameTime;
                 const crtCompositeDeltaTime = currentTime - lastCrtCompositeFrameTime;
+                let drewRainSource = false;
                 if (rainDeltaTime >= rainFrameDelay) {
-                    try { drawMatrixRain({ now: Date.now(), allowCatchUp: useSmoothCrtComposite }); lastRainFrameTime = currentTime - (rainDeltaTime % rainFrameDelay); }
+                    try { drawMatrixRain({ now: Date.now(), allowCatchUp: useSmoothCrtComposite, advanceRows: true }); lastRainFrameTime = currentTime - (rainDeltaTime % rainFrameDelay); drewRainSource = true; }
                     catch(error) { console.error("Error during drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
                 }
                 if (useSmoothCrtComposite && crtCompositeDeltaTime >= ANIMATION_FRAME_DELAY) {
+                    if (!drewRainSource) {
+                        try { drawMatrixRain({ now: Date.now(), allowCatchUp: false, advanceRows: false }); }
+                        catch(error) { console.error("Error during smooth drawMatrixRain:", error); if (rainAnimationId !== null) { cancelAnimationFrame(rainAnimationId); rainAnimationId = null; } }
+                    }
                     renderCrtFrame();
                     lastCrtCompositeFrameTime = currentTime - (crtCompositeDeltaTime % ANIMATION_FRAME_DELAY);
                 } else if (!useSmoothCrtComposite && rainDeltaTime >= rainFrameDelay) {
