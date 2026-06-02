@@ -35,6 +35,7 @@ test.describe('settings and URL persistence', () => {
     await page.locator('#crtJitterSlider').fill('28');
     await page.locator('#crtDistortionDriftSlider').fill('31');
     await page.locator('#crtStartupTimeSlider').fill('7200');
+    await page.locator('#crtAdaptiveScaleBtn').evaluate((element) => element.click());
     await page.locator('#brightnessSlider').blur();
 
     await expectUrlToContain(page, {
@@ -59,6 +60,7 @@ test.describe('settings and URL persistence', () => {
       'crt-jitter': 28,
       'crt-distortion-drift': 31,
       'crt-startup-time': 7200,
+      'crt-adaptive-scale': 'off',
       'rain-layout': 'organic',
       extraction: 'on',
       theme: 'construct'
@@ -90,6 +92,9 @@ test.describe('settings and URL persistence', () => {
     await expect(page.locator('#crtDistortionDriftSlider')).toHaveValue('31');
     await expect(page.locator('#crtStartupTimeSlider')).toHaveValue('7200');
     await expect(page.locator('#crtStartupTimeValue')).toHaveText('7.2s');
+    await expect(page.locator('#crtAdaptiveScaleBtn')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('#crtAdaptiveScaleBtn')).toHaveText('[A] Fixed CRT Scale');
+    await expect(page.locator('#crtAdaptiveScaleDetail')).toContainText('fixed 70%');
   });
 
   test('CRT controls stay directly below Construct Mode', async ({ page }) => {
@@ -165,6 +170,30 @@ test.describe('settings and URL persistence', () => {
     expect(afterProfiles.some((profile, index) => profile.xOffset !== beforeProfiles[index].xOffset)).toBe(true);
   });
 
+  test('glyph shimmer can dim and brighten trail opacity', async ({ page }) => {
+    await openApp(page, {
+      crt: 'false',
+      glyphMutation: 100
+    });
+
+    const debug = await page.evaluate(() => window.__VIBE_TEST__.getShimmerDebug());
+
+    expect(debug.min).toBeLessThan(debug.default);
+    expect(debug.max).toBeGreaterThan(debug.default);
+    expect(debug.samples.some((sample) => sample < debug.default)).toBe(true);
+    expect(debug.samples.some((sample) => sample > debug.default)).toBe(true);
+    expect(debug.opacitySamples.some((opacity) => opacity < debug.baseTrailOpacity)).toBe(true);
+    expect(debug.opacitySamples.some((opacity) => opacity > debug.baseTrailOpacity)).toBe(true);
+    expect(debug.brightAmounts.some((amount) => amount > 0)).toBe(true);
+    expect(debug.colorSamples.every((sample) => sample[0] === debug.baseRgb[0])).toBe(true);
+    expect(debug.colorSamples.every((sample) => sample[2] === debug.baseRgb[2])).toBe(true);
+    expect(debug.colorSamples.some((sample) => sample[1] !== debug.baseRgb[1])).toBe(true);
+    expect(Math.max(...debug.freshAlphaSamples)).toBeGreaterThan(debug.freshBaseAlpha);
+    expect(Math.max(...debug.oldAlphaSamples)).toBeGreaterThan(debug.oldBaseAlpha);
+    expect(Math.max(...debug.oldAlphaSamples)).toBeGreaterThan(debug.freshBaseAlpha * 0.6);
+    expect(Math.max(...debug.oldFadedAlphaSamples)).toBeLessThan(Math.max(...debug.oldAlphaSamples));
+  });
+
   test('effect reset buttons restore defaults without changing roster or extraction mode', async ({ page }) => {
     await openApp(page, {
       crt: 'false',
@@ -190,6 +219,7 @@ test.describe('settings and URL persistence', () => {
       crtJitter: 28,
       crtDistortionDrift: 31,
       crtStartupTime: 7200,
+      'crt-adaptive-scale': 'off',
       theme: 'construct'
     });
     await openMenu(page);
@@ -205,7 +235,7 @@ test.describe('settings and URL persistence', () => {
     await expect(page.locator('#rainVarietySlider')).toHaveValue('50');
     await expect(page.locator('#gapDensitySlider')).toHaveValue('50');
     await expect(page.locator('#leaderHeatSlider')).toHaveValue('50');
-    await expect(page.locator('#glyphMutationSlider')).toHaveValue('50');
+    await expect(page.locator('#glyphMutationSlider')).toHaveValue('6');
     await expect(page.locator('#brightnessSlider')).toHaveValue('73');
     await expect(page.locator('#flatGridModeBtn')).toHaveAttribute('aria-pressed', 'false');
     await expectUrlToContain(page, {
@@ -244,6 +274,9 @@ test.describe('settings and URL persistence', () => {
     await expect(page.locator('#crtJitterSlider')).toHaveValue('0');
     await expect(page.locator('#crtDistortionDriftSlider')).toHaveValue('24');
     await expect(page.locator('#crtStartupTimeSlider')).toHaveValue('3600');
+    await expect(page.locator('#crtAdaptiveScaleBtn')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('#crtAdaptiveScaleDetail')).toContainText('adaptive 62%');
+    await expect(page.locator('#crtAdaptiveScaleDetail')).toContainText('892x682');
     await expect(page.locator('#nameList .name-span')).toHaveText(rosterBefore);
     await expectUrlToContain(page, { extraction: 'on' });
     await expect(page.url()).not.toContain('brightness=');
@@ -252,6 +285,7 @@ test.describe('settings and URL persistence', () => {
     await expect(page.url()).not.toContain('theme=');
     await expect(page.url()).not.toContain('crt-distortion-drift=');
     await expect(page.url()).not.toContain('crt-startup-time=');
+    await expect(page.url()).not.toContain('crt-adaptive-scale=');
     await expect(page.url()).not.toContain('crt=false');
   });
 

@@ -1666,6 +1666,11 @@
                         </label>
                         <input type="range" id="crtStartupTimeSlider" min="800" max="9000" step="100" value="3600">
                     </div>
+                    <div class="control-group mb-3">
+                        <button id="crtAdaptiveScaleBtn" aria-pressed="true" type="button" data-tooltip="Automatically lowers the CRT rain source resolution on large viewports while keeping UI text full resolution. Disable for the sharper fixed-resolution CRT source.">[A] Adaptive CRT Scale</button>
+                        <div id="crtAdaptiveScaleLed" class="led-indicator active" aria-hidden="true"></div>
+                    </div>
+                    <p id="crtAdaptiveScaleDetail" class="text-xs opacity-70 -mt-2 mb-3">// CRT rain source: adaptive 70%.</p>
                 </div>
                 <div class="settings-subgroup settings-subgroup-first">
                     <div class="settings-subgroup-header">
@@ -1776,11 +1781,11 @@
                         <input type="range" id="leaderHeatSlider" min="0" max="100" step="1" value="50">
                     </div>
                     <div class="mb-3">
-                        <label for="glyphMutationSlider" class="flex justify-between items-center" data-tooltip="Controls random glyph flips in existing tails. Higher values make the code shimmer more.">
+                        <label for="glyphMutationSlider" class="flex justify-between items-center" data-tooltip="Controls random glyph flips in existing tails. Higher values make trail glyphs shimmer between dimmer and brighter phosphor states.">
                             <span>// Code Shimmer:</span>
-                            <span id="glyphMutationValue" class="font-semibold text-sm">50%</span>
+                            <span id="glyphMutationValue" class="font-semibold text-sm">6%</span>
                         </label>
-                        <input type="range" id="glyphMutationSlider" min="0" max="100" step="1" value="50">
+                        <input type="range" id="glyphMutationSlider" min="0" max="100" step="1" value="6">
                     </div>
                 </div>
             </div>
@@ -2128,6 +2133,39 @@ void main() {
   gl_FragColor = vec4(color, 1.0);
 }
     </script>
+    <script id="matrix-rain-vertex-shader" type="x-shader/x-vertex">
+attribute vec2 aPosition;
+attribute vec2 aTexCoord;
+attribute vec4 aColor;
+
+uniform vec2 u_resolution;
+
+varying vec2 vTexCoord;
+varying vec4 vColor;
+
+void main() {
+  vec2 zeroToOne = aPosition / max(u_resolution, vec2(1.0));
+  vec2 clipSpace = zeroToOne * 2.0 - 1.0;
+  gl_Position = vec4(clipSpace, 0.0, 1.0);
+  vTexCoord = aTexCoord;
+  vColor = aColor;
+}
+    </script>
+    <script id="matrix-rain-fragment-shader" type="x-shader/x-fragment">
+#ifdef GL_ES
+precision mediump float;
+#endif
+
+uniform sampler2D u_glyphAtlas;
+
+varying vec2 vTexCoord;
+varying vec4 vColor;
+
+void main() {
+  vec4 glyph = texture2D(u_glyphAtlas, vTexCoord);
+  gl_FragColor = vec4(vColor.rgb, vColor.a * glyph.a);
+}
+    </script>
 
     <script>
     (function() { // IIFE to encapsulate scope and avoid global pollution
@@ -2227,6 +2265,9 @@ void main() {
         const crtDistortionDriftValue = document.getElementById('crtDistortionDriftValue');
         const crtStartupTimeSlider = document.getElementById('crtStartupTimeSlider');
         const crtStartupTimeValue = document.getElementById('crtStartupTimeValue');
+        const crtAdaptiveScaleBtn = document.getElementById('crtAdaptiveScaleBtn');
+        const crtAdaptiveScaleLed = document.getElementById('crtAdaptiveScaleLed');
+        const crtAdaptiveScaleDetail = document.getElementById('crtAdaptiveScaleDetail');
 
         // Action Buttons (Inside Panel)
         const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -2273,7 +2314,7 @@ void main() {
         let isFlatGridMode = true;
         let currentGapDensityPercent = 50;
         let currentLeaderHeatPercent = 50;
-        let currentGlyphMutationPercent = 50;
+        let currentGlyphMutationPercent = 6;
         let currentRainGlyphSet = 'expanded';
         let rainAnimationId = null;
         let isAnimationPaused = false;
@@ -2292,6 +2333,7 @@ void main() {
         let currentCrtJitterPercent = 0;
         let currentCrtDistortionDriftPercent = 24;
         let currentCrtStartupTimeMs = 3600;
+        let isCrtAdaptiveScaleEnabled = true;
         let isConstructMode = false;
         let trails = [];
         let drops = [];
@@ -2301,9 +2343,15 @@ void main() {
         let crtProgram = null;
         let crtTexture = null;
         let crtUiTexture = null;
+        let matrixRainProgram = null;
+        let matrixRainGlyphAtlasTexture = null;
+        let matrixRainVertexBuffer = null;
+        let matrixRainFramebuffer = null;
         let crtPositionBuffer = null;
         let crtTexCoordBuffer = null;
+        let matrixRainUniforms = null;
         let crtUniforms = null;
+        let matrixRainAttributeLocations = null;
         let crtAttributeLocations = null;
         let crtTextureWidth = 0;
         let crtTextureHeight = 0;
@@ -2319,15 +2367,26 @@ void main() {
         let crtStartupStartedAt = 0;
         let crtStartupFrameId = null;
         let crtStartupProgressOverride = null;
+        let crtMatrixTextureFromGpu = false;
+        let crtManualSourceFrame = false;
+        let matrixRainGpuReady = false;
+        let matrixRainGpuWarningShown = false;
+        let matrixRainAtlasKey = '';
+        let matrixRainAtlasEntries = new Map();
+        let matrixRainVertexCapacity = 0;
         let lastCrtFrameTime = 0;
         let framePerformanceMetrics = {
             rainUpdateMs: 0,
             cpuMatrixDrawMs: 0,
             compositeMs: 0,
-            renderer: 'cpu'
+            renderer: 'cpu',
+            crtSourceScale: 0.7,
+            crtTextureUpload: 'canvas'
         };
         let pendingModalOpenTimeoutId = null;
         let matrixRenderStyles = null;
+        const matrixRainAtlasCanvas = document.createElement('canvas');
+        const matrixRainAtlasCtx = matrixRainAtlasCanvas.getContext('2d');
         let sanitizedMatrixExpandedGlyphs = null;
         let trailFillStyleCache = [];
         let trailOpacityCache = [];
@@ -2444,7 +2503,10 @@ void main() {
         const DEFAULT_CRT_MODE = true;
         const COLUMN_SPACING_FACTOR = 1.0;
         const DEFAULT_GLITCH_FLIP_CHANCE = 0.0025;
+        const DEFAULT_SHIMMER_PULSE_CHANCE = 0.012;
         const GLITCH_FLIP_COOLDOWN_MS = 500;
+        const SHIMMER_MIN_BRIGHTNESS = 0.58;
+        const SHIMMER_MAX_BRIGHTNESS = 2.2;
         const SHIMMER_DEFAULT_BRIGHTNESS = 1;
         const RAIN_DEPTH_PROFILES = {
             back: { scale: 0.78, opacity: 0.34, speed: 0.62, flip: 0.5 },
@@ -2464,6 +2526,7 @@ void main() {
         const DEFAULT_CRT_JITTER_PERCENT = 0;
         const DEFAULT_CRT_DISTORTION_DRIFT_PERCENT = 24;
         const DEFAULT_CRT_STARTUP_TIME_MS = 3600;
+        const DEFAULT_CRT_ADAPTIVE_SCALE = true;
         const MIN_CRT_STARTUP_TIME_MS = 800;
         const MAX_CRT_STARTUP_TIME_MS = 9000;
         const DEFAULT_RAIN_DEPTH_PERCENT = 50;
@@ -2472,7 +2535,7 @@ void main() {
         const DEFAULT_FLAT_GRID_MODE = true;
         const DEFAULT_GAP_DENSITY_PERCENT = 50;
         const DEFAULT_LEADER_HEAT_PERCENT = 50;
-        const DEFAULT_GLYPH_MUTATION_PERCENT = 50;
+        const DEFAULT_GLYPH_MUTATION_PERCENT = 6;
         const DEFAULT_RAIN_GLYPH_SET = 'expanded';
         const MIN_TRAIL_LENGTH = 20;
         const MIN_COLUMN_TRAIL_LENGTH = 8;
@@ -2482,6 +2545,11 @@ void main() {
         const CRT_TARGET_FPS = 30;
         const CRT_FRAME_DELAY = 1000 / CRT_TARGET_FPS;
         const CRT_SOURCE_SCALE = 0.7;
+        const CRT_ADAPTIVE_SOURCE_SCALE_MEDIUM = 0.62;
+        const CRT_ADAPTIVE_SOURCE_SCALE_LARGE = 0.56;
+        const CRT_ADAPTIVE_SOURCE_SCALE_HUGE = 0.5;
+        const MATRIX_RAIN_VERTEX_STRIDE = 8;
+        const MATRIX_RAIN_VERTICES_PER_GLYPH = 6;
         const MAX_FPS_PERCENT_OFFSET = 0.90;
         const CRT_FISHBOWL_MULTIPLIER = 1.85;
         const CRT_VIGNETTE_MULTIPLIER = 1.7;
@@ -2591,6 +2659,15 @@ void main() {
             } else if (patternName === 'black-field') {
                 ctx.fillStyle = 'rgb(0, 0, 0)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+            if (crtGl && crtTexture) {
+                ensureCrtTextureSize();
+                crtGl.activeTexture(crtGl.TEXTURE0);
+                crtGl.bindTexture(crtGl.TEXTURE_2D, crtTexture);
+                crtGl.pixelStorei(crtGl.UNPACK_FLIP_Y_WEBGL, false);
+                crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, composeCrtSourceFrame());
+                crtManualSourceFrame = true;
+                crtMatrixTextureFromGpu = false;
             }
             if (crtUiCtx) {
                 crtUiCtx.clearRect(0, 0, crtUiCanvas.width, crtUiCanvas.height);
@@ -2772,7 +2849,36 @@ void main() {
                     }
                     return {
                         leaderStyle: resolveMatrixGlyphStyle('leader', 0),
-                        trailStyle: resolveMatrixGlyphStyle('trail', 0)
+                        trailStyle: resolveMatrixGlyphStyle('trail', 0),
+                        gpuRainReady: matrixRainGpuReady,
+                        crtSourceScale: getCrtSourceScale(),
+                        crtAdaptiveScale: isCrtAdaptiveScaleEnabled
+                    };
+                },
+                getShimmerDebug() {
+                    const sampleRolls = [0, 0.25, 0.5, 0.75, 1];
+                    const samples = sampleRolls.map((roll) => createShimmerBrightnessFromRoll(roll));
+                    const baseTrailOpacity = 0.5;
+                    const baseRgb = [57, 180, 20];
+                    const oldTrailIndex = 28;
+                    const oldPulseTrailIndex = 28;
+                    const freshBaseAlpha = 0.82;
+                    const oldBaseAlpha = 0.04;
+                    return {
+                        min: SHIMMER_MIN_BRIGHTNESS,
+                        max: SHIMMER_MAX_BRIGHTNESS,
+                        default: SHIMMER_DEFAULT_BRIGHTNESS,
+                        samples,
+                        baseTrailOpacity,
+                        opacitySamples: samples.map((sample) => clampUnit(baseTrailOpacity * sample)),
+                        brightAmounts: samples.map((sample) => getShimmerBrightAmount(sample)),
+                        baseRgb,
+                        colorSamples: samples.map((sample) => applyGreenChannelShimmer(baseRgb, sample)),
+                        freshBaseAlpha,
+                        oldBaseAlpha,
+                        freshAlphaSamples: samples.map((sample) => getShimmeredTrailAlpha(freshBaseAlpha, sample, 0, 0.82, 0)),
+                        oldAlphaSamples: samples.map((sample) => getShimmeredTrailAlpha(oldBaseAlpha, sample, oldTrailIndex, 0.82, oldPulseTrailIndex)),
+                        oldFadedAlphaSamples: samples.map((sample) => getShimmeredTrailAlpha(oldBaseAlpha, sample, oldTrailIndex + 12, 0.82, oldPulseTrailIndex))
                     };
                 }
             };
@@ -2885,8 +2991,45 @@ void main() {
             const headLift = trailIndex <= 1 ? 1 : Math.max(depthFloor, 1 - (trailIndex * 0.018));
             return clampUnit(profile.opacityScale * headLift);
         }
+        function createShimmerBrightnessFromRoll(roll) {
+            const normalizedRoll = clampUnit(Number.isFinite(roll) ? roll : 0.5);
+            return SHIMMER_MIN_BRIGHTNESS + ((SHIMMER_MAX_BRIGHTNESS - SHIMMER_MIN_BRIGHTNESS) * normalizedRoll);
+        }
+        function getRandomShimmerBrightness() {
+            return createShimmerBrightnessFromRoll(getRandomValue());
+        }
+        function getRandomBrightShimmerBrightness() {
+            return createShimmerBrightnessFromRoll(0.5 + (getRandomValue() * 0.5));
+        }
         function getTrailItemShimmerBrightness(trailItem) {
-            return clampUnit(trailItem?.shimmerBrightness ?? SHIMMER_DEFAULT_BRIGHTNESS);
+            const brightness = trailItem?.shimmerBrightness ?? SHIMMER_DEFAULT_BRIGHTNESS;
+            if (!Number.isFinite(brightness)) { return SHIMMER_DEFAULT_BRIGHTNESS; }
+            return Math.max(SHIMMER_MIN_BRIGHTNESS, Math.min(SHIMMER_MAX_BRIGHTNESS, brightness));
+        }
+        function getShimmerBrightAmount(shimmerBrightness) {
+            return clampUnit((shimmerBrightness - SHIMMER_DEFAULT_BRIGHTNESS) / (SHIMMER_MAX_BRIGHTNESS - SHIMMER_DEFAULT_BRIGHTNESS));
+        }
+        function getShimmerPulseChance() {
+            return DEFAULT_SHIMMER_PULSE_CHANCE * centeredPercentFactor(currentGlyphMutationPercent);
+        }
+        function applyGreenChannelShimmer(rgb, shimmerBrightness) {
+            const greenMultiplier = shimmerBrightness < SHIMMER_DEFAULT_BRIGHTNESS
+                ? shimmerBrightness
+                : 1 + ((shimmerBrightness - SHIMMER_DEFAULT_BRIGHTNESS) * 0.45);
+            return [
+                rgb?.[0] ?? 57,
+                Math.max(0, Math.min(255, (rgb?.[1] ?? 255) * greenMultiplier)),
+                rgb?.[2] ?? 20
+            ];
+        }
+        function getShimmeredTrailAlpha(baseAlpha, shimmerBrightness, trailIndex = 0, columnOpacity = 1, shimmerPulseTrailIndex = null) {
+            const normalAlpha = clampUnit(baseAlpha * Math.min(shimmerBrightness, SHIMMER_DEFAULT_BRIGHTNESS));
+            const brightAmount = getShimmerBrightAmount(shimmerBrightness);
+            if (brightAmount <= 0 || !Number.isFinite(shimmerPulseTrailIndex)) { return normalAlpha; }
+            const pulseAge = Math.max(0, trailIndex - shimmerPulseTrailIndex);
+            const pulseTailAlpha = trailOpacityCache[pulseAge] ?? 0;
+            const pulseAlpha = clampUnit(pulseTailAlpha * columnOpacity * shimmerBrightness);
+            return Math.max(normalAlpha, pulseAlpha);
         }
         function getColumnLeaderRgb(profile, trailIndex = 0) {
             if (isConstructMode) { return null; }
@@ -2911,12 +3054,50 @@ void main() {
             const finalColumnFps = Math.max(0.05, columnFps);
             return 1000 / finalColumnFps;
         }
+        function getCrtSourceScale() {
+            if (!isCrtAdaptiveScaleEnabled) {
+                return CRT_SOURCE_SCALE;
+            }
+            const viewportPixels = Math.max(1, window.innerWidth * window.innerHeight);
+            if (viewportPixels >= 3200000) {
+                return CRT_ADAPTIVE_SOURCE_SCALE_HUGE;
+            }
+            if (viewportPixels >= 2000000) {
+                return CRT_ADAPTIVE_SOURCE_SCALE_LARGE;
+            }
+            if (viewportPixels >= 1300000) {
+                return CRT_ADAPTIVE_SOURCE_SCALE_MEDIUM;
+            }
+            return CRT_SOURCE_SCALE;
+        }
+        function getCrtAdaptiveScaleDetailText() {
+            const scale = getCrtSourceScale();
+            const percent = Math.round(scale * 100);
+            const sourceWidth = Math.max(1, Math.floor(window.innerWidth * scale));
+            const sourceHeight = Math.max(1, Math.floor(window.innerHeight * scale));
+            const modeLabel = isCrtAdaptiveScaleEnabled ? 'adaptive' : 'fixed';
+            const viewportPixels = Math.max(1, window.innerWidth * window.innerHeight);
+            let reason = 'native viewport size';
+            if (isCrtAdaptiveScaleEnabled) {
+                if (viewportPixels >= 3200000) {
+                    reason = 'huge viewport';
+                } else if (viewportPixels >= 2000000) {
+                    reason = 'large viewport';
+                } else if (viewportPixels >= 1300000) {
+                    reason = 'medium viewport';
+                }
+            }
+            return `// CRT rain source: ${modeLabel} ${percent}% (${sourceWidth}x${sourceHeight}, ${reason}).`;
+        }
         function setupCanvas() {
             canvas.width = window.innerWidth; canvas.height = window.innerHeight;
             crtCanvas.width = window.innerWidth; crtCanvas.height = window.innerHeight;
-            crtSourceCanvas.width = Math.max(1, Math.floor(window.innerWidth * CRT_SOURCE_SCALE));
-            crtSourceCanvas.height = Math.max(1, Math.floor(window.innerHeight * CRT_SOURCE_SCALE));
+            const crtSourceScale = getCrtSourceScale();
+            crtSourceCanvas.width = Math.max(1, Math.floor(window.innerWidth * crtSourceScale));
+            crtSourceCanvas.height = Math.max(1, Math.floor(window.innerHeight * crtSourceScale));
             crtUiCanvas.width = window.innerWidth; crtUiCanvas.height = window.innerHeight;
+            framePerformanceMetrics.crtSourceScale = crtSourceScale;
+            updateCrtAdaptiveScaleDetail();
             updateTailLengthDisplay();
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             columns = effectiveColumnWidth > 0 ? Math.max(1, Math.ceil(canvas.width / effectiveColumnWidth) + 2) : 1;
@@ -2946,6 +3127,45 @@ void main() {
             }
             return shader;
         }
+        function setupMatrixRainRenderer() {
+            if (!crtGl || matrixRainGpuReady) { return; }
+            try {
+                const vertexShader = createWebGlShader(crtGl, crtGl.VERTEX_SHADER, getInlineShaderSource('matrix-rain-vertex-shader'), 'Matrix rain vertex shader compilation failed.');
+                const fragmentShader = createWebGlShader(crtGl, crtGl.FRAGMENT_SHADER, getInlineShaderSource('matrix-rain-fragment-shader'), 'Matrix rain fragment shader compilation failed.');
+                matrixRainProgram = crtGl.createProgram();
+                crtGl.attachShader(matrixRainProgram, vertexShader);
+                crtGl.attachShader(matrixRainProgram, fragmentShader);
+                crtGl.linkProgram(matrixRainProgram);
+                if (!crtGl.getProgramParameter(matrixRainProgram, crtGl.LINK_STATUS)) {
+                    throw new Error(crtGl.getProgramInfoLog(matrixRainProgram) || 'Matrix rain shader link failed.');
+                }
+
+                matrixRainAttributeLocations = {
+                    position: crtGl.getAttribLocation(matrixRainProgram, 'aPosition'),
+                    texCoord: crtGl.getAttribLocation(matrixRainProgram, 'aTexCoord'),
+                    color: crtGl.getAttribLocation(matrixRainProgram, 'aColor')
+                };
+                matrixRainUniforms = {
+                    resolution: crtGl.getUniformLocation(matrixRainProgram, 'u_resolution'),
+                    glyphAtlas: crtGl.getUniformLocation(matrixRainProgram, 'u_glyphAtlas')
+                };
+                matrixRainVertexBuffer = crtGl.createBuffer();
+                matrixRainFramebuffer = crtGl.createFramebuffer();
+                matrixRainGlyphAtlasTexture = crtGl.createTexture();
+                crtGl.bindTexture(crtGl.TEXTURE_2D, matrixRainGlyphAtlasTexture);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_S, crtGl.CLAMP_TO_EDGE);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_WRAP_T, crtGl.CLAMP_TO_EDGE);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MIN_FILTER, crtGl.LINEAR);
+                crtGl.texParameteri(crtGl.TEXTURE_2D, crtGl.TEXTURE_MAG_FILTER, crtGl.LINEAR);
+                matrixRainGpuReady = true;
+            } catch (error) {
+                matrixRainGpuReady = false;
+                if (!matrixRainGpuWarningShown) {
+                    console.warn('// Matrix rain GPU renderer unavailable; falling back to Canvas 2D rain.', error);
+                    matrixRainGpuWarningShown = true;
+                }
+            }
+        }
         function setupCrtRenderer() {
             if (!crtGl) {
                 bodyElement.classList.add('crt-unavailable');
@@ -2958,7 +3178,11 @@ void main() {
 
             crtGl.viewport(0, 0, crtCanvas.width, crtCanvas.height);
 
-            if (crtReady) { return; }
+            if (crtReady) {
+                setupMatrixRainRenderer();
+                ensureCrtTextureSize();
+                return;
+            }
 
             try {
                 const vertexShader = createWebGlShader(crtGl, crtGl.VERTEX_SHADER, getInlineShaderSource('crt-vertex-shader'), 'CRT vertex shader compilation failed.');
@@ -3026,6 +3250,7 @@ void main() {
 
                 crtReady = true;
                 bodyElement.classList.remove('crt-unavailable');
+                setupMatrixRainRenderer();
                 ensureCrtTextureSize();
                 updateCrtSafeArea();
             } catch (error) {
@@ -3046,6 +3271,12 @@ void main() {
                 crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtSourceCanvas.width, crtSourceCanvas.height, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, null);
                 crtTextureWidth = crtSourceCanvas.width;
                 crtTextureHeight = crtSourceCanvas.height;
+                crtMatrixTextureFromGpu = false;
+                if (matrixRainFramebuffer) {
+                    crtGl.bindFramebuffer(crtGl.FRAMEBUFFER, matrixRainFramebuffer);
+                    crtGl.framebufferTexture2D(crtGl.FRAMEBUFFER, crtGl.COLOR_ATTACHMENT0, crtGl.TEXTURE_2D, crtTexture, 0);
+                    crtGl.bindFramebuffer(crtGl.FRAMEBUFFER, null);
+                }
             }
             if (crtUiTexture && crtUiCanvas.width > 0 && crtUiCanvas.height > 0 && (crtUiTextureWidth !== crtUiCanvas.width || crtUiTextureHeight !== crtUiCanvas.height)) {
                 crtGl.activeTexture(crtGl.TEXTURE1);
@@ -3797,7 +4028,8 @@ void main() {
                     trailItem.char = getRandomMatrixGlyph();
                     trailItem.flipped = true;
                     trailItem.lastFlipTime = Date.now();
-                    trailItem.shimmerBrightness = getRandomValue();
+                    trailItem.shimmerBrightness = getRandomShimmerBrightness();
+                    trailItem.shimmerPulseTrailIndex = 0;
                 });
             });
         }
@@ -3841,11 +4073,22 @@ void main() {
 
             const baseTrailOpacity = trailIndex > 0 ? getTrailOpacity(trailIndex) : 1;
             if (kind === 'trail') {
+                const trailOpacityMultiplier = Math.max(0, options.opacityMultiplier ?? 1);
+                const shimmerBrightness = Math.max(0, options.shimmerBrightness ?? trailOpacityMultiplier);
+                const baseTrailAlpha = trailOpacityMultiplier;
+                const trailOpacity = getShimmeredTrailAlpha(baseTrailAlpha, shimmerBrightness);
+                const shimmerBrightAmount = getShimmerBrightAmount(shimmerBrightness);
+                const trailRgb = applyGreenChannelShimmer(matrixRenderStyles.trailRgb, shimmerBrightness);
                 return {
-                    fillStyle: trailFillStyleCache[trailIndex] || `rgba(${matrixRenderStyles.trailColorRgb}, 0)`,
-                    shadowColor: 'transparent',
-                    shadowBlur: 0,
-                    glowPasses: []
+                    fillStyle: toRgbaString(trailRgb, trailOpacity),
+                    shadowColor: shimmerBrightAmount > 0 ? toRgbaString(trailRgb, 0.48 * shimmerBrightAmount) : 'transparent',
+                    shadowBlur: shimmerBrightAmount > 0 ? 6 + (10 * shimmerBrightAmount) : 0,
+                    glowPasses: shimmerBrightAmount > 0 ? [{
+                        fillStyle: toRgbaString(trailRgb, 0.32 * shimmerBrightAmount),
+                        shadowColor: toRgbaString(trailRgb, 0.62 * shimmerBrightAmount),
+                        shadowBlur: 8 + (14 * shimmerBrightAmount),
+                        compositeOperation: 'lighter'
+                    }] : []
                 };
             }
             if (kind === 'glitch') {
@@ -3909,7 +4152,7 @@ void main() {
                 return;
             }
             renderMatrixGlyphWithStyleToContext(ctx, char, x, y, resolveMatrixGlyphStyle(kind, trailIndex, options), {
-                alphaMultiplier: options.opacityMultiplier ?? 1
+                alphaMultiplier: 1
             });
         }
         function drawMatrixHighlightGlyph(char, x, y, kind, trailIndex = 0, maskRects = [], timingState = {}) {
@@ -3924,6 +4167,216 @@ void main() {
             renderMatrixGlyphWithStyleToContext(ctx, char, x, y, resolveMatrixGlyphStyle(kind, trailIndex, timingState), {
                 alphaMultiplier: opacityMultiplier
             });
+        }
+        function shouldUseGpuMatrixRain() {
+            return isCrtMode
+                && crtReady
+                && crtCompositeAvailable
+                && crtGl
+                && matrixRainGpuReady
+                && matrixRainProgram
+                && matrixRainFramebuffer
+                && matrixRainGlyphAtlasTexture
+                && crtSourceCanvas.width > 0
+                && crtSourceCanvas.height > 0;
+        }
+        function getMatrixRainAtlasKey() {
+            if (!matrixRenderStyles) {
+                refreshMatrixRenderStyles();
+            }
+            return [
+                currentFontSize,
+                matrixRenderStyles.fontFamily,
+                currentRainGlyphSet,
+                isConstructMode ? 'construct' : 'matrix'
+            ].join('|');
+        }
+        function ensureMatrixRainGlyphAtlas() {
+            if (!crtGl || !matrixRainAtlasCtx || !matrixRainGlyphAtlasTexture) { return false; }
+            const nextKey = getMatrixRainAtlasKey();
+            if (matrixRainAtlasKey === nextKey && matrixRainAtlasEntries.size > 0) { return true; }
+
+            const glyphs = getActiveMatrixGlyphs();
+            const padding = Math.max(4, Math.ceil(currentFontSize * 0.25));
+            const cellSize = Math.max(16, Math.ceil(currentFontSize * 1.45));
+            const maxTextureSize = Math.min(4096, crtGl.getParameter(crtGl.MAX_TEXTURE_SIZE) || 4096);
+            const columnsPerRow = Math.max(1, Math.floor(maxTextureSize / cellSize));
+            const rows = Math.max(1, Math.ceil(glyphs.length / columnsPerRow));
+            matrixRainAtlasCanvas.width = Math.min(maxTextureSize, columnsPerRow * cellSize);
+            matrixRainAtlasCanvas.height = Math.min(maxTextureSize, rows * cellSize);
+            matrixRainAtlasCtx.clearRect(0, 0, matrixRainAtlasCanvas.width, matrixRainAtlasCanvas.height);
+            matrixRainAtlasCtx.font = `${currentFontSize}px ${matrixRenderStyles.fontFamily}`;
+            matrixRainAtlasCtx.textBaseline = 'top';
+            matrixRainAtlasCtx.textAlign = 'left';
+            matrixRainAtlasCtx.fillStyle = '#ffffff';
+
+            matrixRainAtlasEntries = new Map();
+            glyphs.forEach((glyph, index) => {
+                const column = index % columnsPerRow;
+                const row = Math.floor(index / columnsPerRow);
+                const x = column * cellSize;
+                const y = row * cellSize;
+                if (y + cellSize > matrixRainAtlasCanvas.height) { return; }
+                matrixRainAtlasCtx.fillText(glyph, x + padding, y + padding);
+                matrixRainAtlasEntries.set(glyph, {
+                    u0: x / matrixRainAtlasCanvas.width,
+                    v0: y / matrixRainAtlasCanvas.height,
+                    u1: (x + cellSize) / matrixRainAtlasCanvas.width,
+                    v1: (y + cellSize) / matrixRainAtlasCanvas.height,
+                    cellSize,
+                    padding
+                });
+            });
+
+            crtGl.activeTexture(crtGl.TEXTURE2);
+            crtGl.bindTexture(crtGl.TEXTURE_2D, matrixRainGlyphAtlasTexture);
+            crtGl.pixelStorei(crtGl.UNPACK_FLIP_Y_WEBGL, false);
+            crtGl.texImage2D(crtGl.TEXTURE_2D, 0, crtGl.RGBA, crtGl.RGBA, crtGl.UNSIGNED_BYTE, matrixRainAtlasCanvas);
+            matrixRainAtlasKey = nextKey;
+            return matrixRainAtlasEntries.size > 0;
+        }
+        function appendMatrixRainGlyph(vertices, glyph, x, y, fontScale, sourceScaleX, sourceScaleY, rgb, alpha) {
+            const entry = matrixRainAtlasEntries.get(glyph);
+            if (!entry || alpha <= 0) { return; }
+            const scaledCellWidth = entry.cellSize * fontScale * sourceScaleX;
+            const scaledCellHeight = entry.cellSize * fontScale * sourceScaleY;
+            const scaledPaddingX = entry.padding * fontScale * sourceScaleX;
+            const scaledPaddingY = entry.padding * fontScale * sourceScaleY;
+            const x0 = (x * sourceScaleX) - scaledPaddingX;
+            const y0 = (y * sourceScaleY) - scaledPaddingY;
+            const x1 = x0 + scaledCellWidth;
+            const y1 = y0 + scaledCellHeight;
+            const r = (rgb?.[0] ?? 57) / 255;
+            const g = (rgb?.[1] ?? 255) / 255;
+            const b = (rgb?.[2] ?? 20) / 255;
+            const a = clampUnit(alpha);
+            vertices.push(
+                x0, y0, entry.u0, entry.v0, r, g, b, a,
+                x1, y0, entry.u1, entry.v0, r, g, b, a,
+                x0, y1, entry.u0, entry.v1, r, g, b, a,
+                x0, y1, entry.u0, entry.v1, r, g, b, a,
+                x1, y0, entry.u1, entry.v0, r, g, b, a,
+                x1, y1, entry.u1, entry.v1, r, g, b, a
+            );
+        }
+        function renderGpuMatrixRainFrame(now) {
+            if (!shouldUseGpuMatrixRain() || !ensureMatrixRainGlyphAtlas()) { return false; }
+            if (!matrixRenderStyles) {
+                refreshMatrixRenderStyles();
+            }
+            ensureCrtTextureSize();
+            const frameStart = performance.now();
+            const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
+            const glitchFlipChance = getGlitchFlipChance();
+            const shimmerPulseChance = getShimmerPulseChance();
+            const sourceScaleX = crtSourceCanvas.width / Math.max(1, canvas.width);
+            const sourceScaleY = crtSourceCanvas.height / Math.max(1, canvas.height);
+            const vertices = [];
+            const trailRgb = matrixRenderStyles.trailRgb;
+
+            for (let i = 0; i < drops.length; i++) {
+                const drop = drops[i];
+                const profile = columnProfiles[i] || null;
+                if (now - drop.lastUpdateTime >= drop.delay) {
+                    const newLeaderChar = getRandomMatrixGlyph();
+                    if (!trails[i]) { trails[i] = []; }
+                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now, gapSeed: getRandomValue(), shimmerBrightness: getRandomShimmerBrightness(), shimmerPulseTrailIndex: 0 });
+                    const columnTrailLength = getColumnTrailLength(profile);
+                    if (trails[i].length > columnTrailLength) { trails[i].pop(); }
+                    drop.y++;
+                    if (drop.y * currentFontSize > canvas.height && getRandomValue() > 0.975) {
+                        drop.y = 0;
+                        trails[i] = [];
+                        if (profile) {
+                            profile.delayRoll = getRandomValue();
+                        }
+                        drop.delay = calculateColumnDelay(currentRainFPS, profile);
+                    }
+                    drop.lastUpdateTime = now;
+                }
+                if (!trails[i]) { continue; }
+                const fontScale = isFlatGridMode ? 1 : (profile?.depth ? RAIN_DEPTH_PROFILES[profile.depth].scale : 1);
+                for (let k = 0; k < trails[i].length; k++) {
+                    const trailItem = trails[i][k];
+                    const trailYPos = (drop.y - k) * currentFontSize;
+                    if (trailYPos < -currentFontSize || trailYPos > canvas.height + currentFontSize) { continue; }
+                    if (!shouldRenderTrailItem(profile, k, trailItem)) { continue; }
+                    const trailXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now);
+                    const glyphOpacity = getColumnGlyphOpacity(profile, k);
+                    const canFlipTrailGlyph = k > 0 && (!trailItem.lastFlipTime || now - trailItem.lastFlipTime >= (profile?.flipCooldownMs || GLITCH_FLIP_COOLDOWN_MS));
+                    if (canFlipTrailGlyph && getRandomValue() < glitchFlipChance * (profile?.flipChanceScale || 1)) {
+                        let flippedChar;
+                        do {
+                            flippedChar = getRandomMatrixGlyph();
+                        } while (flippedChar === trailItem.char && getActiveMatrixGlyphs().length > 1);
+                        trailItem.char = flippedChar;
+                        trailItem.flipped = true;
+                        trailItem.lastFlipTime = now;
+                        trailItem.shimmerBrightness = getRandomShimmerBrightness();
+                        trailItem.shimmerPulseTrailIndex = k;
+                    } else if (canFlipTrailGlyph && getRandomValue() < shimmerPulseChance * (profile?.flipChanceScale || 1)) {
+                        trailItem.lastFlipTime = now;
+                        trailItem.shimmerBrightness = getRandomBrightShimmerBrightness();
+                        trailItem.shimmerPulseTrailIndex = k;
+                    }
+                    const shimmerBrightness = getTrailItemShimmerBrightness(trailItem);
+                    const trailAlpha = getShimmeredTrailAlpha((trailOpacityCache[k] ?? 0) * glyphOpacity, shimmerBrightness, k, glyphOpacity, trailItem.shimmerPulseTrailIndex);
+                    const shimmerRgb = applyGreenChannelShimmer(trailRgb, shimmerBrightness);
+                    appendMatrixRainGlyph(vertices, trailItem.char, trailXPos, trailYPos, fontScale, sourceScaleX, sourceScaleY, shimmerRgb, trailAlpha);
+                }
+                if (trails[i][0]) {
+                    const leaderXPos = getColumnXPosition(i, effectiveColumnWidth, profile, now);
+                    const leaderYPos = drop.y * currentFontSize;
+                    if (leaderYPos >= -currentFontSize && leaderYPos <= canvas.height + currentFontSize) {
+                        appendMatrixRainGlyph(vertices, trails[i][0].char, leaderXPos, leaderYPos, fontScale, sourceScaleX, sourceScaleY, trailRgb, getColumnGlyphOpacity(profile, 0));
+                    }
+                }
+            }
+
+            const gl = crtGl;
+            const bgRgb = isConstructMode
+                ? parseRgbTriplet(getComputedStyle(bodyElement).getPropertyValue('--construct-bg-rgb').trim())
+                : [0, 0, 0];
+            gl.bindFramebuffer(gl.FRAMEBUFFER, matrixRainFramebuffer);
+            gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, crtTexture, 0);
+            gl.viewport(0, 0, crtSourceCanvas.width, crtSourceCanvas.height);
+            gl.clearColor(bgRgb[0] / 255, bgRgb[1] / 255, bgRgb[2] / 255, 1);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            if (vertices.length > 0) {
+                const glyphCount = vertices.length / (MATRIX_RAIN_VERTEX_STRIDE * MATRIX_RAIN_VERTICES_PER_GLYPH);
+                if (glyphCount > matrixRainVertexCapacity) {
+                    matrixRainVertexCapacity = glyphCount;
+                }
+                gl.useProgram(matrixRainProgram);
+                gl.activeTexture(gl.TEXTURE2);
+                gl.bindTexture(gl.TEXTURE_2D, matrixRainGlyphAtlasTexture);
+                gl.uniform1i(matrixRainUniforms.glyphAtlas, 2);
+                gl.uniform2f(matrixRainUniforms.resolution, crtSourceCanvas.width, crtSourceCanvas.height);
+                gl.bindBuffer(gl.ARRAY_BUFFER, matrixRainVertexBuffer);
+                gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW);
+                const stride = MATRIX_RAIN_VERTEX_STRIDE * 4;
+                gl.enableVertexAttribArray(matrixRainAttributeLocations.position);
+                gl.vertexAttribPointer(matrixRainAttributeLocations.position, 2, gl.FLOAT, false, stride, 0);
+                gl.enableVertexAttribArray(matrixRainAttributeLocations.texCoord);
+                gl.vertexAttribPointer(matrixRainAttributeLocations.texCoord, 2, gl.FLOAT, false, stride, 2 * 4);
+                gl.enableVertexAttribArray(matrixRainAttributeLocations.color);
+                gl.vertexAttribPointer(matrixRainAttributeLocations.color, 4, gl.FLOAT, false, stride, 4 * 4);
+                gl.enable(gl.BLEND);
+                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+                gl.drawArrays(gl.TRIANGLES, 0, vertices.length / MATRIX_RAIN_VERTEX_STRIDE);
+                gl.disable(gl.BLEND);
+            }
+
+            gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+            crtMatrixTextureFromGpu = true;
+            crtManualSourceFrame = false;
+            framePerformanceMetrics.cpuMatrixDrawMs = 0;
+            framePerformanceMetrics.rainUpdateMs = performance.now() - frameStart;
+            framePerformanceMetrics.renderer = 'webgl';
+            framePerformanceMetrics.crtSourceScale = getCrtSourceScale();
+            framePerformanceMetrics.crtTextureUpload = 'gpu';
+            return true;
         }
         function renderCrtFrame() {
             if (!isCrtMode || !crtReady || !crtGl || !crtCompositeAvailable || !crtAttributeLocations) { return; }
@@ -3944,13 +4397,20 @@ void main() {
             ensureCrtTextureSize();
             crtGl.pixelStorei(crtGl.UNPACK_FLIP_Y_WEBGL, false);
             try {
-                crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, composeCrtSourceFrame());
+                let uploadedMatrixCanvas = false;
+                if (crtManualSourceFrame || !crtMatrixTextureFromGpu) {
+                    crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, composeCrtSourceFrame());
+                    uploadedMatrixCanvas = true;
+                    crtMatrixTextureFromGpu = false;
+                }
                 crtGl.activeTexture(crtGl.TEXTURE1);
                 crtGl.bindTexture(crtGl.TEXTURE_2D, crtUiTexture);
                 if (crtUiSnapshotDirty) {
                     repaintCrtUiLayer();
                     crtGl.texSubImage2D(crtGl.TEXTURE_2D, 0, 0, 0, crtGl.RGBA, crtGl.UNSIGNED_BYTE, crtUiCanvas);
                 }
+                framePerformanceMetrics.crtTextureUpload = uploadedMatrixCanvas ? 'canvas' : 'gpu';
+                crtManualSourceFrame = false;
             } catch (error) {
                 crtCompositeAvailable = false;
                 bodyElement.classList.add('crt-unavailable');
@@ -3985,9 +4445,14 @@ void main() {
             if (!matrixRenderStyles) {
                 refreshMatrixRenderStyles();
             }
+            if (shouldUseGpuMatrixRain() && renderGpuMatrixRainFrame(Date.now())) {
+                return;
+            }
+            crtMatrixTextureFromGpu = false;
             const effectiveColumnWidth = currentFontSize * COLUMN_SPACING_FACTOR;
             const now = Date.now();
             const glitchFlipChance = getGlitchFlipChance();
+            const shimmerPulseChance = getShimmerPulseChance();
 
             ctx.setTransform(1, 0, 0, 1, 0, 0);
             ctx.fillStyle = matrixRenderStyles.bgColor;
@@ -4001,7 +4466,7 @@ void main() {
                 const profile = columnProfiles[i] || null;
                 if (now - drop.lastUpdateTime >= drop.delay) {
                     const newLeaderChar = getRandomMatrixGlyph(); if (!trails[i]) trails[i] = [];
-                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now, gapSeed: getRandomValue() });
+                    trails[i].unshift({ char: newLeaderChar, flipped: false, updateTimestamp: now, gapSeed: getRandomValue(), shimmerBrightness: getRandomShimmerBrightness(), shimmerPulseTrailIndex: 0 });
                     const columnTrailLength = getColumnTrailLength(profile);
                     if (trails[i].length > columnTrailLength) { trails[i].pop(); }
                     drop.y++;
@@ -4026,11 +4491,18 @@ void main() {
                         if (canFlipTrailGlyph && getRandomValue() < glitchFlipChance * (profile?.flipChanceScale || 1)) {
                             let flippedChar; do { flippedChar = getRandomMatrixGlyph(); } while (flippedChar === trailItem.char && getActiveMatrixGlyphs().length > 1);
                             trailItem.char = flippedChar; trailItem.flipped = true; trailItem.lastFlipTime = now;
-                            trailItem.shimmerBrightness = getRandomValue();
+                            trailItem.shimmerBrightness = getRandomShimmerBrightness();
+                            trailItem.shimmerPulseTrailIndex = k;
+                        } else if (canFlipTrailGlyph && getRandomValue() < shimmerPulseChance * (profile?.flipChanceScale || 1)) {
+                            trailItem.lastFlipTime = now;
+                            trailItem.shimmerBrightness = getRandomBrightShimmerBrightness();
+                            trailItem.shimmerPulseTrailIndex = k;
                         }
-                        const shimmerOpacity = glyphOpacity * getTrailItemShimmerBrightness(trailItem);
+                        const shimmerBrightness = getTrailItemShimmerBrightness(trailItem);
+                        const shimmerOpacity = getShimmeredTrailAlpha((trailOpacityCache[k] ?? 0) * glyphOpacity, shimmerBrightness, k, glyphOpacity, trailItem.shimmerPulseTrailIndex);
                         drawMatrixGlyph(trailItem.char, trailXPos, trailYPos, 'trail', k, [], {
-                            opacityMultiplier: shimmerOpacity
+                            opacityMultiplier: shimmerOpacity,
+                            shimmerBrightness
                         });
                     }
                     if (trails[i][0]) {
@@ -4050,6 +4522,8 @@ void main() {
             framePerformanceMetrics.cpuMatrixDrawMs = performance.now() - frameStart;
             framePerformanceMetrics.rainUpdateMs = performance.now() - frameStart;
             framePerformanceMetrics.renderer = 'cpu';
+            framePerformanceMetrics.crtSourceScale = getCrtSourceScale();
+            framePerformanceMetrics.crtTextureUpload = isCrtMode ? 'canvas' : 'none';
             ctx.shadowColor = 'transparent';
             ctx.shadowBlur = 0;
         }
@@ -4176,6 +4650,7 @@ void main() {
             if (currentRainGlyphSet !== DEFAULT_RAIN_GLYPH_SET) { params.set('rain-glyphs', currentRainGlyphSet); }
             if (isExtractionMode) { params.set('extraction', 'on'); }
             if (!isCrtMode) { params.set('crt-effect', 'off'); }
+            if (!isCrtAdaptiveScaleEnabled) { params.set('crt-adaptive-scale', 'off'); }
             if (isConstructMode) { params.set('theme', 'construct'); }
             if (isInMatrixMode) { params.set('matrix-mode', 'on'); }
 
@@ -4252,6 +4727,7 @@ void main() {
             currentCrtJitterPercent = DEFAULT_CRT_JITTER_PERCENT;
             currentCrtDistortionDriftPercent = DEFAULT_CRT_DISTORTION_DRIFT_PERCENT;
             currentCrtStartupTimeMs = DEFAULT_CRT_STARTUP_TIME_MS;
+            isCrtAdaptiveScaleEnabled = DEFAULT_CRT_ADAPTIVE_SCALE;
             isConstructMode = DEFAULT_CONSTRUCT_MODE;
             selectionHistory = [];
             pendingNextOperatives = [];
@@ -4329,6 +4805,10 @@ void main() {
             if (crtEffectParam !== null) {
                 isCrtMode = !isURLValueOff(crtEffectParam);
             }
+            const crtAdaptiveScaleParam = getURLParamValue(urlParams, 'crt-adaptive-scale', ['crtAdaptiveScale']);
+            if (crtAdaptiveScaleParam !== null) {
+                isCrtAdaptiveScaleEnabled = !isURLValueOff(crtAdaptiveScaleParam);
+            }
             if (urlParams.has('crtFishbowl')) {
                 const fishbowlParam = parseInt(urlParams.get('crtFishbowl'), 10);
                 if (!isNaN(fishbowlParam) && fishbowlParam >= 0 && fishbowlParam <= 100) {
@@ -4395,6 +4875,7 @@ void main() {
             updateCrtJitterDisplay(currentCrtJitterPercent);
             updateCrtDistortionDriftDisplay(currentCrtDistortionDriftPercent);
             updateCrtStartupTimeDisplay(currentCrtStartupTimeMs);
+            updateCrtAdaptiveScaleButton();
             updateCrtMode();
 
             if (urlParams.has('theme') && urlParams.get('theme') === 'construct') {
@@ -4636,6 +5117,33 @@ void main() {
             if (crtStartupTimeValue) crtStartupTimeValue.textContent = `${(currentCrtStartupTimeMs / 1000).toFixed(1)}s`;
             markCrtSnapshotDirty();
         }
+        function updateCrtAdaptiveScaleButton() {
+            const isPressed = isCrtAdaptiveScaleEnabled;
+            if (crtAdaptiveScaleBtn) {
+                crtAdaptiveScaleBtn.setAttribute('aria-pressed', String(isPressed));
+                crtAdaptiveScaleBtn.textContent = isPressed ? '[A] Adaptive CRT Scale' : '[A] Fixed CRT Scale';
+                crtAdaptiveScaleBtn.classList.toggle('active', isPressed);
+            }
+            if (crtAdaptiveScaleLed) {
+                crtAdaptiveScaleLed.classList.toggle('active', isPressed);
+            }
+            updateCrtAdaptiveScaleDetail();
+            framePerformanceMetrics.crtSourceScale = getCrtSourceScale();
+            markCrtSnapshotDirty();
+        }
+        function updateCrtAdaptiveScaleDetail() {
+            if (crtAdaptiveScaleDetail) {
+                crtAdaptiveScaleDetail.textContent = getCrtAdaptiveScaleDetailText();
+            }
+        }
+        function handleCrtAdaptiveScaleChange(enabled) {
+            isCrtAdaptiveScaleEnabled = !!enabled;
+            updateCrtAdaptiveScaleButton();
+            if (isCrtMode) {
+                setupCanvas();
+                renderCurrentMatrixFrame();
+            }
+        }
         function syncEffectSubSettingsVisibility() {
             const isCrtVisible = isCrtMode;
             crtSubSettings.classList.toggle('hidden', !isCrtVisible);
@@ -4750,6 +5258,7 @@ void main() {
             updateCrtJitterDisplay(DEFAULT_CRT_JITTER_PERCENT);
             updateCrtDistortionDriftDisplay(DEFAULT_CRT_DISTORTION_DRIFT_PERCENT);
             updateCrtStartupTimeDisplay(DEFAULT_CRT_STARTUP_TIME_MS);
+            handleCrtAdaptiveScaleChange(DEFAULT_CRT_ADAPTIVE_SCALE);
             finishEffectReset({ ...options, announce: getResetAnnouncement(options, '// CRT tube effects reset.') });
         }
         function resetAllEffectsToDefaults() {
@@ -6640,6 +7149,11 @@ void main() {
             isCrtMode = !isCrtMode;
             updateCrtMode();
             showTemporaryMessage(`// CRT Mode ${isCrtMode ? 'Engaged' : 'Disengaged'}.`);
+            updateURL();
+        });
+        crtAdaptiveScaleBtn.addEventListener('click', () => {
+            handleCrtAdaptiveScaleChange(!isCrtAdaptiveScaleEnabled);
+            showTemporaryMessage(`// CRT source scale ${isCrtAdaptiveScaleEnabled ? 'adaptive' : 'fixed'}.`);
             updateURL();
         });
         // Modal & Palette Listeners
