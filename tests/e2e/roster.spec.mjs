@@ -129,6 +129,27 @@ test.describe('roster management', () => {
     await expect((await getRosterFromUrl(page)).some((entry) => entry.name === 'Cypher')).toBe(false);
   });
 
+  test('handles roster names with selector metacharacters', async ({ page }) => {
+    const specialName = 'Cipher "One"]';
+
+    await openApp(page, { crt: 'false', names: specialName });
+    await page.locator('#selectedNameDisplayWrapper').click();
+    await expect(page.locator('#selectedNameDisplay')).toHaveText(specialName);
+    await openMenu(page);
+    await expect(page.locator('#nameList .name-item').filter({ hasText: specialName })).toHaveClass(/name-item-selected/);
+
+    await openApp(page, { crt: 'false' });
+    await openMenu(page);
+    await addOperative(page, { name: specialName });
+    const specialRow = page.locator('#nameList .name-item').filter({ hasText: specialName });
+    await expect(specialRow).toBeVisible();
+    await specialRow.locator('.remove-name-btn').evaluate((element) => element.click());
+    await page.waitForTimeout(350);
+
+    await expect(specialRow).toHaveCount(0);
+    await expect((await getRosterFromUrl(page)).some((entry) => entry.name === specialName)).toBe(false);
+  });
+
   test('reorders operatives and keeps the order after reload', async ({ page }) => {
     await openApp(page, { crt: 'false' });
     await openMenu(page);

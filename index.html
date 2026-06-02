@@ -2493,7 +2493,6 @@ void main() {
             ...Array.from(MATRIX_GLOBAL_SCRIPT_GLYPHS),
             ...MATRIX_PICTOGRAPH_GLYPHS
         ];
-        const MATRIX_CHARS = MATRIX_EXPANDED_GLYPHS;
         const TYPING_INTERVAL_MS = 10;
         const EMPTY_QUOTE = "Everything that has a beginning has an end.";
         const DEFAULT_TITLE = "Random Name Picker - Matrix Edition";
@@ -2569,7 +2568,6 @@ void main() {
         const CRT_INTERACTIVE_SELECTOR = 'button, input, textarea, label, .command-item, .drag-handle, .name-span, #selectedNameDisplayWrapper';
         const E2E_URL_PARAMS = new URLSearchParams(window.location.search);
         const E2E_DEFAULT_SEED = 1;
-        const MANAGED_TEXT_INPUT_SELECTOR = '#managementPanel input[type="text"]';
         const NUMERIC_SETTINGS = [
             { urlKey: 'brightness', defaultValue: DEFAULT_BRIGHTNESS_PERCENT, slider: brightnessSlider, apply: updateBrightness, get: () => currentBrightnessPercent, parse: parseIntegerSetting },
             { urlKey: 'speed', defaultValue: DEFAULT_RAIN_FPS, slider: speedSlider, apply: handleSpeedChange, get: () => currentRainFPS, parse: parseIntegerSetting },
@@ -2624,9 +2622,6 @@ void main() {
         }
         function getShaderTimeSeconds() {
             return e2eState.enabled ? 0 : performance.now() / 1000;
-        }
-        function isE2eVisualSceneActive() {
-            return false;
         }
         function renderCurrentMatrixFrame() {
             drawMatrixRain();
@@ -3916,10 +3911,6 @@ void main() {
             const parsed = parseInt(value, 10);
             return Number.isFinite(parsed) ? parsed : null;
         }
-        function parseFloatSetting(value) {
-            const parsed = parseFloat(value);
-            return Number.isFinite(parsed) ? parsed : null;
-        }
         function getURLParamValue(urlParams, urlKey, legacyUrlKeys = []) {
             const keys = [urlKey, ...legacyUrlKeys];
             const foundKey = keys.find((key) => urlParams.has(key));
@@ -3966,10 +3957,6 @@ void main() {
                 });
                 setting.slider.addEventListener('change', updateURL);
             });
-        }
-        function smoothStep01(value) {
-            const t = clampUnit(value);
-            return t * t * (3 - (2 * t));
         }
         function parseRgbTriplet(rgbString) {
             return rgbString.split(',').map(part => Math.max(0, Math.min(255, parseInt(part.trim(), 10) || 0))).slice(0, 3);
@@ -4134,9 +4121,6 @@ void main() {
             targetCtx.shadowColor = style.shadowColor || 'transparent';
             targetCtx.shadowBlur = style.shadowBlur || 0;
         }
-        function applyMatrixGlyphStyle(style) {
-            applyMatrixGlyphStyleToContext(ctx, style);
-        }
         function renderMatrixGlyphWithStyleToContext(targetCtx, char, x, y, style, alphaOptions = 1) {
             const options = typeof alphaOptions === 'number' ? { alphaMultiplier: alphaOptions } : (alphaOptions || {});
             const targetAlpha = clampUnit(options.alphaMultiplier ?? 1);
@@ -4165,9 +4149,6 @@ void main() {
                 targetCtx.fillText(char, x, y);
                 targetCtx.restore();
             }
-        }
-        function renderMatrixGlyphWithStyle(char, x, y, style) {
-            renderMatrixGlyphWithStyleToContext(ctx, char, x, y, style);
         }
         function drawMatrixGlyph(char, x, y, kind, trailIndex = 0, maskRects = [], options = {}) {
             if (kind !== 'trail') {
@@ -4641,11 +4622,14 @@ void main() {
                 return value;
             }
         }
-        function serializeRosterForURL() {
-            return JSON.stringify(allNames.map(op => ({
-                name: op.name,
-                value: op.value || ''
-            })));
+        function escapeCssAttributeValue(value) {
+            if (window.CSS && typeof window.CSS.escape === 'function') {
+                return window.CSS.escape(String(value));
+            }
+            return String(value).replace(/["\\]/g, '\\$&');
+        }
+        function getOperativeListItemByName(name) {
+            return nameListElement.querySelector(`li[data-name="${escapeCssAttributeValue(name)}"]`);
         }
         function appendRosterToURLParams(params) {
             allNames.forEach((operative) => {
@@ -5946,7 +5930,7 @@ void main() {
             }
         }
         function removeName(nameToRemove) {
-            const itemElement = nameListElement.querySelector(`li[data-name="${nameToRemove}"]`); if (itemElement && !itemElement.classList.contains('removing')) {
+            const itemElement = getOperativeListItemByName(nameToRemove); if (itemElement && !itemElement.classList.contains('removing')) {
                 itemElement.classList.add('removing'); setTimeout(() => {
                     allNames = allNames.filter(op => op.name !== nameToRemove);
                     selectionHistory = selectionHistory.filter(name => name !== nameToRemove);
@@ -6017,7 +6001,7 @@ void main() {
                 }
 
                 // PERFORMANCE: Update the specific list item instead of re-rendering
-                const itemElement = nameListElement.querySelector(`li[data-name="${selectedName}"]`);
+                const itemElement = getOperativeListItemByName(selectedName);
                 if (itemElement) {
                     itemElement.classList.add('name-item-selected');
                     itemElement.draggable = false;
