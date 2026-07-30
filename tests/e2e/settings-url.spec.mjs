@@ -3,6 +3,20 @@ import { openApp, expectUrlToContain, waitForAppReady } from '../helpers/app.mjs
 import { openMenu } from '../helpers/roster.mjs';
 
 test.describe('settings and URL persistence', () => {
+  test('schema titles preserve literal percent escape sequences', async ({ page }) => {
+    const schemaTitle = '%20 OPERATIVE';
+    await openApp(page, { title: schemaTitle, crt: 'false' });
+
+    await expect(page.locator('#titleInput')).toHaveValue(schemaTitle);
+    await expect(page).toHaveTitle(schemaTitle);
+
+    await page.reload();
+    await waitForAppReady(page);
+
+    await expect(page.locator('#titleInput')).toHaveValue(schemaTitle);
+    await expect(page).toHaveTitle(schemaTitle);
+  });
+
   test('toggles and sliders persist through the URL and reload', async ({ page }) => {
     test.setTimeout(150000);
     await openApp(page, { crt: 'false', flatGrid: 'false' });
