@@ -2182,7 +2182,7 @@ void main() {
         const canvas = document.getElementById('matrixCanvas');
         const ctx = canvas.getContext('2d');
         const crtCanvas = document.getElementById('crtCanvas');
-        const crtGl = crtCanvas.getContext('webgl', { preserveDrawingBuffer: false });
+        let crtGl = null;
         const crtSourceCanvas = document.createElement('canvas');
         const crtSourceCtx = crtSourceCanvas.getContext('2d');
         const crtUiCanvas = document.createElement('canvas');
@@ -3186,6 +3186,12 @@ void main() {
             }
         }
         function setupCrtRenderer() {
+            if (crtCanvas.width !== window.innerWidth || crtCanvas.height !== window.innerHeight) {
+                return;
+            }
+            if (!crtGl) {
+                crtGl = crtCanvas.getContext('webgl', { preserveDrawingBuffer: false });
+            }
             if (!crtGl) {
                 bodyElement.classList.add('crt-unavailable');
                 if (!crtWarningShown) {
@@ -4637,18 +4643,30 @@ void main() {
                 params.append('alias', operative.value || '');
             });
         }
+        function deduplicateRoster(roster) {
+            const seenNames = new Set();
+            return roster.filter((operative) => {
+                const normalizedName = operative.name.toLowerCase();
+                if (seenNames.has(normalizedName)) {
+                    console.warn(`// Duplicate operative "${operative.name}" ignored in URL state.`);
+                    return false;
+                }
+                seenNames.add(normalizedName);
+                return true;
+            });
+        }
         function parseNamedRosterFromURL(urlParams) {
             const names = urlParams.getAll('name').map(name => name.trim());
             if (names.length === 0) { return null; }
             const aliases = urlParams.getAll('alias');
-            return names.map((name, index) => {
+            return deduplicateRoster(names.map((name, index) => {
                 if (!name) { return null; }
                 return {
                     name,
                     value: aliases[index] || '',
                     selected: false
                 };
-            }).filter(Boolean);
+            }).filter(Boolean));
         }
         function parseRosterFromURL(urlParams) {
             const namedRoster = parseNamedRosterFromURL(urlParams);
@@ -4659,11 +4677,11 @@ void main() {
                 try {
                     const parsedRoster = JSON.parse(urlParams.get('roster') || '[]');
                     if (Array.isArray(parsedRoster)) {
-                        return parsedRoster.map((entry) => {
+                        return deduplicateRoster(parsedRoster.map((entry) => {
                             const name = typeof entry?.name === 'string' ? entry.name.trim() : '';
                             const value = typeof entry?.value === 'string' ? entry.value : '';
                             return name ? { name, value, selected: false } : null;
-                        }).filter(Boolean);
+                        }).filter(Boolean));
                     }
                 } catch (error) {
                     console.warn('// Roster URL state ignored: malformed roster payload.', error);
@@ -4672,12 +4690,12 @@ void main() {
             if (urlParams.has('names')) {
                 const namesParam = urlParams.get('names');
                 if (namesParam) {
-                    return namesParam.split(',').map(pair => {
+                    return deduplicateRoster(namesParam.split(',').map(pair => {
                         const parts = pair.split('|').map(part => safeDecodeUrlComponent(part.trim()));
                         const name = parts[0];
                         const value = parts[1] || '';
                         return name ? { name, value, selected: false } : null;
-                    }).filter(Boolean);
+                    }).filter(Boolean));
                 }
             }
             return null;
@@ -4788,7 +4806,7 @@ void main() {
             if (urlParams.has('title')) {
                 const titleParam = urlParams.get('title').trim();
                 if (titleParam) {
-                    pageTitle = safeDecodeUrlComponent(titleParam);
+                    pageTitle = titleParam;
                     schemaTitle = pageTitle;
                 }
             }

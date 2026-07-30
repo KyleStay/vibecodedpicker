@@ -1,5 +1,5 @@
 import { test, expect } from '../helpers/fixtures.mjs';
-import { getRosterFromUrl, openApp, expectUrlToContain } from '../helpers/app.mjs';
+import { getRosterFromUrl, openApp, expectUrlToContain, waitForAppReady } from '../helpers/app.mjs';
 import { addOperative, enableExtractionMode, expectRosterOrder, openMenu } from '../helpers/roster.mjs';
 
 test.describe('roster management', () => {
@@ -101,6 +101,18 @@ test.describe('roster management', () => {
     await page.locator('#addNameBtn').click();
 
     await expect(page.locator('#nameList .name-item')).toHaveCount(initialCount);
+  });
+
+  test('ignores duplicate operative names from shared URLs', async ({ page }) => {
+    await page.goto('/?e2e=1&crt=false&name=Neo&alias=The+One&name=neo&alias=Duplicate&name=Trinity&alias=Hacker');
+    await waitForAppReady(page);
+
+    await expect(page.locator('#nameList .name-item')).toHaveCount(2);
+    await expect(page.locator('li[data-name="Neo"] .value-row input')).toHaveValue('The One');
+
+    await page.locator('#selectedNameDisplayWrapper').click();
+    await page.locator('#selectedNameDisplayWrapper').click();
+    await expect(page.locator('#progressBar .progress-segment.filled')).toHaveCount(2);
   });
 
   test('normal roster rows use the full list width', async ({ page }) => {
