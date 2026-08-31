@@ -208,6 +208,48 @@ test.describe('settings and URL persistence', () => {
     expect(Math.max(...debug.oldFadedAlphaSamples)).toBeLessThan(Math.max(...debug.oldAlphaSamples));
   });
 
+  test('glyph sets include the Omarchy screensaver symbols and keep expanded glyphs as the default', async ({ page }) => {
+    test.setTimeout(60000);
+    const omarchyGlyphs = '2598Z*):."=+-¦|_ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ';
+    await openApp(page, { crt: 'false' });
+    await openMenu(page);
+
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Expanded Glyphs');
+    await expect(page.url()).not.toContain('rain-glyphs=');
+
+    await page.locator('#rainGlyphSetBtn').click();
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Original Glyphs');
+    await expectUrlToContain(page, { 'rain-glyphs': 'original' });
+
+    await page.locator('#rainGlyphSetBtn').click();
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Omarchy Glyphs');
+    await expectUrlToContain(page, { 'rain-glyphs': 'omarchy' });
+    await expect.poll(() => page.evaluate(() => window.__VIBE_TEST__.getRainGlyphSetDebug())).toEqual({
+      name: 'omarchy',
+      count: 50,
+      glyphs: omarchyGlyphs
+    });
+    const activeTrailGlyphs = await page.evaluate(() =>
+      window.__VIBE_TEST__.getRainContinuityDebug().trailHeads.join('')
+    );
+    expect(activeTrailGlyphs.length).toBeGreaterThan(0);
+    expect(Array.from(activeTrailGlyphs).every((glyph) => omarchyGlyphs.includes(glyph))).toBe(true);
+
+    await page.reload();
+    await waitForAppReady(page);
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Omarchy Glyphs');
+    const reloadedGlyphSet = await page.evaluate(() => window.__VIBE_TEST__.getRainGlyphSetDebug());
+    expect(reloadedGlyphSet).toEqual({
+      name: 'omarchy',
+      count: 50,
+      glyphs: omarchyGlyphs
+    });
+
+    await page.locator('#rainGlyphSetBtn').evaluate((element) => element.click());
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Expanded Glyphs');
+    await expect.poll(() => new URL(page.url()).searchParams.has('rain-glyphs')).toBe(false);
+  });
+
   test('effect reset buttons restore defaults without changing roster or extraction mode', async ({ page }) => {
     await openApp(page, {
       crt: 'false',

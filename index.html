@@ -1742,7 +1742,7 @@
                         <button id="resetRainTextureEffectsBtn" class="reset-effect-btn" type="button" data-reset-scope="rainTexture">Reset</button>
                     </div>
                     <div class="control-group">
-                        <button id="rainGlyphSetBtn" aria-pressed="true">[Y] Expanded Glyphs</button>
+                        <button id="rainGlyphSetBtn" type="button" aria-label="Rain glyph set: Expanded Glyphs. Activate to cycle.">[Y] Expanded Glyphs</button>
                         <div id="rainGlyphSetLed" class="led-indicator active" aria-hidden="true"></div>
                     </div>
                     <div class="mb-3">
@@ -1905,8 +1905,8 @@
                         </li>
                         <li>
                             <div>
-                                <span>Toggle Rain Glyph Set</span>
-                                <p class="text-sm opacity-70 mt-1">Switches between the original Matrix code alphabet and the expanded multilingual symbol feed.</p>
+                                <span>Cycle Rain Glyph Set</span>
+                                <p class="text-sm opacity-70 mt-1">Cycles through the expanded feed, the original Matrix alphabet, and the 50 symbols from Omarchy's ttfx screensaver.</p>
                             </div>
                             <span><kbd>Y</kbd></span>
                         </li>
@@ -2486,6 +2486,8 @@ void main() {
         ];
         const MATRIX_ASCII_REPEAT = Math.ceil((MATRIX_WORLD_GLYPHS.length + MATRIX_SPECIAL_GLYPHS.length + MATRIX_GLOBAL_SCRIPT_GLYPHS.length + MATRIX_PICTOGRAPH_GLYPHS.length) / MATRIX_ASCII_GLYPHS.length);
         const MATRIX_ORIGINAL_GLYPHS = Array.from(MATRIX_ORIGINAL_CHARS);
+        // Default Matrix rain symbols from ttfx 0.3.2, as used by the Omarchy screensaver.
+        const OMARCHY_MATRIX_GLYPHS = Array.from(`2598Z*):."=+-¦|_ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ`);
         const MATRIX_EXPANDED_GLYPHS = [
             ...Array.from(MATRIX_ASCII_GLYPHS.repeat(MATRIX_ASCII_REPEAT)),
             ...Array.from(MATRIX_WORLD_GLYPHS),
@@ -2540,6 +2542,12 @@ void main() {
         const DEFAULT_LEADER_HEAT_PERCENT = 50;
         const DEFAULT_GLYPH_MUTATION_PERCENT = 6;
         const DEFAULT_RAIN_GLYPH_SET = 'expanded';
+        const RAIN_GLYPH_SET_ORDER = ['expanded', 'original', 'omarchy'];
+        const RAIN_GLYPH_SET_LABELS = {
+            expanded: 'Expanded Glyphs',
+            original: 'Original Glyphs',
+            omarchy: 'Omarchy Glyphs'
+        };
         const MIN_TRAIL_LENGTH = 20;
         const MIN_COLUMN_TRAIL_LENGTH = 8;
         const MAX_TRAIL_LENGTH = 400;
@@ -2841,6 +2849,14 @@ void main() {
                         trailHeads: trails.map((trail) => Array.isArray(trail)
                             ? trail.slice(0, 8).map((trailItem) => trailItem?.char || '').join('')
                             : '')
+                    };
+                },
+                getRainGlyphSetDebug() {
+                    const glyphs = getActiveMatrixGlyphs();
+                    return {
+                        name: currentRainGlyphSet,
+                        count: glyphs.length,
+                        glyphs: glyphs.join('')
                     };
                 },
                 getMatrixRenderDebug() {
@@ -4030,7 +4046,9 @@ void main() {
             return sanitizedMatrixExpandedGlyphs;
         }
         function getActiveMatrixGlyphs() {
-            return currentRainGlyphSet === 'original' ? MATRIX_ORIGINAL_GLYPHS : getExpandedMatrixGlyphs();
+            if (currentRainGlyphSet === 'original') { return MATRIX_ORIGINAL_GLYPHS; }
+            if (currentRainGlyphSet === 'omarchy') { return OMARCHY_MATRIX_GLYPHS; }
+            return getExpandedMatrixGlyphs();
         }
         function getRandomMatrixGlyph() {
             const glyphs = getActiveMatrixGlyphs();
@@ -4854,7 +4872,13 @@ void main() {
             const rainGlyphSetParam = getURLParamValue(urlParams, 'rain-glyphs', ['glyphs', 'glyphSet']);
             if (rainGlyphSetParam !== null) {
                 const normalizedGlyphSet = String(rainGlyphSetParam).toLowerCase();
-                currentRainGlyphSet = ['original', 'classic', 'legacy'].includes(normalizedGlyphSet) ? 'original' : DEFAULT_RAIN_GLYPH_SET;
+                if (['original', 'classic', 'legacy'].includes(normalizedGlyphSet)) {
+                    currentRainGlyphSet = 'original';
+                } else if (['omarchy', 'ttfx', 'screensaver'].includes(normalizedGlyphSet)) {
+                    currentRainGlyphSet = 'omarchy';
+                } else {
+                    currentRainGlyphSet = DEFAULT_RAIN_GLYPH_SET;
+                }
             }
             updateRainGlyphSetButton();
             const extractionParam = getURLParamValue(urlParams, 'extraction', ['extract']);
@@ -5118,16 +5142,19 @@ void main() {
             markCrtSnapshotDirty();
         }
         function updateRainGlyphSetButton() {
-            const isExpanded = currentRainGlyphSet !== 'original';
-            currentRainGlyphSet = isExpanded ? 'expanded' : 'original';
-            rainGlyphSetBtn.setAttribute('aria-pressed', isExpanded);
-            rainGlyphSetBtn.textContent = isExpanded ? '[Y] Expanded Glyphs' : '[Y] Original Glyphs';
+            if (!RAIN_GLYPH_SET_ORDER.includes(currentRainGlyphSet)) {
+                currentRainGlyphSet = DEFAULT_RAIN_GLYPH_SET;
+            }
+            const isExpanded = currentRainGlyphSet === DEFAULT_RAIN_GLYPH_SET;
+            const label = RAIN_GLYPH_SET_LABELS[currentRainGlyphSet];
+            rainGlyphSetBtn.textContent = `[Y] ${label}`;
+            rainGlyphSetBtn.setAttribute('aria-label', `Rain glyph set: ${label}. Activate to cycle.`);
             rainGlyphSetBtn.classList.toggle('active', isExpanded);
             rainGlyphSetLed.classList.toggle('active', isExpanded);
             markCrtSnapshotDirty();
         }
         function handleRainGlyphSetChange(glyphSet) {
-            currentRainGlyphSet = glyphSet === 'original' ? 'original' : 'expanded';
+            currentRainGlyphSet = RAIN_GLYPH_SET_ORDER.includes(glyphSet) ? glyphSet : DEFAULT_RAIN_GLYPH_SET;
             updateRainGlyphSetButton();
             refreshActiveTrailGlyphs({ force: true });
             markCrtSnapshotDirty();
@@ -6255,7 +6282,7 @@ void main() {
             { name: "Toggle Extraction Mode", action: () => extractionModeBtn.click(), shortcut: 'E' },
             { name: "Toggle CRT Mode", action: () => crtModeBtn.click(), shortcut: 'T' },
             { name: "Toggle Flat Grid Rain", action: () => flatGridModeBtn.click(), shortcut: 'G' },
-            { name: "Toggle Rain Glyph Set", action: () => rainGlyphSetBtn.click(), shortcut: 'Y' },
+            { name: "Cycle Rain Glyph Set", action: () => rainGlyphSetBtn.click(), shortcut: 'Y' },
             { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
             { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
             { name: "Copy Blank Matrix Mode URL", action: copyBlankMatrixModeURL },
@@ -7211,7 +7238,8 @@ void main() {
             updateURL();
         });
         rainGlyphSetBtn.addEventListener('click', () => {
-            const nextGlyphSet = currentRainGlyphSet === 'original' ? 'expanded' : 'original';
+            const currentGlyphSetIndex = RAIN_GLYPH_SET_ORDER.indexOf(currentRainGlyphSet);
+            const nextGlyphSet = RAIN_GLYPH_SET_ORDER[(currentGlyphSetIndex + 1) % RAIN_GLYPH_SET_ORDER.length];
             handleRainGlyphSetChange(nextGlyphSet);
             showTemporaryMessage(`// Rain glyph set: ${currentRainGlyphSet}.`);
             updateURL();
