@@ -208,46 +208,51 @@ test.describe('settings and URL persistence', () => {
     expect(Math.max(...debug.oldFadedAlphaSamples)).toBeLessThan(Math.max(...debug.oldAlphaSamples));
   });
 
-  test('glyph sets include the Omarchy screensaver symbols and keep expanded glyphs as the default', async ({ page }) => {
+  test('Movie Glyphs use the Omarchy screensaver symbols and remain the default', async ({ page }) => {
     test.setTimeout(60000);
-    const omarchyGlyphs = '2598Z*):."=+-¦|_ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ';
+    const movieGlyphs = '2598Z*):."=+-¦|_ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ';
     await openApp(page, { crt: 'false' });
     await openMenu(page);
 
-    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Expanded Glyphs');
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Movie Glyphs');
     await expect(page.url()).not.toContain('rain-glyphs=');
-
-    await page.locator('#rainGlyphSetBtn').click();
-    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Original Glyphs');
-    await expectUrlToContain(page, { 'rain-glyphs': 'original' });
-
-    await page.locator('#rainGlyphSetBtn').click();
-    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Omarchy Glyphs');
-    await expectUrlToContain(page, { 'rain-glyphs': 'omarchy' });
     await expect.poll(() => page.evaluate(() => window.__VIBE_TEST__.getRainGlyphSetDebug())).toEqual({
-      name: 'omarchy',
+      name: 'movie',
       count: 50,
-      glyphs: omarchyGlyphs
+      glyphs: movieGlyphs
     });
     const activeTrailGlyphs = await page.evaluate(() =>
       window.__VIBE_TEST__.getRainContinuityDebug().trailHeads.join('')
     );
     expect(activeTrailGlyphs.length).toBeGreaterThan(0);
-    expect(Array.from(activeTrailGlyphs).every((glyph) => omarchyGlyphs.includes(glyph))).toBe(true);
+    expect(Array.from(activeTrailGlyphs).every((glyph) => movieGlyphs.includes(glyph))).toBe(true);
+
+    await page.locator('#rainGlyphSetBtn').click();
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Expanded Glyphs');
+    await expectUrlToContain(page, { 'rain-glyphs': 'expanded' });
+
+    await page.locator('#rainGlyphSetBtn').click();
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Original Glyphs');
+    await expectUrlToContain(page, { 'rain-glyphs': 'original' });
 
     await page.reload();
     await waitForAppReady(page);
-    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Omarchy Glyphs');
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Original Glyphs');
     const reloadedGlyphSet = await page.evaluate(() => window.__VIBE_TEST__.getRainGlyphSetDebug());
-    expect(reloadedGlyphSet).toEqual({
-      name: 'omarchy',
-      count: 50,
-      glyphs: omarchyGlyphs
-    });
+    expect(reloadedGlyphSet.name).toBe('original');
+    expect(reloadedGlyphSet.count).toBeGreaterThan(50);
 
     await page.locator('#rainGlyphSetBtn').evaluate((element) => element.click());
-    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Expanded Glyphs');
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Movie Glyphs');
     await expect.poll(() => new URL(page.url()).searchParams.has('rain-glyphs')).toBe(false);
+
+    await openApp(page, { crt: 'false', 'rain-glyphs': 'expanded' });
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Expanded Glyphs');
+    expect(await page.evaluate(() => window.__VIBE_TEST__.getRainGlyphSetDebug().name)).toBe('expanded');
+
+    await openApp(page, { crt: 'false', 'rain-glyphs': 'omarchy' });
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Movie Glyphs');
+    expect(await page.evaluate(() => window.__VIBE_TEST__.getRainGlyphSetDebug().name)).toBe('movie');
   });
 
   test('effect reset buttons restore defaults without changing roster or extraction mode', async ({ page }) => {
@@ -292,6 +297,7 @@ test.describe('settings and URL persistence', () => {
     await expect(page.locator('#gapDensitySlider')).toHaveValue('50');
     await expect(page.locator('#leaderHeatSlider')).toHaveValue('50');
     await expect(page.locator('#glyphMutationSlider')).toHaveValue('6');
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Movie Glyphs');
     await expect(page.locator('#brightnessSlider')).toHaveValue('73');
     await expect(page.locator('#flatGridModeBtn')).toHaveAttribute('aria-pressed', 'false');
     await expectUrlToContain(page, {
@@ -307,6 +313,7 @@ test.describe('settings and URL persistence', () => {
     await expect(page.url()).not.toContain('gap-density=');
     await expect(page.url()).not.toContain('leader-heat=');
     await expect(page.url()).not.toContain('glyph-mutation=');
+    await expect(page.url()).not.toContain('rain-glyphs=');
 
     await page.locator('#resetAllEffectsBtn').scrollIntoViewIfNeeded();
     await page.locator('#resetAllEffectsBtn').click();

@@ -20,11 +20,11 @@ The Matrix and CRT layers are not skins on top of the picker. They are part of t
 
 ## State contract
 
-User-facing controls persist in readable URL parameters. Matrix rain settings include `rain-layout=organic`, `rain-glyphs=omarchy`, `rain-depth`, `rain-variety`, `lane-drift`, `gap-density`, `leader-heat`, and `glyph-mutation`. Fullscreen presentation uses `matrix-mode=on`. CRT settings include `crt-effect=off`, `crt-fishbowl`, `crt-vignette`, `crt-beam-focus`, `crt-scanlines`, `crt-grille`, `crt-noise`, `crt-sync-roll`, `crt-jitter`, `crt-distortion-drift`, `crt-startup-time`, and `crt-adaptive-scale=off`.
+User-facing controls persist in readable URL parameters. Matrix rain settings include `rain-layout=organic`, `rain-glyphs=expanded`, `rain-depth`, `rain-variety`, `lane-drift`, `gap-density`, `leader-heat`, and `glyph-mutation`. Fullscreen presentation uses `matrix-mode=on`. CRT settings include `crt-effect=off`, `crt-fishbowl`, `crt-vignette`, `crt-beam-focus`, `crt-scanlines`, `crt-grille`, `crt-noise`, `crt-sync-roll`, `crt-jitter`, `crt-distortion-drift`, `crt-startup-time`, and `crt-adaptive-scale=off`.
 
 Schema titles round-trip literally, including text that resembles a percent escape such as `%20`. Adaptive CRT source scaling is on by default and omitted from new links unless disabled. Flat Grid Rain is the default, so new flat-grid links omit `rain-layout`. Organic perspective rain uses `rain-layout=organic`.
 
-The expanded glyph feed remains the default and omits `rain-glyphs`. Use `rain-glyphs=original` for the original Matrix alphabet. Use `rain-glyphs=omarchy` for the 50-symbol `ttfx` 0.3.2 set used by Omarchy's screensaver. In flat-grid mode, new shared URLs omit perspective-only depth and lane-drift settings. Cascade entropy and rain texture settings still apply to the flat lanes. Older camelCase parameters such as `flatGrid=false`, `rainDepth=70`, `extract=true`, and `crt=false` remain valid.
+Movie Glyphs is the default and omits `rain-glyphs`. This set contains the 50 symbols from the `ttfx` 0.3.2 Matrix effect used by Omarchy's screensaver. Use `rain-glyphs=expanded` for the expanded feed or `rain-glyphs=original` for the original Matrix alphabet. Older `rain-glyphs=omarchy`, `rain-glyphs=ttfx`, and `rain-glyphs=screensaver` links still select Movie Glyphs. In flat-grid mode, new shared URLs omit perspective-only depth and lane-drift settings. Cascade entropy and rain texture settings still apply to the flat lanes. Older camelCase parameters such as `flatGrid=false`, `rainDepth=70`, `extract=true`, and `crt=false` remain valid.
 
 Matrix-mode links request fullscreen when opened; browsers that block fullscreen without a user gesture retry the request on the first click, tap, or non-exit key press.
 

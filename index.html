@@ -1742,7 +1742,7 @@
                         <button id="resetRainTextureEffectsBtn" class="reset-effect-btn" type="button" data-reset-scope="rainTexture">Reset</button>
                     </div>
                     <div class="control-group">
-                        <button id="rainGlyphSetBtn" type="button" aria-label="Rain glyph set: Expanded Glyphs. Activate to cycle.">[Y] Expanded Glyphs</button>
+                        <button id="rainGlyphSetBtn" type="button" aria-label="Rain glyph set: Movie Glyphs. Activate to cycle.">[Y] Movie Glyphs</button>
                         <div id="rainGlyphSetLed" class="led-indicator active" aria-hidden="true"></div>
                     </div>
                     <div class="mb-3">
@@ -1906,7 +1906,7 @@
                         <li>
                             <div>
                                 <span>Cycle Rain Glyph Set</span>
-                                <p class="text-sm opacity-70 mt-1">Cycles through the expanded feed, the original Matrix alphabet, and the 50 symbols from Omarchy's ttfx screensaver.</p>
+                                <p class="text-sm opacity-70 mt-1">Cycles through the 50 Movie Glyphs, the expanded feed, and the original Matrix alphabet.</p>
                             </div>
                             <span><kbd>Y</kbd></span>
                         </li>
@@ -2315,7 +2315,7 @@ void main() {
         let currentGapDensityPercent = 50;
         let currentLeaderHeatPercent = 50;
         let currentGlyphMutationPercent = 6;
-        let currentRainGlyphSet = 'expanded';
+        let currentRainGlyphSet = 'movie';
         let rainAnimationId = null;
         let isAnimationPaused = false;
         let isInMatrixMode = false;
@@ -2487,7 +2487,7 @@ void main() {
         const MATRIX_ASCII_REPEAT = Math.ceil((MATRIX_WORLD_GLYPHS.length + MATRIX_SPECIAL_GLYPHS.length + MATRIX_GLOBAL_SCRIPT_GLYPHS.length + MATRIX_PICTOGRAPH_GLYPHS.length) / MATRIX_ASCII_GLYPHS.length);
         const MATRIX_ORIGINAL_GLYPHS = Array.from(MATRIX_ORIGINAL_CHARS);
         // Default Matrix rain symbols from ttfx 0.3.2, as used by the Omarchy screensaver.
-        const OMARCHY_MATRIX_GLYPHS = Array.from(`2598Z*):."=+-¦|_ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ`);
+        const MATRIX_MOVIE_GLYPHS = Array.from(`2598Z*):."=+-¦|_ｦｱｳｴｵｶｷｹｺｻｼｽｾｿﾀﾂﾃﾅﾆﾇﾈﾊﾋﾎﾏﾐﾑﾒﾓﾔﾕﾗﾘﾜ`);
         const MATRIX_EXPANDED_GLYPHS = [
             ...Array.from(MATRIX_ASCII_GLYPHS.repeat(MATRIX_ASCII_REPEAT)),
             ...Array.from(MATRIX_WORLD_GLYPHS),
@@ -2541,12 +2541,12 @@ void main() {
         const DEFAULT_GAP_DENSITY_PERCENT = 50;
         const DEFAULT_LEADER_HEAT_PERCENT = 50;
         const DEFAULT_GLYPH_MUTATION_PERCENT = 6;
-        const DEFAULT_RAIN_GLYPH_SET = 'expanded';
-        const RAIN_GLYPH_SET_ORDER = ['expanded', 'original', 'omarchy'];
+        const DEFAULT_RAIN_GLYPH_SET = 'movie';
+        const RAIN_GLYPH_SET_ORDER = ['movie', 'expanded', 'original'];
         const RAIN_GLYPH_SET_LABELS = {
+            movie: 'Movie Glyphs',
             expanded: 'Expanded Glyphs',
-            original: 'Original Glyphs',
-            omarchy: 'Omarchy Glyphs'
+            original: 'Original Glyphs'
         };
         const MIN_TRAIL_LENGTH = 20;
         const MIN_COLUMN_TRAIL_LENGTH = 8;
@@ -4047,7 +4047,7 @@ void main() {
         }
         function getActiveMatrixGlyphs() {
             if (currentRainGlyphSet === 'original') { return MATRIX_ORIGINAL_GLYPHS; }
-            if (currentRainGlyphSet === 'omarchy') { return OMARCHY_MATRIX_GLYPHS; }
+            if (currentRainGlyphSet === 'movie') { return MATRIX_MOVIE_GLYPHS; }
             return getExpandedMatrixGlyphs();
         }
         function getRandomMatrixGlyph() {
@@ -4872,10 +4872,12 @@ void main() {
             const rainGlyphSetParam = getURLParamValue(urlParams, 'rain-glyphs', ['glyphs', 'glyphSet']);
             if (rainGlyphSetParam !== null) {
                 const normalizedGlyphSet = String(rainGlyphSetParam).toLowerCase();
-                if (['original', 'classic', 'legacy'].includes(normalizedGlyphSet)) {
+                if (['movie', 'omarchy', 'ttfx', 'screensaver'].includes(normalizedGlyphSet)) {
+                    currentRainGlyphSet = 'movie';
+                } else if (normalizedGlyphSet === 'expanded') {
+                    currentRainGlyphSet = 'expanded';
+                } else if (['original', 'classic', 'legacy'].includes(normalizedGlyphSet)) {
                     currentRainGlyphSet = 'original';
-                } else if (['omarchy', 'ttfx', 'screensaver'].includes(normalizedGlyphSet)) {
-                    currentRainGlyphSet = 'omarchy';
                 } else {
                     currentRainGlyphSet = DEFAULT_RAIN_GLYPH_SET;
                 }
@@ -5145,12 +5147,12 @@ void main() {
             if (!RAIN_GLYPH_SET_ORDER.includes(currentRainGlyphSet)) {
                 currentRainGlyphSet = DEFAULT_RAIN_GLYPH_SET;
             }
-            const isExpanded = currentRainGlyphSet === DEFAULT_RAIN_GLYPH_SET;
+            const isDefault = currentRainGlyphSet === DEFAULT_RAIN_GLYPH_SET;
             const label = RAIN_GLYPH_SET_LABELS[currentRainGlyphSet];
             rainGlyphSetBtn.textContent = `[Y] ${label}`;
             rainGlyphSetBtn.setAttribute('aria-label', `Rain glyph set: ${label}. Activate to cycle.`);
-            rainGlyphSetBtn.classList.toggle('active', isExpanded);
-            rainGlyphSetLed.classList.toggle('active', isExpanded);
+            rainGlyphSetBtn.classList.toggle('active', isDefault);
+            rainGlyphSetLed.classList.toggle('active', isDefault);
             markCrtSnapshotDirty();
         }
         function handleRainGlyphSetChange(glyphSet) {
@@ -7241,7 +7243,7 @@ void main() {
             const currentGlyphSetIndex = RAIN_GLYPH_SET_ORDER.indexOf(currentRainGlyphSet);
             const nextGlyphSet = RAIN_GLYPH_SET_ORDER[(currentGlyphSetIndex + 1) % RAIN_GLYPH_SET_ORDER.length];
             handleRainGlyphSetChange(nextGlyphSet);
-            showTemporaryMessage(`// Rain glyph set: ${currentRainGlyphSet}.`);
+            showTemporaryMessage(`// Rain glyph set: ${RAIN_GLYPH_SET_LABELS[currentRainGlyphSet]}.`);
             updateURL();
         });
         crtModeBtn.addEventListener('click', () => {

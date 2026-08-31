@@ -73,13 +73,13 @@ test.describe('modals, shortcuts, and fullscreen-backed modes', () => {
     await expect(page.locator('#extractionModeBtn')).toHaveAttribute('aria-pressed', 'true');
 
     await page.keyboard.press('y');
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Expanded Glyphs');
+
+    await page.keyboard.press('y');
     await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Original Glyphs');
 
     await page.keyboard.press('y');
-    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Omarchy Glyphs');
-
-    await page.keyboard.press('y');
-    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Expanded Glyphs');
+    await expect(page.locator('#rainGlyphSetBtn')).toHaveText('[Y] Movie Glyphs');
 
     await page.keyboard.press('t');
     await expect(page.locator('#crtModeBtn')).toHaveAttribute('aria-pressed', 'true');

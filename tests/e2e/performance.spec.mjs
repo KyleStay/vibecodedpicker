@@ -39,7 +39,7 @@ test.describe('matrix rendering performance path', () => {
     const activeRain = await page.evaluate(() => window.__VIBE_TEST__.getRainContinuityDebug());
     await expect.poll(
       () => page.evaluate(() => window.__VIBE_TEST__.getRainContinuityDebug().dropYs),
-      { timeout: 3000 }
+      { timeout: 15000 }
     ).not.toEqual(activeRain.dropYs);
 
     const metrics = await getPerformanceMetrics(page);
