@@ -190,6 +190,7 @@ test.describe('roster management', () => {
 
     const source = page.locator('li[data-name="Trinity"]');
     const handle = source.locator('.drag-handle');
+    await handle.hover();
     const sourceBox = await source.boundingBox();
     const handleBox = await handle.boundingBox();
     if (!sourceBox || !handleBox) {
