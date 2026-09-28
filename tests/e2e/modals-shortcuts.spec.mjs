@@ -86,6 +86,24 @@ test.describe('modals, shortcuts, and fullscreen-backed modes', () => {
 
   });
 
+  test('Enter and Space activate focused buttons without picking', async ({ page }) => {
+    await openApp(page, { crt: 'false' });
+    await page.locator('#menuToggleBtn').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#managementPanel')).toHaveClass(/visible/);
+    await expect(page.locator('#progressBar .progress-segment.filled')).toHaveCount(0);
+
+    const themeButton = page.locator('#themeToggleBtn');
+    await themeButton.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('body')).toHaveClass(/construct-mode/);
+    await expect(page.locator('#progressBar .progress-segment.filled')).toHaveCount(0);
+
+    await page.keyboard.press('Space');
+    await expect(page.locator('body')).not.toHaveClass(/construct-mode/);
+    await expect(page.locator('#progressBar .progress-segment.filled')).toHaveCount(0);
+  });
+
   test('matrix mode enters fullscreen and exits when fullscreen ends', async ({ page }) => {
     await openApp(page, { crt: 'false' });
 
