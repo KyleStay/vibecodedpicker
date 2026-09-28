@@ -63,6 +63,35 @@ test.describe('modals, shortcuts, and fullscreen-backed modes', () => {
     await expect(page.locator('#commandPaletteOverlay')).not.toHaveClass(/visible/);
   });
 
+  test('copies the current picker state from the share button and command palette', async ({ page }) => {
+    await page.evaluate(() => document.fullscreenElement && document.exitFullscreen());
+    await openApp(page, {
+      crt: 'false',
+      title: 'Loaded Deck',
+      name: 'Switch',
+      alias: 'Operator',
+      brightness: 73,
+      extraction: 'on'
+    });
+    await page.locator('#menuToggleBtn').evaluate((button) => button.click());
+    await expect(page.locator('#managementPanel')).toHaveClass(/visible/);
+    await page.locator('#shareStateBtn').click();
+    const expectedUrl = page.url();
+    const sharedState = new URL(expectedUrl).searchParams;
+    expect(sharedState.get('title')).toBe('Loaded Deck');
+    expect(sharedState.getAll('name')).toContain('Switch');
+    expect(sharedState.getAll('alias')).toContain('Operator');
+    expect(sharedState.get('brightness')).toBe('73');
+    expect(sharedState.get('extraction')).toBe('on');
+    await expect.poll(async () => (await getClipboardWrites(page)).at(-1)).toBe(expectedUrl);
+
+    await page.keyboard.press('Control+/');
+    await page.locator('#commandPaletteInput').fill('Copy Share Link');
+    await page.keyboard.press('Enter');
+    await expect.poll(async () => (await getClipboardWrites(page)).at(-1)).toBe(expectedUrl);
+    await expect(page.locator('#commandPaletteOverlay')).not.toHaveClass(/visible/);
+  });
+
   test('single-key shortcuts toggle the expected modes', async ({ page }) => {
     await openApp(page, { crt: 'false' });
 

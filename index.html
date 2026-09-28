@@ -636,6 +636,7 @@
             margin-bottom: 1.35rem;
         }
         #managementPanel .action-button-row.panel-section-static {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
             padding-top: 4rem;
         }
         /* Specific Layout/Overrides for primary section action buttons */
@@ -1427,6 +1428,7 @@
                 padding-top: 3rem;
             }
             #managementPanel .action-button-row.panel-section-static {
+                grid-template-columns: 1fr;
                 padding-top: 3rem;
             }
 
@@ -1541,6 +1543,9 @@
             </button>
             <button id="helpBtn" class="font-medium" aria-controls="helpModalOverlay">
                 [?] Help
+            </button>
+            <button id="shareStateBtn" type="button" aria-label="Copy share link" title="Copy a link with the current roster and settings">
+                [↗] Share
             </button>
         </div>
 
@@ -2189,6 +2194,7 @@ void main() {
         const crtUiCtx = crtUiCanvas.getContext('2d');
         const clickTriggerArea = document.getElementById('clickTriggerArea');
         const menuToggleBtn = document.getElementById('menuToggleBtn');
+        const shareStateBtn = document.getElementById('shareStateBtn');
         const managementPanel = document.getElementById('managementPanel');
         const undoBtn = document.getElementById('undoBtn');
         const rebootBtn = document.getElementById('rebootBtn');
@@ -6277,6 +6283,10 @@ void main() {
         function copyBlankMatrixModeURL() {
             copyToClipboard(buildBlankMatrixModeURL(), '// Blank Matrix mode URL copied.');
         }
+        function copyShareLink() {
+            updateURL();
+            copyToClipboard(window.location.href, '// Share link copied.');
+        }
         
         // --- Command Palette and Help Modal Logic ---
 
@@ -6289,6 +6299,7 @@ void main() {
             { name: "Toggle Fullscreen", action: toggleFullScreen, shortcut: 'F' },
             { name: "Enter/Exit Matrix Mode", action: () => enterMatrixBtn.click(), shortcut: 'M' },
             { name: "Copy Blank Matrix Mode URL", action: copyBlankMatrixModeURL },
+            { name: "Copy Share Link", action: copyShareLink },
             { name: "Previous Operative", action: undoLastPick, shortcut: 'U' },
             { name: "Reboot System (Clear Picks)", action: rebootSystem, shortcut: 'R' },
             { name: "Open Help Manual", action: () => toggleHelpModal(true) },
@@ -7171,6 +7182,7 @@ void main() {
             toggle.addEventListener('click', () => togglePanelSection(toggle));
         });
         menuToggleBtn.addEventListener('click', toggleManagementPanel);
+        shareStateBtn.addEventListener('click', copyShareLink);
         selectedNameDisplayWrapper.addEventListener('click', pickRandomName);
         clickTriggerArea.addEventListener('click', handleScreenClick);
         crtCanvas.addEventListener('pointerdown', handleCrtPointerDown);
