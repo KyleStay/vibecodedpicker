@@ -28,9 +28,11 @@ Movie Glyphs is the default and omits `rain-glyphs`. This set contains the 50 sy
 
 Matrix-mode links request fullscreen when opened; browsers that block fullscreen without a user gesture retry the request on the first click, tap, or non-exit key press.
 
+Enter and Space pick the next operative when focus is outside a text field or interactive control. Focused controls keep their native Enter/Space behavior.
+
 The command palette includes `Copy Blank Matrix Mode URL` for copying a clean `matrix-mode=on` link without the current roster or tuned settings.
 
-Roster state is written as repeated `name` and `alias` pairs so shared links can be read and edited directly, for example `name=Neo&alias=The+One&name=Trinity&alias=Hacker`. Duplicate names in shared links are ignored case-insensitively, preserving the first entry and alias so every loaded operative remains independently pickable. Older `roster` JSON and `names` links are still tolerated as legacy input.
+Roster state is written as repeated `name` and `alias` pairs so shared links can be read and edited directly, for example `name=Neo&alias=The+One&name=Trinity&alias=Hacker`. An explicitly empty roster uses `roster=[]` so it stays empty when shared or reloaded. Duplicate names in shared links are ignored case-insensitively, preserving the first entry and alias so every loaded operative remains independently pickable. Older `roster` JSON and `names` links are still tolerated as legacy input.
 
 Shared links should keep their meaning across changes. If you retune defaults, limits, or renderer-specific response curves, update the Playwright suite and documentation in the same change.
 

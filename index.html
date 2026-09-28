@@ -4727,6 +4727,7 @@ void main() {
                 if (e2eState.scene) { params.set('e2eScene', e2eState.scene); }
             }
             if (allNames.length > 0) { appendRosterToURLParams(params); }
+            else { params.set('roster', '[]'); }
             if (currentTitle) { params.set('title', currentTitle); }
             NUMERIC_SETTINGS.forEach((setting) => {
                 if (setting.relevant && !setting.relevant()) { return; }
@@ -7305,7 +7306,8 @@ void main() {
         // Global Keyboard Shortcuts
         document.addEventListener('keydown', (e) => {
             const isModalOpen = commandPaletteOverlay.classList.contains('visible') || helpModalOverlay.classList.contains('visible');
-            const isInputFocused = document.activeElement.tagName === 'INPUT';
+            const isTextEntryTarget = e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable="true"]');
+            const isNativeActivationTarget = e.target instanceof Element && e.target.closest('button, a, [role="button"]');
             
             // Command Palette Shortcuts
             if (commandPaletteOverlay.classList.contains('visible')) {
@@ -7351,7 +7353,7 @@ void main() {
                  if (managementPanel.classList.contains('visible')) {
                      toggleManagementPanel();
                  }
-            } else if (!isInputFocused) { // Single-key shortcuts only when not typing
+            } else if (!e.defaultPrevented && !isTextEntryTarget && !(isNativeActivationTarget && ['enter', ' '].includes(e.key.toLowerCase()))) {
                  switch(e.key.toLowerCase()) {
                     case 'enter':
                     case ' ':

@@ -52,6 +52,7 @@ test.describe('roster management', () => {
 
     await expect(page.locator('li[data-name="Thomas Anderson"]')).toBeVisible();
     await expect(await getRosterFromUrl(page)).toContainEqual({ name: 'Thomas Anderson', value: 'The One' });
+    await expect(page.locator('#progressBar .progress-segment.filled')).toHaveCount(0);
   });
 
   test('clicking a name edits it in extraction mode and preserves the alias', async ({ page }) => {
@@ -139,6 +140,18 @@ test.describe('roster management', () => {
 
     await expect(page.locator('li[data-name="Cypher"]')).toHaveCount(0);
     await expect((await getRosterFromUrl(page)).some((entry) => entry.name === 'Cypher')).toBe(false);
+  });
+
+  test('keeps an empty roster empty after reload', async ({ page }) => {
+    await openApp(page, { crt: 'false', names: 'Solo' });
+    await openMenu(page);
+
+    await page.locator('li[data-name="Solo"] .remove-name-btn').evaluate((element) => element.click());
+    await expect(page.locator('#nameList .name-item')).toHaveCount(0);
+    await expect.poll(() => new URL(page.url()).searchParams.get('roster')).toBe('[]');
+
+    await page.reload();
+    await expect(page.locator('#nameList .name-item')).toHaveCount(0);
   });
 
   test('handles roster names with selector metacharacters', async ({ page }) => {
