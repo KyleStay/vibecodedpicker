@@ -1566,16 +1566,18 @@
             <div id="rosterSectionBody" class="panel-section-content">
                 <label for="titleInput" data-tooltip="Names this picker in the display and in shared links.">// Operative Schema:</label>
                 <input type="text" id="titleInput" placeholder="Define schema name..." class="outline-none">
-                <label for="newNameInput" data-tooltip="Adds a selectable roster entry. This is the name shown when picked.">// Register New Operative:</label>
-                <input type="text" id="newNameInput" placeholder="Enter name..." class="outline-none">
-                <div id="newValueWrapper">
-                    <label for="newValueInput" class="text-xs" data-tooltip="Optional copied value for extraction mode; the visible roster name stays the same.">// Extraction Alias (Optional):</label>
-                    <input type="text" id="newValueInput" placeholder="Alias to copy..." class="outline-none">
-                </div>
-                <button id="addNameBtn" class="font-medium flex items-center justify-center gap-1">
-                    <span class="text-xl leading-none" aria-hidden="true">[+]</span>
-                    Add
-                </button>
+                <form id="addNameForm">
+                    <label for="newNameInput" data-tooltip="Adds a selectable roster entry. This is the name shown when picked.">// Register New Operative:</label>
+                    <input type="text" id="newNameInput" placeholder="Enter name…" enterkeyhint="go" class="outline-none">
+                    <div id="newValueWrapper">
+                        <label for="newValueInput" class="text-xs" data-tooltip="Leave blank to copy the name in Extraction mode.">// Extraction Alias (Optional):</label>
+                        <input type="text" id="newValueInput" placeholder="Leave blank to use the name" enterkeyhint="go" class="outline-none">
+                    </div>
+                    <button id="addNameBtn" type="submit" class="font-medium flex items-center justify-center gap-1">
+                        <span class="text-xl leading-none" aria-hidden="true">[+]</span>
+                        Add Name
+                    </button>
+                </form>
                 <div class="control-group">
                     <button id="extractionModeBtn" aria-pressed="false">[E] Engage Extraction</button>
                     <div id="extractionModeLed" class="led-indicator" aria-hidden="true"></div>
@@ -1594,6 +1596,12 @@
                 </section>
                 <div class="list-container">
                     <h3 id="rosterHeader">// Operative Roster (Drag to Reorder):</h3>
+                    <button id="clearRosterBtn" type="button" disabled aria-expanded="false" aria-controls="clearRosterConfirm">Clear Roster</button>
+                    <div id="clearRosterConfirm" class="hidden" role="group" aria-label="Confirm roster clear">
+                        <p id="clearRosterWarning" class="text-xs">Remove every name, alias, pick, and team from this roster?</p>
+                        <button id="cancelClearRosterBtn" type="button">Cancel</button>
+                        <button id="confirmClearRosterBtn" type="button" aria-describedby="clearRosterWarning">Remove All Names</button>
+                    </div>
                     <ul id="nameList" aria-labelledby="rosterHeader">
                         <li id="noAvailableMessage" class="hidden">Roster empty...</li>
                     </ul>
@@ -2215,7 +2223,9 @@ void main() {
         const newNameInput = document.getElementById('newNameInput');
         const newValueInput = document.getElementById('newValueInput');
         const newValueWrapper = document.getElementById('newValueWrapper');
-        const addNameBtn = document.getElementById('addNameBtn');
+        const clearRosterBtn = document.getElementById('clearRosterBtn');
+        const clearRosterConfirm = document.getElementById('clearRosterConfirm');
+        const cancelClearRosterBtn = document.getElementById('cancelClearRosterBtn');
         const selectedNameDisplay = document.getElementById('selectedNameDisplay');
         const selectedNameDisplayWrapper = document.getElementById('selectedNameDisplayWrapper');
         const schemaTitleDisplay = document.getElementById('schemaTitleDisplay');
@@ -5845,7 +5855,7 @@ void main() {
         }
 
         function renderAvailableList() {
-            nameListElement.innerHTML = '';
+            nameListElement.replaceChildren(noAvailableMessage);
             checkEmptyStates();
             allNames.forEach((operative) => {
                 const li = createOperativeListItem(operative);
@@ -6054,9 +6064,10 @@ void main() {
         }
 
         // --- Name Management Functions ---
-        function addName() {
+        function addName(event) {
+            event.preventDefault();
             const name = newNameInput.value.trim();
-            const value = newValueInput.value.trim();
+            const value = isExtractionMode ? newValueInput.value.trim() : '';
             if (name && !allNames.some(op => op.name.toLowerCase() === name.toLowerCase())) {
                 const newOperative = { name: name, value: value, selected: false };
                 allNames.push(newOperative);
@@ -6078,10 +6089,32 @@ void main() {
                 showTemporaryMessage(`// Operative "${name}" already exists.`, "warn");
             }
         }
+        function setRosterClearConfirmation(isOpen) {
+            clearRosterConfirm.classList.toggle('hidden', !isOpen);
+            clearRosterBtn.setAttribute('aria-expanded', String(isOpen));
+            markCrtSnapshotDirty();
+        }
+        function clearRoster() {
+            if (isPicking || allNames.length === 0) return;
+            allNames = [];
+            selectionHistory = [];
+            pendingNextOperatives = [];
+            clearTeamResults();
+            setRosterClearConfirmation(false);
+            renderAvailableList();
+            renderProgressBar();
+            resetDisplayStyle();
+            checkEmptyStates();
+            updateUndoButtonState();
+            updateURL();
+            newNameInput.focus();
+        }
         function removeName(nameToRemove) {
+            const operative = allNames.find(op => op.name === nameToRemove);
             const itemElement = getOperativeListItemByName(nameToRemove); if (itemElement && !itemElement.classList.contains('removing')) {
                 itemElement.classList.add('removing'); setTimeout(() => {
-                    allNames = allNames.filter(op => op.name !== nameToRemove);
+                    if (!allNames.includes(operative)) return;
+                    allNames = allNames.filter(op => op !== operative);
                     selectionHistory = selectionHistory.filter(name => name !== nameToRemove);
                     pendingNextOperatives = pendingNextOperatives.filter(name => name !== nameToRemove);
                     
@@ -6217,9 +6250,16 @@ void main() {
 
         // --- Utility Functions ---
         function checkEmptyStates() {
-            const isEmpty = allNames.length === 0; noAvailableMessage.classList.toggle('hidden', !isEmpty);
+            const isEmpty = allNames.length === 0;
+            noAvailableMessage.classList.toggle('hidden', !isEmpty);
+            updateClearRosterAvailability();
+        }
+        function updateClearRosterAvailability() {
+            clearRosterBtn.disabled = isPicking || allNames.length === 0;
+            if (clearRosterBtn.disabled && clearRosterBtn.getAttribute('aria-expanded') === 'true') setRosterClearConfirmation(false);
         }
         function updateUndoButtonState() {
+            updateClearRosterAvailability();
             if (undoBtn) {
                 undoBtn.disabled = isPicking || selectionHistory.length === 0;
                 markCrtSnapshotDirty();
@@ -7286,9 +7326,17 @@ void main() {
         crtCanvas.addEventListener('pointercancel', handleCrtPointerCancel);
         crtCanvas.addEventListener('wheel', handleCrtWheel, { passive: false });
         crtCanvas.addEventListener('click', (event) => { if (isCrtRoutingActive()) { event.preventDefault(); event.stopPropagation(); } });
-        addNameBtn.addEventListener('click', addName);
-        newNameInput.addEventListener('keypress', (event) => { markCrtSnapshotDirty(); if (event.key === 'Enter') { addName(); } });
-        newValueInput.addEventListener('keypress', (event) => { markCrtSnapshotDirty(); if (event.key === 'Enter') { addName(); } });
+        document.getElementById('addNameForm').addEventListener('submit', addName);
+        clearRosterBtn.addEventListener('click', () => {
+            const isOpen = clearRosterBtn.getAttribute('aria-expanded') !== 'true';
+            setRosterClearConfirmation(isOpen);
+            if (isOpen) cancelClearRosterBtn.focus();
+        });
+        cancelClearRosterBtn.addEventListener('click', () => {
+            setRosterClearConfirmation(false);
+            clearRosterBtn.focus();
+        });
+        document.getElementById('confirmClearRosterBtn').addEventListener('click', clearRoster);
         newNameInput.addEventListener('input', markCrtSnapshotDirty);
         newValueInput.addEventListener('input', markCrtSnapshotDirty);
         undoBtn.addEventListener('click', undoLastPick);

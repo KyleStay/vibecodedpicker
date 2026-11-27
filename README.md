@@ -14,6 +14,8 @@ Roster entries can be renamed inline by clicking the operative name and reordere
 
 Open **Menu → Roster → Split Teams** to divide the entire roster into any number of nonempty teams. Sizes differ by at most one. Reshuffle or copy the names as plain text; assignments do not change picking history and are not added to share links.
 
+Use **Menu → Roster → Add Name** (or press Enter in the name field) to add a person. An Extraction Alias is optional; if absent, Extraction copies the name. **Clear Roster** asks for confirmation, then removes names, picks, and teams while keeping the picker settings.
+
 ## Design intent
 
 This project should stay immediate, inspectable, and portable. It should open as plain `index.html`, deploy cleanly to GitHub Pages, and remain understandable to an agent working without a build system.
