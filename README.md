@@ -12,6 +12,8 @@ The app is a static `index.html` with Playwright coverage for picking, roster ed
 
 Roster entries can be renamed inline by clicking the operative name and reordered from the grip handle. Extraction mode keeps the same rename flow and still allows reordering from the handle while alias inputs remain editable.
 
+Open **Menu → Roster → Split Teams** to divide the entire roster into any number of nonempty teams. Sizes differ by at most one. Reshuffle or copy the names as plain text; assignments do not change picking history and are not added to share links.
+
 ## Design intent
 
 This project should stay immediate, inspectable, and portable. It should open as plain `index.html`, deploy cleanly to GitHub Pages, and remain understandable to an agent working without a build system.

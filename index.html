@@ -671,6 +671,15 @@
         .construct-mode #managementPanel .remove-name-btn { border-color: var(--construct-text-light); color: var(--construct-text-light); }
         .construct-mode #managementPanel .remove-name-btn:hover:not(:disabled) { border-color: var(--primary-color); color: var(--construct-bg); background-color: var(--primary-color); }
 
+        #teamSplitter { padding: .5rem 0 .75rem; }
+        #teamSplitter p { margin: .35rem 0; }
+        #teamSplitter .team-results { display: grid; gap: .45rem; margin: .55rem 0; }
+        #teamSplitter .team-card { border: 1px solid currentColor; border-radius: .25rem; padding: .45rem .6rem; }
+        #teamSplitter .team-card h4 { margin: 0; font-weight: 700; }
+        #teamSplitter .team-card ul { margin: .15rem 0 0; padding-left: 1.15rem; list-style: disc; }
+        #teamSplitter .team-card li { overflow-wrap: anywhere; }
+        #teamSplitter [hidden], #teamSplitter[hidden] { display: none; }
+
         /* Input field styling */
         #managementPanel input[type="text"] {
             background-color: var(--bg-color-darker); border: 1px solid var(--primary-color-dark); color: var(--font-color); font-family: var(--matrix-font);
@@ -1571,6 +1580,18 @@
                     <button id="extractionModeBtn" aria-pressed="false">[E] Engage Extraction</button>
                     <div id="extractionModeLed" class="led-indicator" aria-hidden="true"></div>
                 </div>
+                <button id="splitTeamsToggle" type="button" aria-expanded="false" aria-controls="teamSplitter">Split Teams</button>
+                <section id="teamSplitter" aria-label="Team splitter" hidden>
+                    <p id="teamRosterHint" class="text-xs">Uses the entire roster, including already-picked operatives.</p>
+                    <form id="splitTeamsForm" novalidate>
+                        <label for="teamCount">Number of teams</label>
+                        <input id="teamCount" type="text" inputmode="numeric" value="2" aria-describedby="teamRosterHint teamStatus">
+                        <button id="generateTeamsBtn" type="submit">Generate Teams</button>
+                    </form>
+                    <p id="teamStatus" role="status"></p>
+                    <div id="teamResults" class="team-results" hidden></div>
+                    <button id="copyTeamsBtn" type="button" hidden>Copy Teams</button>
+                </section>
                 <div class="list-container">
                     <h3 id="rosterHeader">// Operative Roster (Drag to Reorder):</h3>
                     <ul id="nameList" aria-labelledby="rosterHeader">
@@ -1844,6 +1865,12 @@
                                 <p class="text-sm opacity-70 mt-1">Restores reverted operatives first, then selects a random operative from the available roster.</p>
                             </div>
                             <span><kbd>Enter</kbd> or <kbd>Space</kbd></span>
+                        </li>
+                        <li>
+                            <div>
+                                <span>Split Teams</span>
+                                <p class="text-sm opacity-70 mt-1">In Roster, choose Split Teams to randomly divide all operatives into balanced teams without changing picks.</p>
+                            </div>
                         </li>
                         <li>
                             <div>
@@ -2175,6 +2202,15 @@ void main() {
     <script>
     (function() { // IIFE to encapsulate scope and avoid global pollution
         // --- DOM Elements ---
+        const splitTeamsToggle = document.getElementById('splitTeamsToggle');
+        const teamSplitter = document.getElementById('teamSplitter');
+        const teamCount = document.getElementById('teamCount');
+        const teamStatus = document.getElementById('teamStatus');
+        const teamResults = document.getElementById('teamResults');
+        const generateTeamsBtn = document.getElementById('generateTeamsBtn');
+        const copyTeamsBtn = document.getElementById('copyTeamsBtn');
+        let teamGroups = [];
+        let lastTeamRosterKey = '';
         const nameListElement = document.getElementById('nameList');
         const newNameInput = document.getElementById('newNameInput');
         const newValueInput = document.getElementById('newValueInput');
@@ -4760,7 +4796,66 @@ void main() {
             url.searchParams.set('matrix-mode', 'on');
             return url.toString();
         }
+        function teamRosterKey() {
+            return JSON.stringify(allNames.map(({ name }) => name));
+        }
+
+        function clearTeamResults() {
+            teamGroups = [];
+            teamResults.replaceChildren();
+            teamResults.hidden = true;
+            copyTeamsBtn.hidden = true;
+            generateTeamsBtn.textContent = 'Generate Teams';
+            teamStatus.textContent = '';
+            teamCount.removeAttribute('aria-invalid');
+            markCrtSnapshotDirty();
+        }
+
+        function splitRosterIntoTeams(event) {
+            event.preventDefault();
+            const count = Number(teamCount.value.trim());
+            const names = allNames.map(({ name }) => name);
+            clearTeamResults();
+            if (!names.length) {
+                teamStatus.textContent = 'Add at least one operative first.';
+                return;
+            }
+            if (!/^[0-9]+$/.test(teamCount.value.trim()) || !Number.isSafeInteger(count) || count < 1 || count > names.length) {
+                teamStatus.textContent = `Enter a whole number from 1 to ${names.length}.`;
+                teamCount.setAttribute('aria-invalid', 'true');
+                teamCount.focus();
+                return;
+            }
+            for (let i = names.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [names[i], names[j]] = [names[j], names[i]];
+            }
+            teamGroups = Array.from({ length: count }, () => []);
+            names.forEach((name, i) => teamGroups[i % count].push(name));
+            lastTeamRosterKey = teamRosterKey();
+            for (const [i, group] of teamGroups.entries()) {
+                const card = document.createElement('article');
+                card.className = 'team-card';
+                const title = document.createElement('h4');
+                title.textContent = `Team ${i + 1}`;
+                const list = document.createElement('ul');
+                for (const name of group) {
+                    const item = document.createElement('li');
+                    item.textContent = name;
+                    list.appendChild(item);
+                }
+                card.append(title, list);
+                teamResults.appendChild(card);
+            }
+            teamResults.hidden = false;
+            copyTeamsBtn.hidden = false;
+            generateTeamsBtn.textContent = 'Reshuffle Teams';
+            teamStatus.textContent = `${count} ${count === 1 ? 'team' : 'teams'} · ${names.length} ${names.length === 1 ? 'operative' : 'operatives'}`;
+            markCrtSnapshotDirty();
+        }
+
         function updateURL() {
+            if (teamGroups.length && teamRosterKey() !== lastTeamRosterKey) clearTeamResults();
             if (urlUpdateTimerId !== null) {
                 clearTimeout(urlUpdateTimerId);
                 urlUpdateTimerId = null;
@@ -7270,6 +7365,23 @@ void main() {
             showTemporaryMessage(`// CRT source scale ${isCrtAdaptiveScaleEnabled ? 'adaptive' : 'fixed'}.`);
             updateURL();
         });
+        splitTeamsToggle.addEventListener('click', () => {
+            teamSplitter.hidden = !teamSplitter.hidden;
+            splitTeamsToggle.setAttribute('aria-expanded', String(!teamSplitter.hidden));
+            if (!teamSplitter.hidden) {
+                if (allNames.length === 1 && teamCount.value === '2') teamCount.value = '1';
+                teamCount.focus();
+            }
+            markCrtSnapshotDirty();
+        });
+        document.getElementById('splitTeamsForm').addEventListener('submit', splitRosterIntoTeams);
+        teamCount.addEventListener('input', clearTeamResults);
+        copyTeamsBtn.addEventListener('click', () => {
+            if (!teamGroups.length) return;
+            const text = teamGroups.map((group, i) => [`Team ${i + 1}`, ...group].join('\n')).join('\n\n');
+            copyToClipboard(text, '// Teams copied.');
+        });
+
         // Modal & Palette Listeners
         helpBtn.addEventListener('click', () => toggleHelpModal(true));
         helpModalOverlay.addEventListener('click', (e) => { if (e.target === helpModalOverlay) toggleHelpModal(false); });
